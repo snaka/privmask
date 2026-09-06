@@ -16,6 +16,10 @@ func runProbe() async throws {
 
     let corpus = try Corpus.load(contentsOf: ProbeLocator.corpusURL())
     let detector = FoundationModelDetector()
+    // Evaluate what the product actually produces: the deterministic pipeline
+    // plus whatever the model adds. Measuring the model alone understates it,
+    // because English names are NLTagger's job and never reach the model.
+    let pipeline = DetectionPipeline(dictionaryTerms: corpus.dictionary)
 
     var detections: [String: [DetectedMatch]] = [:]
     var ungroundedBySample: [(sampleID: String, texts: [String])] = []
@@ -23,27 +27,34 @@ func runProbe() async throws {
 
     print(String(repeating: "=", count: 78))
     for sample in corpus.samples {
+        // The deterministic layer runs regardless. A model failure must never
+        // discard results that were already found without it.
+        let deterministic = pipeline.detect(in: sample.text).map {
+            DetectedMatch(kind: $0.kind, source: $0.sources[0], range: $0.range, text: $0.text)
+        }
+        detections[sample.id] = deterministic
+
         do {
             let outcome = try await detector.detect(in: sample.text)
-            detections[sample.id] = outcome.matches
+            detections[sample.id] = deterministic + outcome.matches
             durations.append(outcome.duration)
             if !outcome.ungroundedTexts.isEmpty {
                 ungroundedBySample.append((sample.id, outcome.ungroundedTexts))
             }
             let id = sample.id.padding(toLength: 26, withPad: " ", startingAt: 0)
             let timing = String(format: "%6.2fs", outcome.duration)
-            print("  \(id) \(sample.text.count) chars  \(timing)  \(outcome.matches.count) matches")
+            let truncated = outcome.truncated ? "  TRUNCATED" : ""
+            print("  \(id) \(sample.text.count) chars  \(outcome.linesExamined) ja-lines  \(timing)  \(outcome.matches.count) matches\(truncated)")
         } catch {
-            print("  \(sample.id): FAILED — \(error)")
-            detections[sample.id] = []
+            print("  \(sample.id.padding(toLength: 26, withPad: " ", startingAt: 0)) model failed, keeping \(deterministic.count) deterministic matches — \(error)")
         }
     }
 
     let report = Evaluator.evaluate(corpus: corpus, detections: detections)
     print(
         report.rendered(
-            coveredKinds: [.personalName, .organizationName, .address, .phoneNumber, .email],
-            coveredLabel: "llm"
+            coveredKinds: Set(SensitiveKind.allCases),
+            coveredLabel: "det+llm"
         )
     )
 
@@ -92,7 +103,7 @@ func measureLatencyScaling() async {
     }
 }
 
-print("privmask — on-device language model probe")
+print("privmask — full pipeline probe (deterministic + on-device model)")
 print("macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)")
 
 if #available(macOS 26.0, *) {

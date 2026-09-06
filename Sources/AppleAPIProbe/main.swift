@@ -6,7 +6,7 @@ import PrivMask
 
 let corpus = try Corpus.load(contentsOf: ProbeLocator.corpusURL())
 
-let pipeline = DetectionPipeline()
+let pipeline = DetectionPipeline(dictionaryTerms: corpus.dictionary)
 
 var detections: [String: [DetectedMatch]] = [:]
 for sample in corpus.samples {

@@ -22,6 +22,8 @@ public struct Corpus: Decodable, Sendable {
 
     public let version: Int
     public let note: String
+    /// User-registered terms assumed to be configured when evaluating this corpus.
+    public let dictionary: [String]
     public let samples: [Sample]
 
     public static func load(contentsOf url: URL) throws -> Corpus {

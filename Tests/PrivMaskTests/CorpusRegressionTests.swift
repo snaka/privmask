@@ -13,7 +13,7 @@ struct CorpusRegressionTests {
     /// organisation names are excluded: NLTagger has no Japanese entity model,
     /// so they come from the on-device model instead.
     static let deterministicKinds: Set<SensitiveKind> = [
-        .email, .phoneNumber, .address, .postalCode, .myNumber, .credential,
+        .email, .phoneNumber, .address, .postalCode, .myNumber, .credential, .dictionaryTerm,
     ]
 
     static func loadCorpus() throws -> Corpus {
@@ -26,7 +26,7 @@ struct CorpusRegressionTests {
 
     static func report() throws -> Evaluator.Report {
         let corpus = try loadCorpus()
-        let pipeline = DetectionPipeline()
+        let pipeline = DetectionPipeline(dictionaryTerms: corpus.dictionary)
         var detections: [String: [DetectedMatch]] = [:]
         for sample in corpus.samples {
             detections[sample.id] = pipeline.detect(in: sample.text).map {
@@ -97,16 +97,18 @@ struct MyNumberTests {
 
 @Suite("Precedence and merging")
 struct PipelineTests {
+    private let pipeline = DetectionPipeline()
+
     @Test("A My Number outranks the phone number NSDataDetector sees in it")
     func myNumberBeatsPhoneNumber() {
-        let candidates = DetectionPipeline().detect(in: "マイナンバー: 123456789018")
+        let candidates = pipeline.detect(in: "マイナンバー: 123456789018")
         #expect(candidates.contains { $0.kind == .myNumber })
         #expect(!candidates.contains { $0.kind == .phoneNumber })
     }
 
     @Test("A phone match does not run past the end of its line")
     func phoneMatchStopsAtLineEnd() {
-        let candidates = DetectionPipeline().detect(in: "全角表記: ０９０－１２３４－５６７８\n内線: 7788")
+        let candidates = pipeline.detect(in: "全角表記: ０９０－１２３４－５６７８\n内線: 7788")
         let phones = candidates.filter { $0.kind == .phoneNumber }
         #expect(phones.count == 1)
         #expect(phones.first?.text == "０９０－１２３４－５６７８")
@@ -114,7 +116,7 @@ struct PipelineTests {
 
     @Test("Regex findings are high confidence")
     func regexConfidence() {
-        let candidates = DetectionPipeline().detect(in: "連絡は suzuki@example.co.jp まで")
+        let candidates = pipeline.detect(in: "連絡は suzuki@example.co.jp まで")
         #expect(candidates.first { $0.kind == .email }?.confidence == .high)
     }
 }

@@ -19,7 +19,7 @@ public struct FoundationModelDetector {
         @Guide(description: "The exact substring copied verbatim from the input text. Never paraphrase, translate, or normalise it.")
         var text: String
 
-        @Guide(description: "One of: personalName, organizationName, address, phoneNumber, email, other")
+        @Guide(description: "Always the string personalName.")
         var kind: String
     }
 
@@ -40,26 +40,51 @@ public struct FoundationModelDetector {
         /// counted: a rising number means the prompt is inviting paraphrase.
         public let ungroundedTexts: [String]
         public let duration: TimeInterval
+        /// True when the input held more Japanese than the cap allowed, so part
+        /// of it was never examined. The UI must say so: a silent miss is the
+        /// failure this tool exists to prevent.
+        public let truncated: Bool
+        /// Number of Japanese-bearing lines actually sent to the model.
+        public let linesExamined: Int
+
+        public static func empty(duration: TimeInterval = 0) -> Outcome {
+            Outcome(matches: [], ungroundedTexts: [], duration: duration, truncated: false, linesExamined: 0)
+        }
     }
 
+    /// How much Japanese text is sent to the model in one call.
+    ///
+    /// The context window runs out somewhere between 1.8K and 3.6K characters of
+    /// Japanese, and a request that exceeds it still burns around 20 seconds
+    /// before failing. Latency also grows with input: roughly 13s at 891
+    /// characters and 30s at 1803 on entity-dense text. This default keeps the
+    /// worst case inside the window with room to spare.
+    /// See docs/findings/on-device-model-baseline.md.
+    public static let defaultCharacterLimit = 1500
+
     private static let instructions = """
-        You find personal and sensitive information in text so that it can be masked \
-        before the text is shared with other people.
+        You find personal names in Japanese text, so that they can be masked before the \
+        text is shared with other people.
 
-        The text is usually Japanese, and may mix Japanese and English. Japanese \
-        personal names are the most important thing to find: they appear as 姓名 with \
-        or without a space, in kanji, hiragana, katakana, or romaji, and are often \
-        followed by 様, さん, or 氏.
+        Personal names are the important ones. They appear as 姓名 with or without a \
+        space, written in kanji, hiragana, katakana, or romaji, and are often followed \
+        by 様, さん, or 氏.
 
-        Report every entity you find. For each one, copy the exact substring from the \
-        input — do not paraphrase, translate, reformat, or normalise it.
+        For each name, copy the exact substring from the input — do not paraphrase, \
+        translate, reformat, or normalise it. Do not include a following 様, さん, or 氏 \
+        in the substring.
 
-        Do not report things that merely look like identifiers: UUIDs, git commit \
-        hashes, version numbers, port numbers, error codes, library names, product \
-        names, and dates are not personal information.
+        Report nothing else. Company names, phone numbers, addresses, postal codes, \
+        email addresses, numbers, ports, error codes, hostnames, library names, product \
+        names, section headings and dates are all handled elsewhere and must not be \
+        reported here.
         """
 
-    public init() {}
+    private let characterLimit: Int
+
+    public init(characterLimit: Int = FoundationModelDetector.defaultCharacterLimit) {
+        self.characterLimit = characterLimit
+    }
 
     public static var isAvailable: Bool {
         SystemLanguageModel.default.isAvailable
@@ -81,49 +106,92 @@ public struct FoundationModelDetector {
             throw Unavailability.modelUnavailable(Self.availabilityDescription)
         }
 
+        // Only the lines containing Japanese are sent. Mixing a timestamped log
+        // line into Japanese makes Apple's language identifier report an
+        // unsupported language, and the model then refuses the whole input.
+        // Filtering also keeps the request inside the context window.
+        // See docs/findings/on-device-model-baseline.md.
+        let segments = JapaneseText.japaneseLines(of: text)
+        guard !segments.isEmpty else { return .empty() }
+
+        let batch = JapaneseText.batch(segments, characterLimit: characterLimit)
+        guard !batch.text.isEmpty else {
+            return Outcome(
+                matches: [], ungroundedTexts: [], duration: 0,
+                truncated: true, linesExamined: 0
+            )
+        }
+
         let started = Date()
         let session = LanguageModelSession(instructions: Self.instructions)
-        let response = try await session.respond(to: text, generating: Findings.self)
+        let response = try await session.respond(to: batch.text, generating: Findings.self)
         let duration = Date().timeIntervalSince(started)
 
-        let nsText = text as NSString
+        let batchText = batch.text as NSString
+        let originalText = text as NSString
         var matches: [DetectedMatch] = []
         var ungrounded: [String] = []
 
         for entity in response.content.entities {
             guard let kind = Self.kind(from: entity.kind) else { continue }
             // The model is instructed to copy substrings verbatim, but it is a
-            // language model: anything that does not actually occur in the input
-            // is discarded rather than trusted.
-            let ranges = Self.occurrences(of: entity.text, in: nsText)
-            if ranges.isEmpty {
+            // language model: it has been observed normalising full-width digits
+            // to half-width. Anything that does not occur in what was sent is
+            // discarded rather than trusted.
+            guard Self.isPlausibleName(entity.text) else { continue }
+            let batchRanges = Self.occurrences(of: entity.text, in: batchText)
+            if batchRanges.isEmpty {
                 ungrounded.append(entity.text)
                 continue
             }
-            for range in ranges {
+            for batchRange in batchRanges {
+                guard let range = batch.originalRange(for: batchRange) else { continue }
                 matches.append(
                     DetectedMatch(
                         kind: kind,
                         source: .languageModel,
                         range: range,
-                        text: nsText.substring(with: range)
+                        text: originalText.substring(with: range)
                     )
                 )
             }
         }
 
-        return Outcome(matches: matches, ungroundedTexts: ungrounded, duration: duration)
+        return Outcome(
+            matches: matches,
+            ungroundedTexts: ungrounded,
+            duration: duration,
+            truncated: batch.truncated,
+            linesExamined: batch.mapping.count
+        )
     }
 
+    /// Only personal names are accepted from the model.
+    ///
+    /// The deterministic layer scores full recall on phone numbers, addresses,
+    /// postal codes, emails, My Numbers and credentials, so anything the model
+    /// says about those adds nothing — while measurably costing something: it
+    /// read `8080`, `1,234,567円` and `E-4521-9` as addresses, each of which
+    /// would have corrupted the text if masked.
+    ///
+    /// `organizationName` was tried and abandoned: the model used it as a
+    /// catch-all, returning `サポート窓口`, `緊急連絡先`, `環境変数の例` and entire
+    /// lines such as `住所: 〒150-0002 …`. Organisation names come from the user
+    /// dictionary instead, which is how the design already treats them.
     private static func kind(from raw: String) -> SensitiveKind? {
         switch raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
         case "personalname": return .personalName
-        case "organizationname": return .organizationName
-        case "address": return .address
-        case "phonenumber": return .phoneNumber
-        case "email": return .email
         default: return nil
         }
+    }
+
+    /// Rejects spans that cannot be a name. The model sometimes returns a whole
+    /// line — `マイナンバー: 123456789018` was reported as a personal name — and a
+    /// line is recognisable by its structural punctuation and its length.
+    static func isPlausibleName(_ text: String) -> Bool {
+        guard !text.isEmpty, text.count <= 24 else { return false }
+        let structural: Set<Character> = [":", "：", "\n", "\t", "=", "、", "。", "/", "|"]
+        return !text.contains(where: structural.contains)
     }
 
     private static func occurrences(of needle: String, in haystack: NSString) -> [NSRange] {

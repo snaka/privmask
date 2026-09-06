@@ -119,3 +119,47 @@ output length, not just input length, drives the cost.
   latency is the perceived speed of the whole extension. Showing deterministic
   results immediately and folding in model results as they arrive is worth
   considering.
+
+## What was settled, and the numbers after settling
+
+Three changes came out of the measurements above, and the pipeline was
+re-measured over three consecutive runs to account for the model's variance.
+
+1. **Only the Japanese-bearing lines are sent**, each mapped back to its offset
+   in the original text. This removes the language rejection and shrinks the
+   request.
+2. **Only `personalName` is accepted from the model.** `organizationName` was
+   tried and abandoned — the model used it as a catch-all, returning `サポート窓口`,
+   `緊急連絡先`, `環境変数の例` and whole lines such as `住所: 〒150-0002 …`.
+   Organisation names come from the user dictionary instead. Phone numbers,
+   addresses, emails, postal codes, My Numbers and credentials are all at full
+   recall deterministically, so the model's opinion on them costs without paying:
+   it read `8080`, `1,234,567円` and `E-4521-9` as addresses.
+3. **Returned spans are sanity-checked**: a span longer than 24 characters or
+   containing structural punctuation is not a name. The model had returned
+   `マイナンバー: 123456789018` as a personal name.
+
+Narrowing the prompt to names also halved latency — mean 1.5s against 2.4s.
+
+### Result over three runs
+
+| | run 1 | run 2 | run 3 |
+|---|---:|---:|---:|
+| Recall, all eight kinds | 29/29 | 29/29 | 29/29 |
+| Over-masking violations | 2 | 1 | 2 |
+| Unexpected detections | 12 | 8 | 12 |
+
+Recall is solved: every expectation in the corpus is met on every run, with
+Japanese personal names coming from the model and everything else deterministic.
+
+**The open problem is false positives from the model.** Eight to twelve spurious
+findings across seven short samples, of which one or two would corrupt the text
+if accepted. They are consistently common nouns and labels — `サポート窓口`,
+`緊急連絡先`, `全角表記`, `内線` — or a name embedded in a compound, such as `田中`
+inside `田中式アルゴリズム`.
+
+Every one of these is marked low confidence and shown for confirmation, so none
+of them is masked without being seen. But the design assumed the confirmation
+step would be reviewed, and a screen carrying ten noise items per paste is a
+screen people stop reading. That is the same failure the design worried about
+when it decided to measure NLTagger before trusting it.

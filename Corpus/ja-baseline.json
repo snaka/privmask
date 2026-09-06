@@ -1,18 +1,36 @@
 {
   "version": 1,
-  "note": "Ground truth for measuring Apple's built-in detectors against Japanese text. Every string is fictional. 'expected' lists what a correct detector must find; 'mustNotDetect' lists spans that must never be masked.",
+  "note": "Ground truth for measuring Apple's built-in detectors against Japanese text. Every string is fictional. 'expected' lists what a correct detector must find; 'mustNotDetect' lists spans that must never be masked. 'dictionary' is the set of user-registered terms assumed to be configured when evaluating.",
   "samples": [
     {
       "id": "incident-report",
       "note": "Incident write-up of the kind that gets pasted into Slack.",
       "text": "【障害報告】2026-09-05 14:32 頃より API サーバでレイテンシ悪化。\n一次対応: 田中健一 / 二次対応: 佐藤 美咲\n影響を受けたお客様: 株式会社サンプル商事（担当: 鈴木一郎 様、連絡先 090-1234-5678 / suzuki@example.co.jp）\nデプロイ: commit 4f2a1c9e8b3d5a7f6c0e9d2b1a8f7e6d5c4b3a29\nバージョン: v2.14.3\nリクエストID: 550e8400-e29b-41d4-a716-446655440000",
       "expected": [
-        { "kind": "personalName", "text": "田中健一" },
-        { "kind": "personalName", "text": "佐藤 美咲" },
-        { "kind": "personalName", "text": "鈴木一郎" },
-        { "kind": "organizationName", "text": "株式会社サンプル商事" },
-        { "kind": "phoneNumber", "text": "090-1234-5678" },
-        { "kind": "email", "text": "suzuki@example.co.jp" }
+        {
+          "kind": "personalName",
+          "text": "田中健一"
+        },
+        {
+          "kind": "personalName",
+          "text": "佐藤 美咲"
+        },
+        {
+          "kind": "personalName",
+          "text": "鈴木一郎"
+        },
+        {
+          "kind": "dictionaryTerm",
+          "text": "株式会社サンプル商事"
+        },
+        {
+          "kind": "phoneNumber",
+          "text": "090-1234-5678"
+        },
+        {
+          "kind": "email",
+          "text": "suzuki@example.co.jp"
+        }
       ],
       "mustNotDetect": [
         "4f2a1c9e8b3d5a7f6c0e9d2b1a8f7e6d5c4b3a29",
@@ -25,13 +43,34 @@
       "note": "Transcribed customer record: the densest realistic case.",
       "text": "お客様からの問い合わせ転記:\n氏名: 高橋 由美\n住所: 〒150-0002 東京都渋谷区渋谷2丁目21番1号 渋谷ヒカリエ 11F\n電話: 03-1234-5678（日中）、080-9876-5432（携帯）\nメール: takahashi.yumi@example.com\nマイナンバー: 123456789018",
       "expected": [
-        { "kind": "personalName", "text": "高橋 由美" },
-        { "kind": "postalCode", "text": "〒150-0002" },
-        { "kind": "address", "text": "東京都渋谷区渋谷2丁目21番1号" },
-        { "kind": "phoneNumber", "text": "03-1234-5678" },
-        { "kind": "phoneNumber", "text": "080-9876-5432" },
-        { "kind": "email", "text": "takahashi.yumi@example.com" },
-        { "kind": "myNumber", "text": "123456789018" }
+        {
+          "kind": "personalName",
+          "text": "高橋 由美"
+        },
+        {
+          "kind": "postalCode",
+          "text": "〒150-0002"
+        },
+        {
+          "kind": "address",
+          "text": "東京都渋谷区渋谷2丁目21番1号"
+        },
+        {
+          "kind": "phoneNumber",
+          "text": "03-1234-5678"
+        },
+        {
+          "kind": "phoneNumber",
+          "text": "080-9876-5432"
+        },
+        {
+          "kind": "email",
+          "text": "takahashi.yumi@example.com"
+        },
+        {
+          "kind": "myNumber",
+          "text": "123456789018"
+        }
       ],
       "mustNotDetect": []
     },
@@ -40,23 +79,52 @@
       "note": "Numbering-plan coverage: toll-free, navi-dial, no hyphens, full-width.",
       "text": "サポート窓口: 0120-123-456 / ナビダイヤル 0570-064-000\n緊急連絡先: 09012345678\n全角表記: ０９０－１２３４－５６７８\n内線: 7788",
       "expected": [
-        { "kind": "phoneNumber", "text": "0120-123-456" },
-        { "kind": "phoneNumber", "text": "0570-064-000" },
-        { "kind": "phoneNumber", "text": "09012345678" },
-        { "kind": "phoneNumber", "text": "０９０－１２３４－５６７８" }
+        {
+          "kind": "phoneNumber",
+          "text": "0120-123-456"
+        },
+        {
+          "kind": "phoneNumber",
+          "text": "0570-064-000"
+        },
+        {
+          "kind": "phoneNumber",
+          "text": "09012345678"
+        },
+        {
+          "kind": "phoneNumber",
+          "text": "０９０－１２３４－５６７８"
+        }
       ],
-      "mustNotDetect": ["7788"]
+      "mustNotDetect": [
+        "7788"
+      ]
     },
     {
       "id": "name-variants",
       "note": "Japanese personal names across scripts, plus non-Japanese names.",
       "text": "参加者一覧:\nあきら\nヤマダ タロウ\n林 修\nJohn Smith\n李 明",
       "expected": [
-        { "kind": "personalName", "text": "あきら" },
-        { "kind": "personalName", "text": "ヤマダ タロウ" },
-        { "kind": "personalName", "text": "林 修" },
-        { "kind": "personalName", "text": "John Smith" },
-        { "kind": "personalName", "text": "李 明" }
+        {
+          "kind": "personalName",
+          "text": "あきら"
+        },
+        {
+          "kind": "personalName",
+          "text": "ヤマダ タロウ"
+        },
+        {
+          "kind": "personalName",
+          "text": "林 修"
+        },
+        {
+          "kind": "personalName",
+          "text": "John Smith"
+        },
+        {
+          "kind": "personalName",
+          "text": "李 明"
+        }
       ],
       "mustNotDetect": []
     },
@@ -80,10 +148,22 @@
       "note": "Address shapes with and without prefecture, with and without postal code.",
       "text": "配送先候補:\n大阪府大阪市北区梅田3-1-3\n神奈川県横浜市西区みなとみらい2-3-5 クイーンズタワーA 15F\n〒100-0001 東京都千代田区千代田1-1",
       "expected": [
-        { "kind": "address", "text": "大阪府大阪市北区梅田3-1-3" },
-        { "kind": "address", "text": "神奈川県横浜市西区みなとみらい2-3-5" },
-        { "kind": "postalCode", "text": "〒100-0001" },
-        { "kind": "address", "text": "東京都千代田区千代田1-1" }
+        {
+          "kind": "address",
+          "text": "大阪府大阪市北区梅田3-1-3"
+        },
+        {
+          "kind": "address",
+          "text": "神奈川県横浜市西区みなとみらい2-3-5"
+        },
+        {
+          "kind": "postalCode",
+          "text": "〒100-0001"
+        },
+        {
+          "kind": "address",
+          "text": "東京都千代田区千代田1-1"
+        }
       ],
       "mustNotDetect": []
     },
@@ -92,11 +172,23 @@
       "note": "Apple's detectors cannot see these at all. Included to size the gap the regex layer must close.",
       "text": "環境変数の例:\nAWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE\nGITHUB_TOKEN=ghp_16C7e42F292c6912E7710c838347Ae178B4a\nOPENAI_API_KEY=sk-proj-abcdefghijklmnopqrstuvwxyz1234567890\nDB_PASSWORD=hunter2",
       "expected": [
-        { "kind": "credential", "text": "AKIAIOSFODNN7EXAMPLE" },
-        { "kind": "credential", "text": "ghp_16C7e42F292c6912E7710c838347Ae178B4a" },
-        { "kind": "credential", "text": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890" }
+        {
+          "kind": "credential",
+          "text": "AKIAIOSFODNN7EXAMPLE"
+        },
+        {
+          "kind": "credential",
+          "text": "ghp_16C7e42F292c6912E7710c838347Ae178B4a"
+        },
+        {
+          "kind": "credential",
+          "text": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890"
+        }
       ],
       "mustNotDetect": []
     }
+  ],
+  "dictionary": [
+    "株式会社サンプル商事"
   ]
 }
