@@ -220,7 +220,31 @@ public struct FoundationModelDetector {
         // A name contains at least one letter. `7788` was returned as one.
         guard text.contains(where: { $0.isLetter }) else { return false }
 
+        guard !startsAContinuation(text) else { return false }
+
         return isNameShaped(text)
+    }
+
+    /// Particles that can begin a word but never begin part of a name.
+    private static let particles = ["の", "は", "が", "を", "に", "で", "と", "も", "へ", "や"]
+
+    /// Rejects a span that has run past the name into the sentence around it.
+    ///
+    /// The model returned `田中健一 の再掲` — the name plus the words after it. A
+    /// name written with a space separates family from given name, and neither
+    /// part can begin with a grammatical particle, so a later token starting
+    /// with one means the span kept going when it should have stopped.
+    ///
+    /// The rule is only applied from the second token onward. A single-token
+    /// name may legitimately begin with one of these characters: のぞみ is a name.
+    static func startsAContinuation(_ text: String) -> Bool {
+        let tokens = text
+            .split(whereSeparator: { $0 == " " || $0 == "\u{3000}" })
+            .map(String.init)
+        guard tokens.count > 1 else { return false }
+        return tokens.dropFirst().contains { token in
+            particles.contains { token.hasPrefix($0) }
+        }
     }
 
     /// Checks a candidate against how Japanese names are actually written.

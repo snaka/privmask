@@ -98,3 +98,44 @@ struct DataDetectorTests {
         #expect(matches.isEmpty)
     }
 }
+
+@Suite("Model output plausibility")
+struct ModelPlausibilityTests {
+    @available(macOS 26.0, *)
+    @Test(
+        "Real names are accepted",
+        arguments: ["田中健一", "佐藤 美咲", "高橋 由美", "ヤマダ タロウ", "あきら", "林 修", "John Smith"]
+    )
+    func acceptsNames(_ name: String) {
+        #expect(FoundationModelDetector.isPlausibleName(name))
+    }
+
+    /// Every one of these was actually returned by the model during measurement.
+    @available(macOS 26.0, *)
+    @Test(
+        "Spans the model returned that are not names are rejected",
+        arguments: [
+            "サポート窓口",  // katakana mixed with kanji
+            "緊急連絡先",  // does not begin with a family name
+            "全角表記",
+            "内線",
+            "式",
+            "ナビダイヤル",  // katakana, not a family name reading
+            "7788",  // no letters
+            "マイナンバー: 123456789018",  // a whole line
+            "田中式アルゴリズムを採用",  // contains を, so it is a clause
+            "田中健一 の再掲",  // ran past the name into the sentence
+        ]
+    )
+    func rejectsNonNames(_ span: String) {
+        #expect(!FoundationModelDetector.isPlausibleName(span))
+    }
+
+    /// A single-token name may begin with a character that is also a particle.
+    @available(macOS 26.0, *)
+    @Test("A one-token name beginning with a particle character is kept")
+    func singleTokenParticleNameKept() {
+        #expect(!FoundationModelDetector.startsAContinuation("のぞみ"))
+        #expect(FoundationModelDetector.startsAContinuation("田中健一 の再掲"))
+    }
+}
