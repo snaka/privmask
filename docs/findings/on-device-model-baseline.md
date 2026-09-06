@@ -163,3 +163,49 @@ of them is masked without being seen. But the design assumed the confirmation
 step would be reviewed, and a screen carrying ten noise items per paste is a
 screen people stop reading. That is the same failure the design worried about
 when it decided to measure NLTagger before trusting it.
+
+## Reducing the model's false positives: where it plateaued
+
+Four changes were made and measured over three runs each.
+
+**Routing the model's findings through the pipeline's precedence rules** rather
+than appending them to the result removed a third of the noise at a stroke. A
+span the model calls a personal name, which a deterministic detector has already
+claimed as a phone number, an email or an address, is the deterministic finding.
+Containment was not enough on its own: the model returns spans that *wrap* a
+deterministic finding — `03-1234-5678（日中）` as a personal name — so a
+model-only finding is now dropped when it overlaps a more confident finding of a
+different kind in either direction.
+
+**Three span-shape rules**, each a general fact rather than a corpus-specific
+patch: a name contains at least one letter (`7788` was returned as one); a name
+does not contain を, which in modern Japanese is only ever the accusative
+particle (`田中式アルゴリズムを採用`); a name does not contain structural
+punctuation.
+
+**Prompt narrowing** — telling the model that roles, departments, contact
+channels and section headings are not names, that a family name inside a
+compound is not a name, and that an empty list is the correct answer when there
+are no names.
+
+| | Baseline | + precedence | + span rules | + prompt |
+|---|---:|---:|---:|---:|
+| Unexpected detections | 12 | 7 | 5–7 | 7 |
+| Over-masking violations | 2 | 2 | 0–3 | 2 |
+
+Recall held at 9/9 personal names in five of the six measured runs, and 8/9 in
+the other two.
+
+**Prompt work has plateaued.** The last iteration changed nothing except to make
+the output more repeatable — the same seven false positives now appear on every
+run:
+
+- `サポート窓口`, `ナビダイヤル`, `緊急連絡先`, `全角表記`, `内線` — every one of them
+  from the single corpus sample that contains no personal names at all. Asked to
+  find names in text that has none, the model offers the nearest available word,
+  and saying so explicitly in the instructions did not stop it.
+- `田中` and `式`, decomposed out of `田中式アルゴリズム`.
+
+Note that all five of the first group would be rejected by checking the
+candidate against a list of Japanese family names — none of them begins with
+one. `田中` would not be, since 田中 is a real surname.

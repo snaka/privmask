@@ -35,13 +35,22 @@ public struct DetectionPipeline {
         dictionary = DictionaryDetector(terms: dictionaryTerms)
     }
 
-    public func detect(in text: String) -> [MaskCandidate] {
+    /// - Parameter additional: findings from a slower source, typically the
+    ///   on-device model. Passing them here rather than appending to the result
+    ///   is what makes precedence apply to them: a span the model calls a
+    ///   personal name, which a deterministic detector has already claimed as a
+    ///   phone number or an address, is the deterministic finding.
+    ///
+    ///   The UI calls this twice: once with nothing, to show results
+    ///   immediately, and again when the model returns.
+    public func detect(in text: String, additional: [DetectedMatch] = []) -> [MaskCandidate] {
         var matches: [DetectedMatch] = []
         matches += myNumber.detect(in: text)
         matches += dictionary.detect(in: text)
         matches += regex.detect(in: text)
         matches += dataDetector.detect(in: text)
         matches += nameTagger.detect(in: text)
+        matches += additional
         return Self.reconcile(matches, in: text)
     }
 
@@ -90,11 +99,29 @@ public struct DetectionPipeline {
     private static func applyPrecedence(_ candidates: [MaskCandidate]) -> [MaskCandidate] {
         candidates.filter { candidate in
             !candidates.contains { other in
-                other.id != candidate.id
-                    && contains(other.range, candidate.range)
-                    && precedence(of: other.kind) > precedence(of: candidate.kind)
+                guard other.id != candidate.id, other.kind != candidate.kind else { return false }
+                if contains(other.range, candidate.range),
+                    precedence(of: other.kind) > precedence(of: candidate.kind)
+                {
+                    return true
+                }
+                return supersedesModelFinding(other, candidate)
             }
         }
+    }
+
+    /// A finding that came only from the language model is dropped when it
+    /// overlaps a more trustworthy finding of a different kind, in either
+    /// direction.
+    ///
+    /// Containment alone is not enough, because the model returns spans that
+    /// *wrap* a deterministic finding rather than sit inside it — it reported
+    /// `03-1234-5678（日中）` as a personal name. Masking that as a name would
+    /// swallow the annotation around the phone number.
+    private static func supersedesModelFinding(_ other: MaskCandidate, _ candidate: MaskCandidate) -> Bool {
+        candidate.sources == [.languageModel]
+            && rangesOverlap(other.range, candidate.range)
+            && other.confidence > candidate.confidence
     }
 
     private static func contains(_ outer: NSRange, _ inner: NSRange) -> Bool {

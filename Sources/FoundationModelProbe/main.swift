@@ -29,14 +29,20 @@ func runProbe() async throws {
     for sample in corpus.samples {
         // The deterministic layer runs regardless. A model failure must never
         // discard results that were already found without it.
-        let deterministic = pipeline.detect(in: sample.text).map {
-            DetectedMatch(kind: $0.kind, source: $0.sources[0], range: $0.range, text: $0.text)
+        func flatten(_ candidates: [MaskCandidate]) -> [DetectedMatch] {
+            candidates.map {
+                DetectedMatch(kind: $0.kind, source: $0.sources[0], range: $0.range, text: $0.text)
+            }
         }
-        detections[sample.id] = deterministic
+        detections[sample.id] = flatten(pipeline.detect(in: sample.text))
 
         do {
             let outcome = try await detector.detect(in: sample.text)
-            detections[sample.id] = deterministic + outcome.matches
+            // Reconcile through the pipeline, exactly as the UI does when the
+            // model returns, so precedence applies to the model's findings too.
+            detections[sample.id] = flatten(
+                pipeline.detect(in: sample.text, additional: outcome.matches)
+            )
             durations.append(outcome.duration)
             if !outcome.ungroundedTexts.isEmpty {
                 ungroundedBySample.append((sample.id, outcome.ungroundedTexts))
@@ -46,7 +52,8 @@ func runProbe() async throws {
             let truncated = outcome.truncated ? "  TRUNCATED" : ""
             print("  \(id) \(sample.text.count) chars  \(outcome.linesExamined) ja-lines  \(timing)  \(outcome.matches.count) matches\(truncated)")
         } catch {
-            print("  \(sample.id.padding(toLength: 26, withPad: " ", startingAt: 0)) model failed, keeping \(deterministic.count) deterministic matches — \(error)")
+            let kept = detections[sample.id]?.count ?? 0
+            print("  \(sample.id.padding(toLength: 26, withPad: " ", startingAt: 0)) model failed, keeping \(kept) deterministic matches — \(error)")
         }
     }
 

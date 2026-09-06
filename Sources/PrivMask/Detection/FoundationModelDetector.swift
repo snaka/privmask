@@ -74,10 +74,22 @@ public struct FoundationModelDetector {
         translate, reformat, or normalise it. Do not include a following 様, さん, or 氏 \
         in the substring.
 
-        Report nothing else. Company names, phone numbers, addresses, postal codes, \
-        email addresses, numbers, ports, error codes, hostnames, library names, product \
-        names, section headings and dates are all handled elsewhere and must not be \
-        reported here.
+        Only report a name that refers to a specific individual person. A word that \
+        names a role, a department, a contact channel, a document section, or a \
+        category is not a personal name, even where a name would normally sit — such \
+        as at the start of a line, before a colon.
+
+        A family name occurring inside a longer word, a product name, or a compound \
+        term is not a personal name either. Report the person, never the phrase around \
+        them.
+
+        Report nothing else at all. Company names, phone numbers, addresses, postal \
+        codes, email addresses, numbers, ports, error codes, hostnames, library names, \
+        product names and dates are handled elsewhere.
+
+        Most text contains no personal names. When there is none, return an empty list. \
+        That is the correct answer and the expected one — never offer the nearest \
+        available word instead.
         """
 
     private let characterLimit: Int
@@ -190,8 +202,20 @@ public struct FoundationModelDetector {
     /// line is recognisable by its structural punctuation and its length.
     static func isPlausibleName(_ text: String) -> Bool {
         guard !text.isEmpty, text.count <= 24 else { return false }
+
+        // The model has returned whole lines. Structural punctuation marks a
+        // line or a clause, never a name.
         let structural: Set<Character> = [":", "：", "\n", "\t", "=", "、", "。", "/", "|"]
-        return !text.contains(where: structural.contains)
+        guard !text.contains(where: structural.contains) else { return false }
+
+        // を is only ever the accusative particle in modern Japanese. Its
+        // presence means the span is a clause: "田中式アルゴリズムを採用".
+        guard !text.contains("を") else { return false }
+
+        // A name contains at least one letter. `7788` was returned as one.
+        guard text.contains(where: { $0.isLetter }) else { return false }
+
+        return true
     }
 
     private static func occurrences(of needle: String, in haystack: NSString) -> [NSRange] {
