@@ -74,10 +74,10 @@ Items 1–3 are pinned by `DataDetectorTests`.
 
 ## Consequences for the design
 
-Open questions this raises, to be decided before the detector layers are built:
+Personal names now depend on the on-device model or the user dictionary. The
+model was measured next, in
+[on-device-model-baseline.md](on-device-model-baseline.md): it finds Japanese
+names reliably, and it was made default-on where available as a result.
 
-- Personal names now depend on `FoundationModels` (default-off, opt-in) or the
-  user dictionary. Should the LLM layer become default-on where available?
-- If it does, the "deterministic baseline, LLM as optional extra" split no
-  longer describes the product for its most important entity type.
-- Alternatively, drop personal-name detection from v1 and lean on the dictionary.
+`NLTagger` is not discarded entirely — `NameType` *is* available for English, so
+it stays as the deterministic path for English names.

@@ -19,6 +19,7 @@ let package = Package(
         // Measurement harness for Apple's built-in detectors. Deliberately not a
         // product: it is a development tool, not something consumers depend on.
         .executableTarget(name: "AppleAPIProbe", dependencies: ["PrivMask"]),
+        .executableTarget(name: "FoundationModelProbe", dependencies: ["PrivMask"]),
         .testTarget(name: "PrivMaskTests", dependencies: ["PrivMask"]),
     ]
 )
