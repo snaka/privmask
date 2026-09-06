@@ -144,7 +144,13 @@ public struct FoundationModelDetector {
         var matches: [DetectedMatch] = []
         var ungrounded: [String] = []
 
+        let debug = ProcessInfo.processInfo.environment["PRIVMASK_DEBUG"] == "1"
         for entity in response.content.entities {
+            if debug {
+                FileHandle.standardError.write(
+                    Data("    model: \(entity.kind) \(entity.text.debugDescription) plausible=\(Self.isPlausibleName(entity.text))\n".utf8)
+                )
+            }
             guard let kind = Self.kind(from: entity.kind) else { continue }
             // The model is instructed to copy substrings verbatim, but it is a
             // language model: it has been observed normalising full-width digits
@@ -178,23 +184,22 @@ public struct FoundationModelDetector {
         )
     }
 
-    /// Only personal names are accepted from the model.
+    /// The model's own label is ignored; only its span is used, and only as a
+    /// personal name.
     ///
-    /// The deterministic layer scores full recall on phone numbers, addresses,
-    /// postal codes, emails, My Numbers and credentials, so anything the model
-    /// says about those adds nothing — while measurably costing something: it
-    /// read `8080`, `1,234,567円` and `E-4521-9` as addresses, each of which
-    /// would have corrupted the text if masked.
+    /// The label is not reliable — `鈴木一郎` came back as an organisation name in
+    /// two runs out of three, and dropping it on that basis lost a real name.
+    /// The span is decided by `isPlausibleName` instead, which checks how the
+    /// text is written rather than what the model called it. A genuine company
+    /// name does not begin with a family name, so it is rejected there and left
+    /// to the user dictionary, which is how the design treats organisations.
     ///
-    /// `organizationName` was tried and abandoned: the model used it as a
-    /// catch-all, returning `サポート窓口`, `緊急連絡先`, `環境変数の例` and entire
-    /// lines such as `住所: 〒150-0002 …`. Organisation names come from the user
-    /// dictionary instead, which is how the design already treats them.
+    /// Nothing but names is taken from the model at all. The deterministic layer
+    /// has full recall on phone numbers, addresses, postal codes, emails, My
+    /// Numbers and credentials, so the model's opinion on those only costs: it
+    /// read `8080`, `1,234,567円` and `E-4521-9` as addresses.
     private static func kind(from raw: String) -> SensitiveKind? {
-        switch raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
-        case "personalname": return .personalName
-        default: return nil
-        }
+        .personalName
     }
 
     /// Rejects spans that cannot be a name. The model sometimes returns a whole
@@ -215,7 +220,35 @@ public struct FoundationModelDetector {
         // A name contains at least one letter. `7788` was returned as one.
         guard text.contains(where: { $0.isLetter }) else { return false }
 
-        return true
+        return isNameShaped(text)
+    }
+
+    /// Checks a candidate against how Japanese names are actually written.
+    ///
+    /// Text in Latin or hiragana alone is accepted as-is: there is no reliable
+    /// signal to apply, and the cost of a wrong rejection is a missed name.
+    /// Kanji and katakana candidates are checked against the surname list,
+    /// which is what rejects the words the model reaches for when a text
+    /// contains no names.
+    static func isNameShaped(_ text: String) -> Bool {
+        var hasKanji = false
+        var hasKatakana = false
+        for scalar in text.unicodeScalars {
+            switch scalar.value {
+            case 0x4E00...0x9FFF, 0x3400...0x4DBF, 0xF900...0xFAFF:
+                hasKanji = true
+            case 0x30A0...0x30FF, 0xFF66...0xFF9D:
+                hasKatakana = true
+            default:
+                break
+            }
+        }
+
+        // Japanese names are written in one script. `サポート窓口` mixes them.
+        if hasKanji && hasKatakana { return false }
+
+        guard hasKanji || hasKatakana else { return true }
+        return JapaneseSurnames.beginsWithSurname(text)
     }
 
     private static func occurrences(of needle: String, in haystack: NSString) -> [NSRange] {

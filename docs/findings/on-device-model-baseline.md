@@ -209,3 +209,44 @@ run:
 Note that all five of the first group would be rejected by checking the
 candidate against a list of Japanese family names — none of them begins with
 one. `田中` would not be, since 田中 is a real surname.
+
+### Verifying the model against a family-name list
+
+The plateau was broken by checking the model's output against a list of common
+Japanese family names — as a *verification* step, never as a detector. Used as a
+detector, such a list only finds names somebody already thought of, which is the
+weakness the model exists to cover. Used as a check on the model, it costs
+nothing and rejects exactly what the model reaches for when a text has no names
+in it.
+
+Two rules, in `FoundationModelDetector.isNameShaped`:
+
+- A Japanese name is written in one script. `サポート窓口` mixes katakana and
+  kanji, so it is not one.
+- A kanji or katakana candidate must begin with a family name from the list.
+  `緊急連絡先`, `全角表記`, `内線`, `式` do not. Latin and hiragana candidates are
+  accepted unchecked: there is no reliable signal, and a wrong rejection costs a
+  missed name.
+
+The model's own `kind` label is now ignored entirely — only its span is used.
+`鈴木一郎` came back labelled as an organisation name in two runs out of three,
+and honouring that label lost a real name. What the text looks like is a better
+guide than what the model called it.
+
+### Where it ended up, over five runs
+
+| | Baseline | Final |
+|---|---:|---:|
+| Unexpected detections | 12 | **1** |
+| Over-masking violations | 2 | **1** |
+| Japanese personal names | 9/9 | 9/9 in three runs, 8/9 in two |
+
+The single remaining false positive is `田中`, decomposed out of
+`田中式アルゴリズム`. 田中 is a real family name, so no list can reject it; only
+knowing that it sits inside a compound would, and that is a judgement the model
+is already failing to make. It is shown as low confidence, and unchecking it is
+one keystroke.
+
+The intermittent miss is `鈴木一郎`, which the model returns in most runs but not
+all. It appears in the text as `担当: 鈴木一郎 様` — a name the deterministic layer
+cannot see at all, so when the model skips it, it is missed.

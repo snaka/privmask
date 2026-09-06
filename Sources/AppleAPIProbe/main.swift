@@ -17,6 +17,15 @@ for sample in corpus.samples {
     }
 }
 
+if ProcessInfo.processInfo.environment["PRIVMASK_DEBUG"] == "1" {
+    for sample in corpus.samples {
+        print("[\(sample.id)]")
+        for candidate in pipeline.detect(in: sample.text) {
+            print("  \(candidate.kind.rawValue)/\(candidate.confidence) @\(candidate.range.location): \(candidate.text.debugDescription)")
+        }
+    }
+}
+
 let report = Evaluator.evaluate(corpus: corpus, detections: detections)
 
 print("privmask — deterministic detection pipeline probe")
