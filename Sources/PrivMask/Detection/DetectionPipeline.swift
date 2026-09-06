@@ -10,7 +10,15 @@ public struct MaskCandidate: Sendable, Identifiable {
     /// Every detector that found this span, in the order they ran.
     public let sources: [DetectorSource]
 
-    init(kind: SensitiveKind, range: NSRange, text: String, confidence: Confidence, sources: [DetectorSource]) {
+    /// Public so that a front end can hand back the subset of findings the user
+    /// kept, without the pipeline having to remember what it offered.
+    public init(
+        kind: SensitiveKind,
+        range: NSRange,
+        text: String,
+        confidence: Confidence,
+        sources: [DetectorSource]
+    ) {
         self.id = "\(kind.rawValue):\(range.location):\(range.length)"
         self.kind = kind
         self.range = range

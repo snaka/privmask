@@ -79,7 +79,7 @@ if options.json {
         findings: candidates.map { candidate in
             Report.Finding(
                 kind: candidate.kind.rawValue,
-                confidence: String(describing: candidate.confidence),
+                confidence: candidate.confidence.name,
                 sources: candidate.sources.map(\.rawValue),
                 text: candidate.text,
                 location: candidate.range.location,

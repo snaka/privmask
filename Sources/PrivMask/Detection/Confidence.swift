@@ -15,6 +15,24 @@ public enum Confidence: Int, Sendable, Comparable, Codable {
         lhs.rawValue < rhs.rawValue
     }
 
+    /// Stable name for crossing a process or language boundary.
+    public var name: String {
+        switch self {
+        case .low: return "low"
+        case .medium: return "medium"
+        case .high: return "high"
+        }
+    }
+
+    public init?(name: String) {
+        switch name {
+        case "low": self = .low
+        case "medium": self = .medium
+        case "high": self = .high
+        default: return nil
+        }
+    }
+
     var promoted: Confidence {
         Confidence(rawValue: min(rawValue + 1, Confidence.high.rawValue)) ?? self
     }
