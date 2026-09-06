@@ -70,13 +70,18 @@ struct DataDetectorTests {
         #expect(matches.contains { $0.kind == .address })
     }
 
-    /// Known defect to work around: the detector will run a phone-number match
-    /// across a newline and swallow unrelated trailing digits.
-    @Test("Phone matches can span a newline and over-capture")
-    func phoneMatchSpansNewline() {
+    /// Apple's defect, checked against the framework directly: NSDataDetector
+    /// runs a phone-number match across a newline and swallows unrelated
+    /// trailing digits. AppleDataDetector cuts matches back to their first line
+    /// to compensate; that workaround is covered by PipelineTests.
+    @Test("Raw NSDataDetector runs a phone match across a newline")
+    func rawDetectorSpansNewline() throws {
         let text = "全角表記: ０９０－１２３４－５６７８\n内線: 7788"
-        let matches = detector.detect(in: text).filter { $0.kind == .phoneNumber }
-        #expect(matches.contains { $0.text.contains("\n") })
+        let raw = try NSDataDetector(types: NSTextCheckingResult.CheckingType.phoneNumber.rawValue)
+        let nsText = text as NSString
+        let matches = raw.matches(in: text, range: NSRange(location: 0, length: nsText.length))
+            .map { nsText.substring(with: $0.range) }
+        #expect(matches.contains { $0.contains("\n") })
     }
 
     /// A 12-digit My Number is claimed by the phone-number detector, so the

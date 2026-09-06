@@ -38,6 +38,23 @@ public struct AppleDataDetector {
         return results
     }
 
+    /// Cuts `range` back to its first line and drops trailing whitespace.
+    /// Returns nil if nothing is left.
+    static func trimmedToFirstLine(_ range: NSRange, in text: NSString) -> NSRange? {
+        var end = range.location + range.length
+        let newline = text.range(of: "\n", range: range)
+        if newline.location != NSNotFound {
+            end = newline.location
+        }
+        while end > range.location {
+            let scalar = text.substring(with: NSRange(location: end - 1, length: 1)).unicodeScalars.first
+            guard let scalar, CharacterSet.whitespaces.contains(scalar) else { break }
+            end -= 1
+        }
+        let length = end - range.location
+        return length > 0 ? NSRange(location: range.location, length: length) : nil
+    }
+
     private func matches(in text: String, types: NSTextCheckingResult.CheckingType) -> [DetectedMatch] {
         guard let detector = try? NSDataDetector(types: types.rawValue) else { return [] }
         let nsText = text as NSString
@@ -50,12 +67,16 @@ public struct AppleDataDetector {
             case .address: kind = .address
             default: return
             }
+            // The detector will run a phone-number match across a newline and
+            // swallow unrelated trailing digits, so every match is cut back to
+            // the line it starts on. See docs/findings/apple-detector-baseline.md.
+            guard let range = Self.trimmedToFirstLine(result.range, in: nsText) else { return }
             results.append(
                 DetectedMatch(
                     kind: kind,
                     source: .dataDetector,
-                    range: result.range,
-                    text: nsText.substring(with: result.range)
+                    range: range,
+                    text: nsText.substring(with: range)
                 )
             )
         }

@@ -6,22 +6,25 @@ import PrivMask
 
 let corpus = try Corpus.load(contentsOf: ProbeLocator.corpusURL())
 
-let dataDetector = AppleDataDetector()
-let nameTagger = AppleNameTagger()
+let pipeline = DetectionPipeline()
 
 var detections: [String: [DetectedMatch]] = [:]
 for sample in corpus.samples {
-    detections[sample.id] = dataDetector.detect(in: sample.text) + nameTagger.detect(in: sample.text)
+    // Evaluate the pipeline's output, not raw detector output: precedence and
+    // merging are part of what is being measured.
+    detections[sample.id] = pipeline.detect(in: sample.text).map {
+        DetectedMatch(kind: $0.kind, source: $0.sources[0], range: $0.range, text: $0.text)
+    }
 }
 
 let report = Evaluator.evaluate(corpus: corpus, detections: detections)
 
-print("privmask — Apple built-in detector probe")
+print("privmask — deterministic detection pipeline probe")
 print("macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)")
 print(String(repeating: "=", count: 78))
 print(
     report.rendered(
-        coveredKinds: [.phoneNumber, .address, .personalName, .organizationName, .placeName],
-        coveredLabel: "apple"
+        coveredKinds: [.phoneNumber, .address, .email, .postalCode, .myNumber, .credential],
+        coveredLabel: "det."
     )
 )
