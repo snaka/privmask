@@ -50,8 +50,10 @@ shipped Japanese NER and the personal-name detector should be reconsidered.
 advantage over pattern matching. But personal names were the centre of the
 differentiation, precisely because no pattern can find one. Losing `NLTagger`
 means the *only* remaining on-device route to a Japanese personal name is the
-Apple Intelligence model (`FoundationModels`) — which the design placed behind an
-opt-in, default-off switch — or the user dictionary.
+Apple Intelligence model (`FoundationModels`) — which the design had at that
+point placed behind an opt-in, default-off switch — or the user dictionary.
+(That switch was flipped as a direct result of this measurement: the model is on
+by default now.)
 
 Japanese-language PII tooling is often described as structurally underserved,
 and for entity recognition that is exactly right. It is worth being precise

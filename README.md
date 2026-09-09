@@ -70,14 +70,30 @@ on a blank screen.
 ## Read this before you rely on it
 
 **Japanese personal names are found only by Apple Intelligence's on-device
-model.** Without macOS 26 and Apple Intelligence enabled, names are not detected
-at all. `NLTagger` has no Japanese entity model — that is a platform limitation,
+model**, and that model needs **macOS 26 with Apple Intelligence enabled**.
+Below that, names are not detected at all — `NLTagger` has no Japanese entity
+model, which is a platform limitation,
 [measured and documented](docs/findings/apple-detector-baseline.md), not
 something this tool can work around.
 
-privmask always says so on stderr when the model did not run. Read those
-warnings. The worst way to use this is to paste something believing it was
-masked when it was not.
+The model is **on by default** wherever it is available, and skipped with a
+warning wherever it is not. Read those warnings. The worst way to use this is to
+paste something believing it was masked when it was not.
+
+### What works on which macOS
+
+| | 13 – 25 | 26, Apple Intelligence off | 26, Apple Intelligence on |
+|---|:--:|:--:|:--:|
+| Phone numbers, addresses | ✅ | ✅ | ✅ |
+| Email, postal codes, API keys, My Number | ✅ | ✅ | ✅ |
+| Your term list, matched exactly | ✅ | ✅ | ✅ |
+| English personal names | ✅ | ✅ | ✅ |
+| **Japanese personal names** | ❌ | ❌ | ✅ |
+| Spelling variants of your terms | ❌ | ❌ | ✅ |
+
+Turning the model off — `--no-model`, or the *Use the on-device language model*
+preference in the Raycast extension — makes privmask fully deterministic and
+much faster, at the cost of every row marked ✅ only in the last column.
 
 Other limits worth knowing:
 
@@ -96,8 +112,8 @@ Other limits worth knowing:
 brew install snaka/tap/privmask
 ```
 
-Runs on macOS 13 and later. Everything except Japanese personal names works
-throughout that range.
+Runs on macOS 13 and later. Japanese personal names additionally need macOS 26
+with Apple Intelligence enabled; see the table above for what that changes.
 
 ## Use
 

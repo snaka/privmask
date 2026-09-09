@@ -27,9 +27,13 @@ struct Options {
           --dictionary PATH    Term list to use.
                                Default: ~/.config/privmask/terms.txt
           --no-dictionary      Ignore the term list.
-          --no-model           Skip the on-device language model layer.
-                               Japanese personal names are only found by that
-                               layer, so this turns their detection off.
+          --no-model           Skip the on-device language model layer, which is
+                               used by default wherever it is available.
+                               Japanese personal names are found only by that
+                               layer, so this turns their detection off. The
+                               layer itself needs macOS 26 with Apple
+                               Intelligence enabled; without it, names are not
+                               detected either way and privmask says so.
           --version            Print the version.
           -h, --help           Print this message.
         """
