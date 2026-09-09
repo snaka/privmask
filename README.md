@@ -1,7 +1,9 @@
-# privmask
+<h1 align="center">🙈<br />privmask</h1>
 
-Mask personal information in text before you share it. On device, with Japanese
-handled properly.
+<p align="center">
+  Mask personal information in text before you share it.<br />
+  On device, with Japanese handled properly.
+</p>
 
 ```console
 $ cat incident.txt | privmask
