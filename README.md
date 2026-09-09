@@ -17,7 +17,55 @@ GitHub issue, you want the personal information out of it. Existing tools are
 regex-based, which is why they miss the things that matter in Japanese: names,
 addresses and My Numbers cannot be found by pattern matching.
 
-Nothing is sent anywhere, and no rules are fetched from anywhere either.
+## Everything happens on your Mac
+
+```mermaid
+flowchart TB
+    in["Clipboard · selection · stdin"]
+
+    subgraph mac["Your Mac"]
+        direction TB
+        pat["Patterns<br/>email · API keys · postal code<br/>My Number, check digit validated"]
+        dd["NSDataDetector<br/>phone numbers · addresses<br/>full-width and unhyphenated"]
+        terms["Your term list<br/>~/.config/privmask/terms.txt"]
+        fm["Apple Intelligence<br/>on-device foundation model<br/>Japanese personal names"]
+        merge["Reconcile<br/>precedence · confidence"]
+        you["You confirm<br/>what gets masked"]
+    end
+
+    out["Masked text<br/>numbered placeholders"]
+
+    in --> pat
+    in --> dd
+    in --> terms
+    in --> fm
+
+    pat -->|milliseconds| merge
+    dd -->|milliseconds| merge
+    terms -->|milliseconds| merge
+    fm -->|seconds| merge
+
+    merge --> you
+    you --> out
+```
+
+**No arrow leaves that box, and that is not a simplification of the diagram.**
+There is no API key to configure, no account to create, no endpoint to allow
+through a proxy, and no rule set fetched from a server. Unplug the network and
+nothing changes. The text you are trying to keep private is never the payload of
+a request, because there are no requests.
+
+This is what Apple Intelligence buys here. Finding a Japanese personal name
+takes a language model — patterns cannot do it, and neither can Apple's own
+`NLTagger`, which has no Japanese entity model at all. Until the on-device
+foundation model existed, the only way to get that capability was to send the
+text to somebody's server, which for this particular job means handing over the
+exact thing you were trying not to share.
+
+The two speeds in the diagram are why the tool feels immediate: the
+deterministic detectors return in milliseconds and are shown straight away, and
+the model's findings are folded in when they arrive rather than making you wait
+on a blank screen.
 
 ## Read this before you rely on it
 
