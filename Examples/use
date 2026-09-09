@@ -1,0 +1,25 @@
+#!/bin/bash
+# Puts one of the sample texts on the clipboard, ready for the Raycast command
+# or for piping into privmask.
+set -euo pipefail
+here="$(cd "$(dirname "$0")" && pwd)"
+
+case "${1:-}" in
+  1|incident)    file=1-incident.txt ;;
+  2|customer)    file=2-customer.txt ;;
+  3|false)       file=3-false-positives.txt ;;
+  4|credentials) file=4-credentials.txt ;;
+  5|english)     file=5-english.txt ;;
+  6|long)        file=6-long.txt ;;
+  *)
+    echo "usage: Examples/use <1-6>"
+    echo
+    for f in "$here"/*.txt; do
+      printf "  %-24s %5s characters\n" "$(basename "$f")" "$(wc -m < "$f" | tr -d ' ')"
+    done
+    exit 1
+    ;;
+esac
+
+pbcopy < "$here/$file"
+echo "clipboard ← $file ($(wc -m < "$here/$file" | tr -d ' ') characters)"

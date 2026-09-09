@@ -37,6 +37,16 @@ stored: that table would be a second copy of exactly what the masking removed.
 Register your own terms (customer names, project code names) one per line in
 `~/.config/privmask/terms.txt`.
 
+## Trying it by hand
+
+`Examples/` holds sample texts in the shapes this is pointed at — an incident
+report, a customer record, and one where nothing should be masked at all.
+
+```sh
+cat Examples/1-incident.txt | privmask
+Examples/use 1   # or put it on the clipboard for the Raycast extension
+```
+
 ## Layout
 
 ```
@@ -45,6 +55,7 @@ Sources/PrivMaskCLI/        # the `privmask` CLI
 Sources/AppleAPIProbe/      # deterministic-layer measurement harness
 Sources/FoundationModelProbe/  # on-device model measurement harness
 Corpus/                     # ground-truth corpus for measuring detectors
+Examples/                   # sample texts for trying it by hand
 Tests/                      # includes characterisation tests for Apple's frameworks
 ```
 

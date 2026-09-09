@@ -1,0 +1,19 @@
+【障害報告】2026-09-08 02:14 JST
+
+■ 事象
+決済 API のレイテンシが 15 分間にわたり悪化。p99 が 320ms → 8.4s。
+
+■ 影響
+株式会社サンプル商事（担当: 鈴木一郎 様、090-1234-5678 / suzuki@example.co.jp）から問い合わせあり。
+ほか 3 社に影響。
+
+■ 対応
+一次対応: 田中健一 / 二次対応: 佐藤 美咲
+14:32:01 [ERROR] payment-api: upstream timeout (retry 3/3)
+14:33:10 [WARN]  payment-api: circuit breaker opened
+デプロイ: commit 4f2a1c9e8b3d5a7f6c0e9d2b1a8f7e6d5c4b3a29 / v2.14.3
+リクエストID: 550e8400-e29b-41d4-a716-446655440000
+ホスト: payment-api-07.internal.example.com:8080
+
+■ 恒久対応
+高橋 由美 が来週までに設計案を出す。
