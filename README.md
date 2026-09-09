@@ -5,19 +5,95 @@
   On device, with Japanese handled properly.
 </p>
 
+<p align="center">
+  <a href="https://github.com/snaka/privmask/releases"><img src="https://img.shields.io/github/v/release/snaka/privmask" alt="Release" /></a>
+  <img src="https://img.shields.io/badge/macOS-13%2B-black" alt="macOS 13+" />
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT" />
+</p>
+
+---
+
+You are about to paste an incident report into Slack, and there are customer
+names in it.
+
 ```console
-$ cat incident.txt | privmask
-■ 影響
-[TERM_1]（担当: [NAME_1] 様、[PHONE_1] / [EMAIL_1]）から問い合わせあり。
-デプロイ: commit 4f2a1c9e8b3d5a7f6c0e9d2b1a8f7e6d5c4b3a29 / v2.14.3
+$ cat incident.txt
+【障害報告】決済 API のレイテンシが悪化。
+一次対応: 田中健一 / 二次対応: 佐藤 美咲
+連絡先は 090-1234-5678、メールは suzuki@example.co.jp です。
+お客様は株式会社サンプル商事、住所は東京都渋谷区渋谷2丁目21番1号。
+デプロイ: commit 4f2a1c9e8b3d / v2.14.3 / req 550e8400-e29b-41d4
+
+$ privmask < incident.txt
+【障害報告】決済 API のレイテンシが悪化。
+一次対応: [NAME_1] / 二次対応: [NAME_2]
+連絡先は [PHONE_1]、メールは [EMAIL_1] です。
+お客様は[TERM_1]、住所は[ADDRESS_1]。
+デプロイ: commit 4f2a1c9e8b3d / v2.14.3 / req 550e8400-e29b-41d4
 ```
 
-Before pasting a log, an incident write-up or a customer record into Slack or a
-GitHub issue, you want the personal information out of it. Existing tools are
-regex-based, which is why they miss the things that matter in Japanese: names,
-addresses and My Numbers cannot be found by pattern matching.
+The commit hash, version and request ID are left alone — masking those would
+have ruined the report. The same value always gets the same number, so a reader
+can still tell who is who.
 
-## Everything happens on your Mac
+Nothing is sent anywhere. No account, no API key, no rules fetched from a
+server.
+
+## Install
+
+```sh
+brew install snaka/tap/privmask
+```
+
+## Usage
+
+```sh
+pbpaste | privmask | pbcopy     # mask what you just copied
+cat app.log | privmask          # or anything on stdin
+cat app.log | privmask --json   # findings as JSON, for tooling
+```
+
+There is a [Raycast extension](https://github.com/snaka/privacy-mask) that puts
+this on a hotkey, with a confirmation step before anything is replaced.
+
+## What it finds
+
+| | Found by |
+|---|---|
+| Phone numbers, addresses | `NSDataDetector`, including full-width and unhyphenated Japanese forms |
+| My Number | Pattern plus check digit, so an order number is not mistaken for one |
+| Email, postal codes, API keys and tokens | Patterns |
+| Your own terms | A list you keep |
+| Japanese personal names | Apple Intelligence, on device |
+| English personal names | `NLTagger` |
+
+IP addresses, hostnames and internal URLs are deliberately left alone. Whether
+they are sensitive is not something a detector can decide, and masking them
+wrongly ruins the text.
+
+## Requirements
+
+macOS 13 or later.
+
+**Japanese personal names additionally need macOS 26 with Apple Intelligence
+enabled.** They are found only by the on-device model, which runs by default
+wherever it is available. Where it is not, privmask says so on stderr — read
+those warnings rather than assuming the text was checked.
+
+## Your own terms
+
+Customer names, company names, project code names — the things no general
+detector can know are sensitive. One per line:
+
+```
+# ~/.config/privmask/terms.txt
+株式会社サンプル商事
+Project Bluebird
+```
+
+Matching ignores case and character width.
+
+## How it works
 
 ```mermaid
 flowchart TB
@@ -49,136 +125,59 @@ flowchart TB
     you --> out
 ```
 
-**No arrow leaves that box, and that is not a simplification of the diagram.**
-There is no API key to configure, no account to create, no endpoint to allow
-through a proxy, and no rule set fetched from a server. Unplug the network and
-nothing changes. The text you are trying to keep private is never the payload of
-a request, because there are no requests.
+No arrow leaves that box, and that is not a simplification.
 
-This is what Apple Intelligence buys here. Finding a Japanese personal name
-takes a language model — patterns cannot do it, and neither can Apple's own
-`NLTagger`, which has no Japanese entity model at all. Until the on-device
-foundation model existed, the only way to get that capability was to send the
-text to somebody's server, which for this particular job means handing over the
-exact thing you were trying not to share.
+It matters because finding a Japanese personal name takes a language model —
+patterns cannot, and neither can `NLTagger`, which has no Japanese entity model
+at all. Until the on-device model existed, that capability meant sending the
+text to somebody's server: handing over the exact thing you were trying not to
+share.
 
-The two speeds in the diagram are why the tool feels immediate: the
-deterministic detectors return in milliseconds and are shown straight away, and
-the model's findings are folded in when they arrive rather than making you wait
-on a blank screen.
+The two speeds are why it feels immediate: the deterministic detectors are shown
+straight away, and the model's findings are folded in when they arrive.
 
-## Read this before you rely on it
+## Limits
 
-**Japanese personal names are found only by Apple Intelligence's on-device
-model**, and that model needs **macOS 26 with Apple Intelligence enabled**.
-Below that, names are not detected at all — `NLTagger` has no Japanese entity
-model, which is a platform limitation,
-[measured and documented](docs/findings/apple-detector-baseline.md), not
-something this tool can work around.
-
-The model is **on by default** wherever it is available, and skipped with a
-warning wherever it is not. Read those warnings. The worst way to use this is to
-paste something believing it was masked when it was not.
-
-### What works on which macOS
-
-| | 13 – 25 | 26, Apple Intelligence off | 26, Apple Intelligence on |
+| | macOS 13 – 25 | 26, Apple Intelligence off | 26, on |
 |---|:--:|:--:|:--:|
-| Phone numbers, addresses | ✅ | ✅ | ✅ |
-| Email, postal codes, API keys, My Number | ✅ | ✅ | ✅ |
-| Your term list, matched exactly | ✅ | ✅ | ✅ |
-| English personal names | ✅ | ✅ | ✅ |
+| Everything except the two rows below | ✅ | ✅ | ✅ |
 | **Japanese personal names** | ❌ | ❌ | ✅ |
 | Spelling variants of your terms | ❌ | ❌ | ✅ |
-
-Turning the model off — `--no-model`, or the *Use the on-device language model*
-preference in the Raycast extension — makes privmask fully deterministic and
-much faster, at the cost of every row marked ✅ only in the last column.
-
-Other limits worth knowing:
 
 - Only the first 1,500 characters of Japanese are examined for names. Beyond
   that, names are left in place and a warning is printed.
 - The model varies between runs. It finds every name in the test corpus most
   times, not every time.
-- Your own terms are matched exactly; spelling variants are matched only when
-  the model is available.
-- Masking is **not reversible**. There is no way to get the original text back
+- Masking is **not reversible**. There is no way to recover the original text
   from the output.
-
-## Install
-
-```sh
-brew install snaka/tap/privmask
-```
-
-Runs on macOS 13 and later. Japanese personal names additionally need macOS 26
-with Apple Intelligence enabled; see the table above for what that changes.
-
-## Use
-
-```sh
-cat app.log | privmask
-cat app.log | privmask --json
-```
-
-Detected values are replaced with numbered placeholders — `[NAME_1]`,
-`[EMAIL_2]` — and the same value always gets the same number, so a reader can
-still follow who is who. The substitution is not reversible and no mapping is
-stored: that table would be a second copy of exactly what the masking removed.
-
-Register your own terms (customer names, project code names) one per line in
-`~/.config/privmask/terms.txt`.
-
-## What it finds
-
-| Kind | How |
-|---|---|
-| Phone numbers, addresses | `NSDataDetector` — Apple's models, including full-width and unhyphenated Japanese formats |
-| My Number | Pattern plus check-digit validation, so an order number is not mistaken for one |
-| Email, API keys and tokens, postal codes | Patterns |
-| Your own terms | `~/.config/privmask/terms.txt` |
-| Japanese personal names | Apple Intelligence, on device |
-| English personal names | `NLTagger` |
-
-Not everything the tool could plausibly mask is masked. IP addresses, hostnames
-and internal URLs are deliberately left alone: whether they are sensitive is not
-something a detector can decide, and masking them wrongly corrupts the text.
-
-## Trying it by hand
-
-`Examples/` holds sample texts in the shapes this is pointed at — an incident
-report, a customer record, and one where nothing should be masked at all.
-
-```sh
-cat Examples/1-incident.txt | privmask
-Examples/use 1   # or put it on the clipboard for the Raycast extension
-```
-
-## Layout
-
-```
-Sources/PrivMask/           # library: detection and masking
-Sources/PrivMaskCLI/        # the `privmask` CLI
-Sources/AppleAPIProbe/      # deterministic-layer measurement harness
-Sources/FoundationModelProbe/  # on-device model measurement harness
-Corpus/                     # ground-truth corpus for measuring detectors
-Examples/                   # sample texts for trying it by hand
-Tests/                      # includes characterisation tests for Apple's frameworks
-```
+- `--no-model` makes privmask fully deterministic and much faster, at the cost
+  of the last two rows above.
 
 ## Development
 
 ```sh
-swift test                    # unit, corpus regression and characterisation tests
-swift run AppleAPIProbe       # measure the deterministic layer against the corpus
+swift test                      # unit, corpus regression and characterisation tests
+swift run AppleAPIProbe         # measure the deterministic layer against the corpus
 swift run FoundationModelProbe  # measure the full pipeline, model included (slow)
+Examples/use 1                  # put a sample text on the clipboard
 ```
 
-The corpus regression test is the one that matters: detection accuracy is the
-product. `Corpus/ja-baseline.json` carries both what must be found and what must
-never be masked — over-masking corrupts the text being shared, so negative
-examples count as much as positive ones.
+[`Corpus/ja-baseline.json`](Corpus/ja-baseline.json) carries both what must be
+found and what must never be masked; over-masking ruins the text being shared,
+so the negative examples count as much as the positive ones.
+
+[`docs/findings/`](docs/findings/) records what was measured about Apple's
+detectors and the on-device model, and how it changed the design. Two of the
+defects documented there are worked around in this code — both found by reading
+output, not by reasoning about the APIs.
+
+```
+Sources/PrivMask/       library: detection and masking
+Sources/PrivMaskCLI/    the privmask CLI
+Sources/*Probe/         measurement harnesses
+Corpus/                 ground truth for the regression test
+Examples/               sample texts for trying it by hand
+```
 
 ## License
 
