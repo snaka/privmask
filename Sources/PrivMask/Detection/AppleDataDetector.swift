@@ -24,8 +24,9 @@ public struct AppleDataDetector {
     public func observations(in text: String) -> [(type: String, range: NSRange, text: String)] {
         guard let detector = try? NSDataDetector(types: Self.observedTypes.rawValue) else { return [] }
         let nsText = text as NSString
+        let scanned = Self.detectorFriendly(text)
         var results: [(String, NSRange, String)] = []
-        detector.enumerateMatches(in: text, range: NSRange(location: 0, length: nsText.length)) { result, _, _ in
+        detector.enumerateMatches(in: scanned, range: NSRange(location: 0, length: nsText.length)) { result, _, _ in
             guard let result else { return }
             let label: String
             switch result.resultType {
@@ -36,6 +37,21 @@ public struct AppleDataDetector {
             results.append((label, result.range, nsText.substring(with: result.range)))
         }
         return results
+    }
+
+    /// Rejects matches that cannot be what the detector says they are.
+    ///
+    /// A run of digits with no separator and no country code is only a phone
+    /// number at Japanese lengths: 10 (03-1234-5678, 0120-123-456) or 11
+    /// (090-1234-5678). NSDataDetector claimed the 12-digit order number
+    /// `123456789010` as a phone number, which would have masked it. Matches
+    /// that carry separators or a leading + are left alone, so an international
+    /// number written normally is unaffected.
+    static func isPlausible(kind: SensitiveKind, text: String) -> Bool {
+        guard kind == .phoneNumber else { return true }
+        let normalized = MyNumberDetector.normalizeDigits(text)
+        guard normalized.allSatisfy(\.isNumber) else { return true }
+        return (10...11).contains(normalized.count)
     }
 
     /// Cuts `range` back to its first line and drops trailing whitespace.
@@ -55,11 +71,35 @@ public struct AppleDataDetector {
         return length > 0 ? NSRange(location: range.location, length: length) : nil
     }
 
+    /// Japanese punctuation that stops the detector, mapped to ASCII equivalents.
+    ///
+    /// A phone number followed directly by an ideographic comma is not detected
+    /// at all — and `連絡先 090-1234-5678、住所は…` is an ordinary sentence, not an
+    /// edge case. Followed by a space or `。` the same number is found, so it is
+    /// the comma specifically.
+    ///
+    /// Both characters occupy one UTF-16 unit, so substituting them leaves every
+    /// offset unchanged and matches still refer to the original text.
+    private static let punctuationSubstitutions: [Character: Character] = [
+        "、": ",",
+        "，": ",",
+    ]
+
+    /// A copy of `text` the detector can parse, with identical offsets.
+    /// Returns the original unchanged if the lengths would ever diverge.
+    static func detectorFriendly(_ text: String) -> String {
+        guard text.contains(where: { punctuationSubstitutions[$0] != nil }) else { return text }
+        let substituted = String(text.map { punctuationSubstitutions[$0] ?? $0 })
+        guard (substituted as NSString).length == (text as NSString).length else { return text }
+        return substituted
+    }
+
     private func matches(in text: String, types: NSTextCheckingResult.CheckingType) -> [DetectedMatch] {
         guard let detector = try? NSDataDetector(types: types.rawValue) else { return [] }
         let nsText = text as NSString
+        let scanned = Self.detectorFriendly(text)
         var results: [DetectedMatch] = []
-        detector.enumerateMatches(in: text, range: NSRange(location: 0, length: nsText.length)) { result, _, _ in
+        detector.enumerateMatches(in: scanned, range: NSRange(location: 0, length: nsText.length)) { result, _, _ in
             guard let result else { return }
             let kind: SensitiveKind
             switch result.resultType {
@@ -71,6 +111,7 @@ public struct AppleDataDetector {
             // swallow unrelated trailing digits, so every match is cut back to
             // the line it starts on. See docs/findings/apple-detector-baseline.md.
             guard let range = Self.trimmedToFirstLine(result.range, in: nsText) else { return }
+            guard Self.isPlausible(kind: kind, text: nsText.substring(with: range)) else { return }
             results.append(
                 DetectedMatch(
                     kind: kind,

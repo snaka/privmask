@@ -84,12 +84,56 @@ struct DataDetectorTests {
         #expect(matches.contains { $0.contains("\n") })
     }
 
-    /// A 12-digit My Number is claimed by the phone-number detector, so the
-    /// dedicated My Number detector has to win when the ranges collide.
-    @Test("A My Number is misread as a phone number")
-    func myNumberLooksLikeAPhoneNumber() {
-        let matches = detector.detect(in: "マイナンバー: 123456789018")
-        #expect(matches.contains { $0.kind == .phoneNumber && $0.text.contains("123456789018") })
+    /// Apple's behaviour, checked against the framework directly: a bare
+    /// 12-digit number is reported as a phone number. That is why AppleDataDetector
+    /// rejects separator-free digit runs outside Japanese phone lengths, and why
+    /// the My Number detector outranks the phone detector when both fire.
+    @Test("Raw NSDataDetector reads a 12-digit number as a phone number")
+    func rawDetectorClaimsTwelveDigits() throws {
+        let text = "番号: 123456789018"
+        let raw = try NSDataDetector(types: NSTextCheckingResult.CheckingType.phoneNumber.rawValue)
+        let nsText = text as NSString
+        let matches = raw.matches(in: text, range: NSRange(location: 0, length: nsText.length))
+            .map { nsText.substring(with: $0.range) }
+        #expect(matches.contains { $0.contains("123456789018") })
+    }
+
+    @Test("A digit run that is not a Japanese phone length is rejected")
+    func implausibleDigitRunsRejected() {
+        #expect(detector.detect(in: "注文番号 123456789010 の件").isEmpty)
+        #expect(detector.detect(in: "伝票 4912345678901 は対象外").isEmpty)
+        #expect(!detector.detect(in: "携帯 09012345678 です").isEmpty)
+    }
+
+    /// Apple's behaviour, checked directly: a phone number followed by an
+    /// ideographic comma is not detected at all, though the same number followed
+    /// by a space or 。 is. AppleDataDetector scans a copy with the comma
+    /// substituted; both characters are one UTF-16 unit, so offsets survive.
+    @Test("Raw NSDataDetector misses a phone number before an ideographic comma")
+    func rawDetectorMissesPhoneBeforeIdeographicComma() throws {
+        let raw = try NSDataDetector(types: NSTextCheckingResult.CheckingType.phoneNumber.rawValue)
+        func count(_ text: String) -> Int {
+            raw.matches(in: text, range: NSRange(location: 0, length: (text as NSString).length)).count
+        }
+        #expect(count("連絡先 090-1234-5678、住所は東京都渋谷区渋谷1丁目1番地です") == 0)
+        #expect(count("連絡先 090-1234-5678。") == 1)
+    }
+
+    @Test("The substitution recovers those numbers, with offsets intact")
+    func commaSubstitutionRecoversPhone() {
+        let text = "連絡先 090-1234-5678、住所は大阪府大阪市北区梅田3-1-3です"
+        let matches = detector.detect(in: text).filter { $0.kind == .phoneNumber }
+        #expect(matches.count == 1)
+        #expect(matches.first?.text == "090-1234-5678")
+    }
+
+    @Test("Substitution never changes the length of the text")
+    func substitutionPreservesLength() {
+        let samples = ["連絡先、住所", "a、b，c", "、、、", "no japanese punctuation"]
+        for sample in samples {
+            let scanned = AppleDataDetector.detectorFriendly(sample)
+            #expect((scanned as NSString).length == (sample as NSString).length)
+        }
     }
 
     @Test("Bare email addresses are not detected")

@@ -186,6 +186,46 @@
         }
       ],
       "mustNotDetect": []
+    },
+    {
+      "id": "digit-runs",
+      "note": "Long digit runs that are not phone numbers. NSDataDetector claims them; an order number masked as a phone number corrupts the text.",
+      "text": "注文番号 123456789010 の集計を修正。\n伝票 4912345678901 は対象外。\n携帯 09012345678 は有効な番号。\n内線 7788 は記載しない。",
+      "expected": [
+        {
+          "kind": "phoneNumber",
+          "text": "09012345678"
+        }
+      ],
+      "mustNotDetect": [
+        "123456789010",
+        "4912345678901",
+        "7788"
+      ]
+    },
+    {
+      "id": "punctuation-adjacency",
+      "note": "Values butted up against Japanese punctuation. NSDataDetector does not see a phone number followed directly by an ideographic comma, which is how Japanese sentences are ordinarily written.",
+      "text": "担当は田中健一、連絡先 090-1234-5678、住所は大阪府大阪市北区梅田3-1-3です。\n予備の番号は03-1234-5678、メールは taro@example.co.jp、以上です。",
+      "expected": [
+        {
+          "kind": "phoneNumber",
+          "text": "090-1234-5678"
+        },
+        {
+          "kind": "phoneNumber",
+          "text": "03-1234-5678"
+        },
+        {
+          "kind": "address",
+          "text": "大阪府大阪市北区梅田3-1-3"
+        },
+        {
+          "kind": "email",
+          "text": "taro@example.co.jp"
+        }
+      ],
+      "mustNotDetect": []
     }
   ],
   "dictionary": [

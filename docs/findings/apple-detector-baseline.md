@@ -81,3 +81,39 @@ names reliably, and it was made default-on where available as a result.
 
 `NLTagger` is not discarded entirely — `NameType` *is* available for English, so
 it stays as the deterministic path for English names.
+
+## Two more defects, found by running real text through the CLI
+
+Neither showed up in the original corpus. Both were found by writing the kind of
+text the tool is actually for and reading the output.
+
+### A phone number followed by an ideographic comma is not detected
+
+```
+連絡先 090-1234-5678、住所は…   → no phone number found
+連絡先 090-1234-5678。          → found
+連絡先 090-1234-5678 です        → found
+連絡先 090-1234-5678,住所は…    → found
+```
+
+It is the `、` specifically. This matters more than it sounds: butting a value
+against a comma is how Japanese sentences are ordinarily written, so the gap
+covers a large share of real text rather than an edge case. In a 40-line list of
+contacts, not one phone number was masked.
+
+`AppleDataDetector` now scans a copy of the text with `、` and `，` replaced by
+`,`. Both are one UTF-16 unit, exactly like the ASCII comma, so every offset is
+unchanged and matches still refer to the original text. The substitution is
+skipped entirely if the lengths would ever diverge.
+
+### A 12-digit number is reported as a phone number
+
+`注文番号 123456789010` was masked as a phone number. The My Number detector
+correctly rejected it — the check digit does not match — and `NSDataDetector`
+then claimed the same digits.
+
+A separator-free run of digits is only a Japanese phone number at 10 or 11
+digits, so runs outside that are now rejected. Matches carrying separators or a
+leading `+` are untouched, leaving international numbers written normally alone.
+
+Both are pinned by tests, and both now have corpus samples.
