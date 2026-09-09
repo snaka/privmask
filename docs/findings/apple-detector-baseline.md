@@ -47,16 +47,16 @@ shipped Japanese NER and the personal-name detector should be reconsidered.
 ## Why this matters more than it looks
 
 `NSDataDetector` handling Japanese phone numbers and addresses well is a real
-advantage over regex-based tools. But personal names were the centre of the
-differentiation: they cannot be found by pattern matching, which is exactly why
-a regex-based competitor cannot do them. Losing `NLTagger` means the *only*
-remaining on-device route to Japanese personal names is the Apple Intelligence
-on-device model (`FoundationModels`) — which the design placed behind an opt-in,
-default-off switch — or the user dictionary.
+advantage over pattern matching. But personal names were the centre of the
+differentiation, precisely because no pattern can find one. Losing `NLTagger`
+means the *only* remaining on-device route to a Japanese personal name is the
+Apple Intelligence model (`FoundationModels`) — which the design placed behind an
+opt-in, default-off switch — or the user dictionary.
 
-Note that `fuseji`'s claim that existing PII tools structurally miss Japanese
-does **not** hold for `NSDataDetector`: Apple's phone and address models handle
-Japanese properly. The claim does hold for entity recognition.
+Japanese-language PII tooling is often described as structurally underserved,
+and for entity recognition that is exactly right. It is worth being precise
+about the scope of it, though: phone numbers and addresses are not in that gap.
+Apple's models handle both, including the forms Japanese text actually uses.
 
 ## Defects to work around
 
