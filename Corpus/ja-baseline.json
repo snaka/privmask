@@ -226,6 +226,41 @@
         }
       ],
       "mustNotDetect": []
+    },
+    {
+      "id": "name-after-others",
+      "note": "A known recall gap, kept so it stays visible. The third name is consistently missed by the model when it sits on a line already carrying a company name, a phone number and an email. Moving that same name to the first line, or removing the other two names, makes it detectable — so this is about position and competition, not about how the name is written.",
+      "text": "【障害報告】決済 API のレイテンシ悪化。\n担当: 田中健一 / 二次対応: 佐藤 美咲\n株式会社サンプル商事（鈴木一郎 様、090-1234-5678 / suzuki@example.co.jp）から連絡あり。\nデプロイ: commit 4f2a1c9e8b3d / v2.14.3",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "田中健一"
+        },
+        {
+          "kind": "personalName",
+          "text": "佐藤 美咲"
+        },
+        {
+          "kind": "personalName",
+          "text": "鈴木一郎"
+        },
+        {
+          "kind": "dictionaryTerm",
+          "text": "株式会社サンプル商事"
+        },
+        {
+          "kind": "phoneNumber",
+          "text": "090-1234-5678"
+        },
+        {
+          "kind": "email",
+          "text": "suzuki@example.co.jp"
+        }
+      ],
+      "mustNotDetect": [
+        "4f2a1c9e8b3d",
+        "v2.14.3"
+      ]
     }
   ],
   "dictionary": [

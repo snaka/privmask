@@ -250,3 +250,37 @@ one keystroke.
 The intermittent miss is `鈴木一郎`, which the model returns in most runs but not
 all. It appears in the text as `担当: 鈴木一郎 様` — a name the deterministic layer
 cannot see at all, so when the model skips it, it is missed.
+
+## The recall gap that is left: a name that comes after others
+
+The one miss the corpus tracks deliberately. `鈴木一郎` is not found in either
+sample that contains it, run after run.
+
+It is not about how the name is written. Isolated, every one of these is
+detected:
+
+```
+株式会社サンプル商事（鈴木一郎 様、090-1234-5678）から連絡あり。
+（鈴木一郎 様、090-1234-5678）から連絡あり。
+株式会社サンプル商事の鈴木一郎 様から連絡あり。
+担当は鈴木一郎 様です。
+```
+
+It is about position. Given the same four-line report:
+
+| Where `鈴木一郎` sits | Result |
+|---|---|
+| Third name, after 田中健一 and 佐藤 美咲 | **missed** |
+| First name, before the other two | found, and so are the other two |
+| Only name in the text | found |
+
+The line it sits on already carries a company name, a phone number and an email,
+so the model has several candidates competing on one line and returns the ones it
+returns. Recall degrades for names that appear later, not for names that are
+written a particular way.
+
+Two things follow. The obvious one is that this is a real limit on what the model
+will do for a dense record — the more people a text mentions, the more likely one
+of them survives. The less obvious one is that a corpus sample where nothing is
+missed would have hidden it: `name-after-others` exists to keep the number
+honest, and `FoundationModelProbe` is expected to report it as a miss.
