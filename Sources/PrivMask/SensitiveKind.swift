@@ -22,6 +22,7 @@ public enum DetectorSource: String, Hashable, Sendable, Codable {
     case regex
     case dictionary
     case languageModel
+    case credentialContext
 }
 
 /// One piece of sensitive information located in a text.
@@ -31,11 +32,25 @@ public struct DetectedMatch: Hashable, Sendable {
     /// Range within the text, in UTF-16 offsets (`NSString` semantics).
     public let range: NSRange
     public let text: String
+    /// Set by a detector that has grounds to differ from what its source
+    /// normally carries. `nil` means the source's `baseConfidence` applies.
+    ///
+    /// `CredentialContextDetector` is the only user: the name that introduces a
+    /// value is the same evidence whether the value is a live key or
+    /// `YOUR_API_KEY_HERE`, so the value itself has to move the confidence.
+    public let confidence: Confidence?
 
-    public init(kind: SensitiveKind, source: DetectorSource, range: NSRange, text: String) {
+    public init(
+        kind: SensitiveKind,
+        source: DetectorSource,
+        range: NSRange,
+        text: String,
+        confidence: Confidence? = nil
+    ) {
         self.kind = kind
         self.source = source
         self.range = range
         self.text = text
+        self.confidence = confidence
     }
 }

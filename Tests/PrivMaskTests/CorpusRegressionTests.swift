@@ -119,4 +119,35 @@ struct PipelineTests {
         let candidates = pipeline.detect(in: "連絡は suzuki@example.co.jp まで")
         #expect(candidates.first { $0.kind == .email }?.confidence == .high)
     }
+
+    @Test("The context detector's own default is medium")
+    func contextSourceIsMedium() {
+        #expect(DetectorSource.credentialContext.baseConfidence == .medium)
+    }
+
+    @Test("A detector may lower the confidence of its own finding")
+    func detectorMayLowerConfidence() {
+        let match = DetectedMatch(
+            kind: .credential,
+            source: .credentialContext,
+            range: NSRange(location: 0, length: 3),
+            text: "abc",
+            confidence: .low
+        )
+        let candidates = DetectionPipeline.reconcile([match], in: "abc")
+        #expect(candidates.first?.confidence == .low)
+    }
+
+    /// Without the override the base would be medium and promotion would reach
+    /// high, so this fails if merging still reads `baseConfidence` directly.
+    @Test("Promotion for independent agreement uses the lowered confidence")
+    func promotionUsesEffectiveConfidence() {
+        let range = NSRange(location: 0, length: 3)
+        let lowered = DetectedMatch(
+            kind: .credential, source: .credentialContext, range: range, text: "abc", confidence: .low
+        )
+        let tagger = DetectedMatch(kind: .credential, source: .nameTagger, range: range, text: "abc")
+        let candidates = DetectionPipeline.reconcile([lowered, tagger], in: "abc")
+        #expect(candidates.first?.confidence == .medium)
+    }
 }

@@ -82,7 +82,7 @@ public struct DetectionPipeline {
 
         return groups.values.map { group in
             let sources = group.map(\.source)
-            let base = sources.map(\.baseConfidence).max() ?? .low
+            let base = group.map(\.effectiveConfidence).max() ?? .low
             let distinctSources = Set(sources)
             let confidence = distinctSources.count > 1 ? base.promoted : base
             let first = group[0]
