@@ -155,3 +155,94 @@ struct CredentialNameTests {
         #expect(!CredentialName.claimsCredential(identifier))
     }
 }
+
+@Suite("Credentials named by their context")
+struct CredentialContextDetectorTests {
+    private let detector = CredentialContextDetector()
+    private let masker = Masker()
+
+    /// Masks with this detector alone, so a failure here is not a merge or a
+    /// precedence problem elsewhere.
+    private func masked(_ text: String) -> String {
+        let candidates = DetectionPipeline.reconcile(detector.detect(in: text), in: text)
+        return masker.mask(text, candidates: candidates).text
+    }
+
+    private func confidence(of text: String) -> Confidence? {
+        DetectionPipeline.reconcile(detector.detect(in: text), in: text).first?.confidence
+    }
+
+    @Test("An AWS secret access key is reached by the name that introduces it")
+    func awsSecretAccessKey() {
+        let text = "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYzTBLURKEY"
+        #expect(masked(text) == "AWS_SECRET_ACCESS_KEY=[SECRET_1]")
+    }
+
+    @Test("Only the value is masked, never the name")
+    func nameIsKept() {
+        #expect(masked("DB_PASSWORD=hunter2") == "DB_PASSWORD=[SECRET_1]")
+    }
+
+    /// Swallowing the comma would corrupt the document.
+    @Test("A quoted value ends at its closing quote")
+    func jsonStaysParseable() throws {
+        let text = #"{"api_key": "abc123def456", "retries": 3}"#
+        let output = masked(text)
+        #expect(output == #"{"api_key": "[SECRET_1]", "retries": 3}"#)
+        #expect(try JSONSerialization.jsonObject(with: Data(output.utf8)) is [String: Any])
+    }
+
+    @Test("Two claims on one line are two findings")
+    func twoClaimsOnOneLine() {
+        let text = #"{"api_key": "aaaaaaaaaa", "password": "bbbbbbbbbb"}"#
+        #expect(masked(text) == #"{"api_key": "[SECRET_1]", "password": "[SECRET_2]"}"#)
+    }
+
+    /// Keeping the scheme word also makes the span coincide with what the JWT
+    /// pattern finds, so the two merge instead of nesting.
+    @Test("The scheme word of an Authorization header is kept")
+    func authorizationScheme() {
+        #expect(masked("Authorization: Bearer abc123def456") == "Authorization: Bearer [SECRET_1]")
+    }
+
+    @Test("A quoted header inside a shell command stops at the quote")
+    func headerInsideShellCommand() {
+        let text = #"curl -H "X-Api-Key: abc123def456" https://api.example.com/v1/orders"#
+        #expect(masked(text) == #"curl -H "X-Api-Key: [SECRET_1]" https://api.example.com/v1/orders"#)
+    }
+
+    @Test("A value containing Japanese is masked whole")
+    func japaneseValue() {
+        #expect(masked("password = 合言葉はひらけごま") == "password = [SECRET_1]")
+    }
+
+    @Test("Nothing is claimed here", arguments: [
+        "secretary: unassigned",
+        "token_count: 1500",
+        "primary_key = orders.id",
+        "パスワードを再設定してください",
+        "Authorization:",
+    ])
+    func notAClaim(_ text: String) {
+        #expect(detector.detect(in: text).isEmpty)
+    }
+
+    @Test("An ordinary value is medium confidence")
+    func ordinaryValueIsMedium() {
+        #expect(confidence(of: "DB_PASSWORD=hunter2") == .medium)
+    }
+
+    /// A placeholder is still a candidate. A rule that dropped it would
+    /// eventually drop a real numeric password, and nobody would see it go.
+    @Test("A value that cannot be live is low confidence, not discarded", arguments: [
+        "api_key = YOUR_API_KEY_HERE",
+        "api_key = xxxxxxxxxx",
+        "api_key = <your-key-here>",
+        "api_key = ****************",
+        "refresh_token_expires_at: 3600",
+        "password = abc",
+    ])
+    func placeholderIsLow(_ text: String) {
+        #expect(confidence(of: text) == .low)
+    }
+}
