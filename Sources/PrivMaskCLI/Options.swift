@@ -20,7 +20,10 @@ struct Options {
           cat app.log | privmask --json
 
         Reads text on stdin. Writes the masked text on stdout, or a JSON report
-        with --json. Nothing is sent anywhere: all detection runs locally.
+        with --json. Everything found is masked, including low-confidence
+        findings such as a placeholder in a credential slot. Use --json to
+        see the confidence of each finding. Nothing is sent anywhere: all
+        detection runs locally.
 
         OPTIONS
           --json               Report findings as JSON instead of masked text.
