@@ -116,3 +116,42 @@ struct KnownPrefixTests {
         #expect(found.allSatisfy { !$0.text.contains("この行は") })
     }
 }
+
+@Suite("What counts as claiming to hold a credential")
+struct CredentialNameTests {
+    @Test("An identifier splits into words on separators and case changes", arguments: [
+        ("api_key", ["api", "key"]),
+        ("X-Api-Key", ["x", "api", "key"]),
+        ("secretKey", ["secret", "key"]),
+        ("AWSSecretKey", ["aws", "secret", "key"]),
+        ("API_KEY", ["api", "key"]),
+        ("spring.datasource.password", ["spring", "datasource", "password"]),
+        ("Authorization", ["authorization"]),
+    ])
+    func splitsIntoWords(_ identifier: String, _ expected: [String]) {
+        #expect(CredentialName.words(in: identifier) == expected)
+    }
+
+    @Test("It claims to hold a credential", arguments: [
+        "api_key", "apiKey", "API_KEY", "X-Api-Key", "apikey",
+        "client_secret", "secretKey", "AWSSecretKey", "AWS_SECRET_ACCESS_KEY",
+        "password", "PASSWORD", "spring.datasource.password", "passwd", "pwd",
+        "credential", "credentials", "auth", "Authorization",
+        "access_token", "refresh_token", "GITHUB_TOKEN",
+    ])
+    func claims(_ identifier: String) {
+        #expect(CredentialName.claimsCredential(identifier))
+    }
+
+    /// `secretary` contains `secret`; `token_count` and `入力トークン数` are why
+    /// a bare `token` is not a claim; `key` on its own opens a mapping in most
+    /// YAML documents.
+    @Test("It does not", arguments: [
+        "secretary", "token", "token_count", "key", "primary_key",
+        "AWS_ACCESS_KEY_ID", "STRIPE_PUBLISHABLE_KEY",
+        "keyboard", "monkey", "name", "retries",
+    ])
+    func doesNotClaim(_ identifier: String) {
+        #expect(!CredentialName.claimsCredential(identifier))
+    }
+}
