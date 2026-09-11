@@ -43,3 +43,58 @@ struct URLCredentialTests {
         #expect(!candidates.contains { $0.kind == .email })
     }
 }
+
+@Suite("Known credential prefixes")
+struct KnownPrefixTests {
+    private let detectors = RegexDetectors()
+
+    private func findsWholeValue(_ value: String, in text: String) -> Bool {
+        detectors.detect(in: text).contains { $0.kind == .credential && $0.text == value }
+    }
+
+    @Test(
+        "A value with a published prefix is found whole",
+        arguments: [
+            "github_pat_11ABCDEFG0abcdefghijkl_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqr",
+            "xoxb-123456789012-123456789012-abcdefghijklmnopqrstuvwx",
+            "xapp-1-A012BCDEFGH-1234567890123-abcdefghijklmnopqrstuvwxyz",
+            "AIzaSyB1234567890abcdefghijklmnopqrstuv",
+            "sk_live_51H1234567890abcdefghijkl",
+            "rk_test_51H1234567890abcdefghijkl",
+            "npm_abcdefghijklmnopqrstuvwxyz0123456789",
+            "SG.abcdefghijklmnopqrstuv.abcdefghijklmnopqrstuvwxyz0123456789012345678",
+            "https://hooks.slack.com/services/T00000000/B00000000/abcdefghijklmnopqrstuvwx",
+        ]
+    )
+    func knownPrefix(_ value: String) {
+        #expect(findsWholeValue(value, in: "value: \(value)"))
+    }
+
+    @Test("A JWT is found")
+    func jwt() {
+        let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+            + ".eyJzdWIiOiIxMjM0NTY3ODkwIn0"
+            + ".dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+        #expect(findsWholeValue(token, in: "Bearer \(token)"))
+    }
+
+    @Test("A private key block is found whole, newlines included")
+    func privateKeyBlock() {
+        let block = """
+            -----BEGIN PRIVATE KEY-----
+            MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7
+            -----END PRIVATE KEY-----
+            """
+        #expect(findsWholeValue(block, in: "key:\n\(block)\n"))
+    }
+
+    /// A publishable key is meant to be public, and a public key is a public
+    /// key. Masking either destroys the text for no gain.
+    @Test("Public counterparts are not credentials", arguments: [
+        "pk_live_51H1234567890abcdefghijkl",
+        "-----BEGIN PUBLIC KEY-----",
+    ])
+    func publicCounterparts(_ value: String) {
+        #expect(!findsWholeValue(value, in: "value: \(value)"))
+    }
+}

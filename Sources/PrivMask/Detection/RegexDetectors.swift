@@ -43,6 +43,27 @@ public struct RegexDetectors {
         Pattern(#"\bgh[pousr]_[A-Za-z0-9]{36,255}\b"#),
         // OpenAI-style secret keys
         Pattern(#"\bsk-(?:proj-)?[A-Za-z0-9_\-]{20,}\b"#),
+        // GitHub fine-grained personal access token
+        Pattern(#"\bgithub_pat_[A-Za-z0-9_]{22,}\b"#),
+        // Slack bot / user / app-level tokens
+        Pattern(#"\bxox[baprs]-[A-Za-z0-9\-]{10,}"#),
+        Pattern(#"\bxapp-[0-9]-[A-Za-z0-9\-]{10,}"#),
+        // Slack incoming webhook: the URL is the credential
+        Pattern(#"https://hooks\.slack\.com/services/[A-Za-z0-9/_\-]{20,}"#),
+        // Google API key
+        Pattern(#"\bAIza[0-9A-Za-z_\-]{35}\b"#),
+        // Stripe secret and restricted keys. `pk_` is publishable: left alone.
+        Pattern(#"\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,}\b"#),
+        // npm access token
+        Pattern(#"\bnpm_[A-Za-z0-9]{36}\b"#),
+        // SendGrid API key
+        Pattern(#"\bSG\.[A-Za-z0-9_\-]{16,}\.[A-Za-z0-9_\-]{16,}\b"#),
+        // JWT: header.payload.signature, both halves base64url-encoded JSON
+        Pattern(#"\beyJ[A-Za-z0-9_\-]{8,}\.eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\b"#),
+        // A private key block, newlines included. `PUBLIC KEY` is not matched.
+        Pattern(
+            #"-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----[\s\S]*?-----END (?:[A-Z]+ )?PRIVATE KEY-----"#
+        ),
     ]
 
     /// Credentials embedded in a URL. Group 1 is the password.
