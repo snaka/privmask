@@ -114,7 +114,8 @@ flowchart TB
 
     subgraph mac["Your Mac"]
         direction TB
-        pat["Patterns<br/>email · API keys · postal code<br/>My Number, check digit validated"]
+        pat["Patterns<br/>email · postal code · keys with a published prefix<br/>My Number, check digit validated"]
+        named["The name that introduces a value<br/>api_key = … · Authorization: …<br/>whatever the value looks like"]
         dd["NSDataDetector<br/>phone numbers · addresses<br/>full-width and unhyphenated"]
         terms["Your term list<br/>~/.config/privmask/terms.txt"]
         fm["Apple Intelligence<br/>on-device foundation model<br/>Japanese personal names"]
@@ -125,11 +126,13 @@ flowchart TB
     out["Masked text<br/>numbered placeholders"]
 
     in --> pat
+    in --> named
     in --> dd
     in --> terms
     in --> fm
 
     pat -->|milliseconds| merge
+    named -->|milliseconds| merge
     dd -->|milliseconds| merge
     terms -->|milliseconds| merge
     fm -->|seconds| merge
