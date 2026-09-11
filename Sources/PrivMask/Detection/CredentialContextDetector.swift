@@ -35,14 +35,17 @@ public struct CredentialContextDetector {
     /// over from a shell-quoted header, or a bracket that would otherwise let
     /// masking corrupt JSON or a function call.
     ///
-    /// `&` and `#` are deliberately absent even though `?api_key=abc&limit=10`
-    /// then masks the whole `abc&limit=10` tail. Stopping at them would turn an
-    /// unquoted `password=hunter2#2024` into a partial mask that leaks the
-    /// suffix `2024`, and a partial mask is a leak — the over-masking this
-    /// causes instead loses no secret; it only masks a little more of the
-    /// visible text than strictly necessary. `<` and `>` stay out for the same
-    /// reason: including them would cut `<your-key-here>` down to a zero-length
-    /// value and stop it from being detected as a placeholder at all.
+    /// Every character here can also occur inside a secret, so each one is in
+    /// the set for the same reason: leaving it out corrupts the document being
+    /// shared. What that costs is a partial mask — `password: correct horse
+    /// battery staple` is masked as far as the first space, and the reader is
+    /// shown a placeholder on a line that is not safe. The trade is accepted
+    /// only because a secret containing a space, a semicolon or a bracket is
+    /// rarer than one containing `&` or `#`, which is why those two stay out
+    /// even though `?api_key=abc&limit=10` then masks the whole
+    /// `abc&limit=10` tail. `<` and `>` stay out for an unrelated reason:
+    /// including them would cut `<your-key-here>` down to a zero-length value
+    /// and stop it from being detected as a placeholder at all.
     private static let unquotedTerminators = CharacterSet(charactersIn: " \t\"',;)}]")
 
     public func detect(in text: String) -> [DetectedMatch] {
@@ -118,14 +121,43 @@ public struct CredentialContextDetector {
 
     /// The content between a value's own quotes, or nil when the quote never
     /// closes or encloses nothing.
+    ///
+    /// A quote the value escapes is not the closing one. Taking it as the close
+    /// truncated `"abc\"def"` to `abc`, which both left `def` visible and broke
+    /// the JSON around it — the thing `jsonStaysParseable` exists to prevent.
     static func quotedValueRange(in nsRest: NSString) -> NSRange? {
         let opening = nsRest.substring(to: 1)
-        let closing = nsRest.range(
-            of: opening,
-            range: NSRange(location: 1, length: nsRest.length - 1)
-        )
-        guard closing.location != NSNotFound, closing.location > 1 else { return nil }
-        return NSRange(location: 1, length: closing.location - 1)
+        var searchFrom = 1
+        while searchFrom < nsRest.length {
+            let closing = nsRest.range(
+                of: opening,
+                range: NSRange(location: searchFrom, length: nsRest.length - searchFrom)
+            )
+            guard closing.location != NSNotFound else { return nil }
+            if backslashesBefore(closing.location, in: nsRest).isMultiple(of: 2) {
+                guard closing.location > 1 else { return nil }
+                return NSRange(location: 1, length: closing.location - 1)
+            }
+            searchFrom = closing.location + closing.length
+        }
+        return nil
+    }
+
+    /// How many backslashes run consecutively up to `index`. An odd count means
+    /// the character there is escaped.
+    ///
+    /// Counting is what separates `"abc\"def"`, where the quote is escaped,
+    /// from `"abc\\"`, where the backslash is escaped and the quote really
+    /// does close the value. Skipping every `\"` gets the first right and
+    /// runs past the end of the second.
+    private static func backslashesBefore(_ index: Int, in nsString: NSString) -> Int {
+        var count = 0
+        var cursor = index - 1
+        while cursor >= 0, nsString.character(at: cursor) == 0x5C {
+            count += 1
+            cursor -= 1
+        }
+        return count
     }
 
     /// The value of an `Authorization`-style header, in `rest`'s coordinates.

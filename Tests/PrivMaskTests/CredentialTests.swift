@@ -192,6 +192,31 @@ struct CredentialContextDetectorTests {
         #expect(try JSONSerialization.jsonObject(with: Data(output.utf8)) is [String: Any])
     }
 
+    /// Taking the escaped quote as the close truncated the value, leaving
+    /// `def` visible next to a placeholder and breaking the JSON that
+    /// `jsonStaysParseable` exists to guarantee.
+    @Test("An escaped quote inside a value does not close it")
+    func escapedQuoteDoesNotCloseTheValue() throws {
+        let text = #"{"api_key": "abc\"def", "retries": 3}"#
+        let output = masked(text)
+        #expect(output == #"{"api_key": "[SECRET_1]", "retries": 3}"#)
+        #expect(!output.contains("def"))
+        #expect(try JSONSerialization.jsonObject(with: Data(output.utf8)) is [String: Any])
+    }
+
+    /// The counterpart, and the reason the rule counts backslashes rather than
+    /// skipping every `\\"`: here the backslash is escaped and the quote after
+    /// it really does close the value. Skipping the pair runs the mask forward
+    /// into the rest of the line.
+    @Test("An escaped backslash still lets the next quote close the value")
+    func escapedBackslashDoesNotOverrun() throws {
+        let text = #"{"api_key": "abc\\", "retries": 3}"#
+        let output = masked(text)
+        #expect(output == #"{"api_key": "[SECRET_1]", "retries": 3}"#)
+        #expect(output.contains(#""retries": 3"#))
+        #expect(try JSONSerialization.jsonObject(with: Data(output.utf8)) is [String: Any])
+    }
+
     @Test("Two claims on one line are two findings")
     func twoClaimsOnOneLine() {
         let text = #"{"api_key": "aaaaaaaaaa", "password": "bbbbbbbbbb"}"#

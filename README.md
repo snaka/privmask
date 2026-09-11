@@ -168,6 +168,9 @@ straight away, and the model's findings are folded in when they arrive.
   found — scoring values by randomness was rejected because that would also
   flag the commit hash and request ID this README's own example keeps intact.
   The name rule is ASCII only, so `パスワード: hunter2` is not found either.
+- An unquoted value is masked only as far as the first space, quote, comma,
+  semicolon or closing bracket — stopping there is what keeps the surrounding
+  document intact — so a passphrase with spaces in it is only partly covered.
 - Masking is **not reversible**. There is no way to recover the original text
   from the output.
 - `--no-model` makes privmask fully deterministic and much faster, at the cost
