@@ -353,6 +353,36 @@ struct CredentialContextDetectorTests {
         #expect(detector.detect(in: text).isEmpty)
     }
 
+    /// `}` is a terminator, so the value stopped one character short and the
+    /// brace was left behind. A compose file or a `.env.example` is intended
+    /// input, and the output has to stay well-formed.
+    @Test("A ${…} reference takes its closing brace with it", arguments: [
+        ("secret: ${AWS_SECRET}", "secret: [SECRET_1]"),
+        ("DB_PASSWORD=${DB_PASSWORD}", "DB_PASSWORD=[SECRET_1]"),
+        ("      - DB_PASSWORD=${DB_PASSWORD}", "      - DB_PASSWORD=[SECRET_1]"),
+    ])
+    func variableReferenceKeepsItsBrace(_ input: String, _ expected: String) {
+        #expect(masked(input) == expected)
+    }
+
+    /// A reference that never closes falls back to the ordinary rule rather
+    /// than reaching to the end of the line.
+    @Test("An unclosed ${ is an ordinary value")
+    func unclosedVariableReference() {
+        #expect(masked("secret: ${AWS_SECRET and more") == "secret: [SECRET_1] and more")
+    }
+
+    /// A reference names where the secret comes from; it is not the secret.
+    /// Lowered rather than dropped, for the same reason `<your-key-here>` is.
+    @Test("A variable reference is a placeholder", arguments: [
+        "secret: ${AWS_SECRET}",
+        "password: $DB_PASSWORD",
+        "api_key=$API_KEY",
+    ])
+    func variableReferenceIsAPlaceholder(_ text: String) {
+        #expect(confidence(of: text) == .low)
+    }
+
     @Test("An ordinary value is medium confidence")
     func ordinaryValueIsMedium() {
         #expect(confidence(of: "DB_PASSWORD=hunter2") == .medium)

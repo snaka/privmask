@@ -112,11 +112,33 @@ public struct CredentialContextDetector {
         if Self.isQuote(nsRest.substring(to: 1)) {
             return quotedValueRange(in: nsRest)
         }
+        if let reference = Self.variableReferenceRange(in: nsRest) {
+            return reference
+        }
 
         let terminator = nsRest.rangeOfCharacter(from: unquotedTerminators)
         let length = terminator.location == NSNotFound ? nsRest.length : terminator.location
         guard length > 0 else { return nil }
         return NSRange(location: 0, length: length)
+    }
+
+    /// A `${…}` reference, closing brace included.
+    ///
+    /// `}` is a terminator, so the ordinary rule stopped one character short
+    /// and left the brace orphaned — `secret: ${AWS_SECRET}` became
+    /// `secret: [SECRET_1]}`. A `.env.example`, a compose file and a CI config
+    /// are all intended input, so the output has to stay well-formed.
+    ///
+    /// A nested `${A:-${B}}` ends at the first `}`. Counting braces for a
+    /// shape that does not appear in these files would buy nothing.
+    static func variableReferenceRange(in nsRest: NSString) -> NSRange? {
+        guard nsRest.length > 2, nsRest.substring(to: 2) == "${" else { return nil }
+        let closing = nsRest.range(
+            of: "}",
+            range: NSRange(location: 2, length: nsRest.length - 2)
+        )
+        guard closing.location != NSNotFound else { return nil }
+        return NSRange(location: 0, length: closing.location + 1)
     }
 
     /// The content between a value's own quotes, or nil when the quote never
@@ -268,12 +290,20 @@ public struct CredentialContextDetector {
         return character == 0x20 || character == 0x09
     }
 
+    /// `$DB_PASSWORD` and `${AWS_SECRET}` say where the secret comes from;
+    /// they are not the secret. Same reading as `<your-key-here>`, and the
+    /// finding is lowered rather than dropped for the same reason.
+    private static let variableReference = Pattern(
+        #"^\$(\{[A-Za-z_][A-Za-z0-9_]*\}|[A-Za-z_][A-Za-z0-9_]*)$"#
+    )
+
     /// Values that cannot be a live credential.
     static func looksLikePlaceholder(_ value: String) -> Bool {
         let trimmed = value.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty || trimmed.count < 6 { return true }
         if trimmed.allSatisfy(\.isNumber) { return true }
         if trimmed.hasPrefix("<") && trimmed.hasSuffix(">") { return true }
+        if !variableReference.matchRanges(in: trimmed).isEmpty { return true }
         if trimmed.allSatisfy({ "*xX.-_".contains($0) }) { return true }
         let upper = trimmed.uppercased()
         let markers = ["YOUR_", "YOUR-", "CHANGEME", "CHANGE_ME", "PLACEHOLDER", "REDACTED", "DUMMY", "TODO", "FIXME"]
