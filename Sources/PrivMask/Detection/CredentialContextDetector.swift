@@ -22,11 +22,21 @@ public struct CredentialContextDetector {
     private static let assignment = Pattern(#"([A-Za-z][A-Za-z0-9_.\-]*)["']?[ \t]*[:=][ \t]*"#)
 
     /// An authentication scheme word is not the secret.
-    private static let schemeWords = ["Bearer ", "Basic ", "Token "]
+    private static let schemeWords = ["Bearer", "Basic", "Token"]
 
-    /// Ends an unquoted value. The quotes are here so that a value inside a
-    /// shell-quoted header stops before the closing quote, and the brackets so
-    /// that masking cannot corrupt JSON or a function call.
+    /// Ends an unquoted value at the first character that is more likely to be
+    /// a delimiter than part of the secret: whitespace, a closing quote left
+    /// over from a shell-quoted header, or a bracket that would otherwise let
+    /// masking corrupt JSON or a function call.
+    ///
+    /// `&` and `#` are deliberately absent even though `?api_key=abc&limit=10`
+    /// then masks the whole `abc&limit=10` tail. Stopping at them would turn an
+    /// unquoted `password=hunter2#2024` into a partial mask that leaks the
+    /// suffix `2024`, and a partial mask is a leak — the over-masking this
+    /// causes instead loses no secret; it only masks a little more of the
+    /// visible text than strictly necessary. `<` and `>` stay out for the same
+    /// reason: including them would cut `<your-key-here>` down to a zero-length
+    /// value and stop it from being detected as a placeholder at all.
     private static let unquotedTerminators = CharacterSet(charactersIn: " \t\"',;)}]")
 
     public func detect(in text: String) -> [DetectedMatch] {
@@ -47,7 +57,7 @@ public struct CredentialContextDetector {
                 guard afterSeparator < nsLine.length else { continue }
 
                 let rest = nsLine.substring(from: afterSeparator)
-                let scheme = Self.skippingScheme(rest)
+                guard let scheme = Self.skippingScheme(rest) else { continue }
                 guard let valueRange = Self.valueRange(in: scheme.remainder) else { continue }
 
                 let range = NSRange(
@@ -91,14 +101,43 @@ public struct CredentialContextDetector {
         return NSRange(location: 0, length: length)
     }
 
-    /// Steps over `Bearer` / `Basic` / `Token`, reporting how far it moved.
-    static func skippingScheme(_ rest: String) -> (offset: Int, remainder: String) {
-        let lowered = rest.lowercased()
-        for word in schemeWords where lowered.hasPrefix(word.lowercased()) {
-            let length = (word as NSString).length
-            return (length, (rest as NSString).substring(from: length))
+    /// Steps over a scheme word and the whitespace after it, reporting how far
+    /// it moved. Returns nil when the scheme word introduces no value at all.
+    ///
+    /// The word is located in `rest`'s own coordinates rather than measured
+    /// from the constant. Taking the distance from the constant broke as soon
+    /// as the separator was a tab or a run of spaces, and it did not fail
+    /// safely: `Authorization: Bearer\tabc…` masked the word `Bearer` and left
+    /// the token in the clear.
+    static func skippingScheme(_ rest: String) -> (offset: Int, remainder: String)? {
+        let nsRest = rest as NSString
+        for word in schemeWords {
+            let found = nsRest.range(
+                of: word,
+                options: [.caseInsensitive, .anchored],
+                range: NSRange(location: 0, length: nsRest.length)
+            )
+            guard found.location != NSNotFound else { continue }
+
+            var cursor = found.length
+            while cursor < nsRest.length, Self.isSpaceOrTab(nsRest, at: cursor) {
+                cursor += 1
+            }
+
+            // `Bearer` with nothing after it introduces no value, and reporting
+            // the word itself as a secret is a false positive.
+            guard cursor < nsRest.length else { return nil }
+            // `Bearerfoo` is not a scheme word introducing a value; treat the
+            // whole thing as an opaque value rather than losing it.
+            guard cursor > found.length else { return (0, rest) }
+            return (cursor, nsRest.substring(from: cursor))
         }
         return (0, rest)
+    }
+
+    private static func isSpaceOrTab(_ nsString: NSString, at index: Int) -> Bool {
+        let character = nsString.character(at: index)
+        return character == 0x20 || character == 0x09
     }
 
     /// Values that cannot be a live credential.

@@ -211,9 +211,47 @@ struct CredentialContextDetectorTests {
         #expect(masked(text) == #"curl -H "X-Api-Key: [SECRET_1]" https://api.example.com/v1/orders"#)
     }
 
+    /// `合言葉は𩸽ひらけごま` includes a supplementary-plane character (a
+    /// surrogate pair in UTF-16), so its `Character` count and `utf16.count`
+    /// differ. A value made only of BMP characters would pass even if the
+    /// range arithmetic secretly used `String.Index` offsets.
     @Test("A value containing Japanese is masked whole")
     func japaneseValue() {
-        #expect(masked("password = 合言葉はひらけごま") == "password = [SECRET_1]")
+        #expect(masked("password = 合言葉は𩸽ひらけごま") == "password = [SECRET_1]")
+    }
+
+    /// The reported range is composed from four offsets; only a value on a
+    /// later line exercises the line's own contribution.
+    @Test("A claim on the second line is masked in place")
+    func claimOnLaterLine() {
+        #expect(masked("retries = 3\napi_key = abcdef123456") == "retries = 3\napi_key = [SECRET_1]")
+    }
+
+    @Test("CRLF line endings do not shift the range")
+    func crlfLineEndings() {
+        #expect(masked("retries = 3\r\napi_key = abcdef123456") == "retries = 3\r\napi_key = [SECRET_1]")
+    }
+
+    /// `skippingScheme` measured its skip distance from the constant's own
+    /// length, which happened to match only when the separator after the
+    /// scheme word was exactly one ASCII space. A tab or a second space left
+    /// the token itself unmasked or, worse, masked the scheme word instead.
+    @Test("A tab after the scheme word does not leak the token")
+    func schemeWordFollowedByTab() {
+        #expect(masked("Authorization: Bearer\tabc123def456") == "Authorization: Bearer\t[SECRET_1]")
+    }
+
+    @Test("Two spaces after the scheme word do not leak the token")
+    func schemeWordFollowedByTwoSpaces() {
+        #expect(masked("Authorization: Bearer  abc123def456") == "Authorization: Bearer  [SECRET_1]")
+    }
+
+    /// A scheme word with nothing after it introduces no value. Reporting the
+    /// word itself as the secret, which the old length-from-constant skip
+    /// did, is a false positive.
+    @Test("A scheme word with no token after it is not a claim")
+    func schemeWordAloneIsNotAClaim() {
+        #expect(detector.detect(in: "Authorization: Bearer").isEmpty)
     }
 
     @Test("Nothing is claimed here", arguments: [
