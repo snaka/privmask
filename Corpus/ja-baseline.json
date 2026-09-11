@@ -282,13 +282,16 @@
     {
       "id": "credential-false-positives",
       "note": "Text that reads like a credential and is not. Over-masking here destroys the report being shared.",
-      "text": "secretary: unassigned\ntoken_count: 1500\n入力トークン数: 3,200\nprimary_key = orders.id\nSTRIPE_PUBLISHABLE_KEY=pk_live_51H1234567890abcdefghijkl\nパスワードを再設定してください\n-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvQ9m\n-----END PUBLIC KEY-----",
+      "text": "secretary: unassigned\ntoken_count: 1500\n入力トークン数: 3,200\nprimary_key = orders.id\nauth: enabled\nsecretName: db-tls-cert\napi_key_count: 3\nSTRIPE_PUBLISHABLE_KEY=pk_live_51H1234567890abcdefghijkl\nパスワードを再設定してください\n-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvQ9m\n-----END PUBLIC KEY-----",
       "expected": [],
       "mustNotDetect": [
         "unassigned",
         "1500",
         "3,200",
         "orders.id",
+        "enabled",
+        "db-tls-cert",
+        "3",
         "pk_live_51H1234567890abcdefghijkl",
         "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvQ9m"
       ]

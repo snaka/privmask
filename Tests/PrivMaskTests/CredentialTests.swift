@@ -136,8 +136,9 @@ struct CredentialNameTests {
         "api_key", "apiKey", "API_KEY", "X-Api-Key", "apikey",
         "client_secret", "secretKey", "AWSSecretKey", "AWS_SECRET_ACCESS_KEY",
         "password", "PASSWORD", "spring.datasource.password", "passwd", "pwd",
-        "credential", "credentials", "auth", "Authorization",
+        "credential", "credentials", "authorization", "Authorization",
         "access_token", "refresh_token", "GITHUB_TOKEN",
+        "auth_token", "X-Auth-Token",
     ])
     func claims(_ identifier: String) {
         #expect(CredentialName.claimsCredential(identifier))
@@ -146,13 +147,38 @@ struct CredentialNameTests {
     /// `secretary` contains `secret`; `token_count` and `入力トークン数` are why
     /// a bare `token` is not a claim; `key` on its own opens a mapping in most
     /// YAML documents.
+    ///
+    /// The last group names something *about* a secret — where it lives, what
+    /// it is called, how many there are — and a bare `auth` names a switch far
+    /// more often than a secret.
     @Test("It does not", arguments: [
         "secretary", "token", "token_count", "key", "primary_key",
         "AWS_ACCESS_KEY_ID", "STRIPE_PUBLISHABLE_KEY",
         "keyboard", "monkey", "name", "retries",
+        "auth", "auth_provider", "secretName", "api_key_count",
+        "password_file", "authorization_url", "secret_path", "key_length",
+        "credentials_id",
     ])
     func doesNotClaim(_ identifier: String) {
         #expect(!CredentialName.claimsCredential(identifier))
+    }
+
+    /// The reference-tail rule is checked ahead of every claim, so it governs
+    /// the Authorization rule as well. Without that, `authorization_url:`
+    /// masked to the end of the line.
+    @Test("A reference tail also takes the name out of the Authorization rule")
+    func referenceTailBeatsTheAuthorizationRule() {
+        #expect(CredentialName.namesAuthorizationHeader("Authorization"))
+        #expect(CredentialName.namesAuthorizationHeader("Proxy-Authorization"))
+        #expect(!CredentialName.namesAuthorizationHeader("authorization_url"))
+    }
+
+    /// Only the last word decides, so a name that ends on the secret still
+    /// claims.
+    @Test("A reference word that is not the tail does not disqualify")
+    func referenceWordInTheMiddle() {
+        #expect(CredentialName.claimsCredential("secret_file_password"))
+        #expect(CredentialName.claimsCredential("file_secret"))
     }
 }
 
@@ -348,6 +374,12 @@ struct CredentialContextDetectorTests {
         "primary_key = orders.id",
         "パスワードを再設定してください",
         "Authorization:",
+        "auth: enabled",
+        "auth_provider: google",
+        "secretName: db-tls-cert",
+        "api_key_count: 3",
+        "password_file: /run/secrets/db_password",
+        "authorization_url: https://idp.example.com/oauth/authorize",
     ])
     func notAClaim(_ text: String) {
         #expect(detector.detect(in: text).isEmpty)
