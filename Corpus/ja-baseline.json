@@ -183,6 +183,10 @@
         {
           "kind": "credential",
           "text": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890"
+        },
+        {
+          "kind": "credential",
+          "text": "hunter2"
         }
       ],
       "mustNotDetect": []
@@ -260,6 +264,33 @@
       "mustNotDetect": [
         "4f2a1c9e8b3d",
         "v2.14.3"
+      ]
+    },
+    {
+      "id": "credential-shapes",
+      "note": "Shapes that arrive by paste: a curl command, a connection string, tokens from other services.",
+      "text": "curl -H \"X-Api-Key: abc123def456ghi\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk\" https://api.example.com/v1/orders\nDATABASE_URL=postgres://app:hunter2@db.internal:5432/orders\nSLACK_BOT_TOKEN=xoxb-123456789012-123456789012-abcdefghijklmnopqrstuvwx\nGOOGLE_API_KEY=AIzaSyB1234567890abcdefghijklmnopqrstuv",
+      "expected": [
+        { "kind": "credential", "text": "abc123def456ghi" },
+        { "kind": "credential", "text": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" },
+        { "kind": "credential", "text": "hunter2" },
+        { "kind": "credential", "text": "xoxb-123456789012-123456789012-abcdefghijklmnopqrstuvwx" },
+        { "kind": "credential", "text": "AIzaSyB1234567890abcdefghijklmnopqrstuv" }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "credential-false-positives",
+      "note": "Text that reads like a credential and is not. Over-masking here destroys the report being shared.",
+      "text": "secretary: unassigned\ntoken_count: 1500\n入力トークン数: 3,200\nprimary_key = orders.id\nSTRIPE_PUBLISHABLE_KEY=pk_live_51H1234567890abcdefghijkl\nパスワードを再設定してください\n-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvQ9m\n-----END PUBLIC KEY-----",
+      "expected": [],
+      "mustNotDetect": [
+        "unassigned",
+        "1500",
+        "3,200",
+        "orders.id",
+        "pk_live_51H1234567890abcdefghijkl",
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvQ9m"
       ]
     }
   ],

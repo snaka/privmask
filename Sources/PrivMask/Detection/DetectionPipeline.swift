@@ -37,6 +37,7 @@ public struct DetectionPipeline {
     private let myNumber = MyNumberDetector()
     private let dataDetector = AppleDataDetector()
     private let nameTagger = AppleNameTagger()
+    private let credentialContext = CredentialContextDetector()
     private let dictionary: DictionaryDetector
 
     public init(dictionaryTerms: [String] = []) {
@@ -56,6 +57,7 @@ public struct DetectionPipeline {
         matches += myNumber.detect(in: text)
         matches += dictionary.detect(in: text)
         matches += regex.detect(in: text)
+        matches += credentialContext.detect(in: text)
         matches += dataDetector.detect(in: text)
         matches += nameTagger.detect(in: text)
         matches += additional
