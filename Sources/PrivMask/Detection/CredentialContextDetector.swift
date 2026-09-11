@@ -24,6 +24,12 @@ public struct CredentialContextDetector {
     /// An authentication scheme word is not the secret.
     private static let schemeWords = ["Bearer", "Basic", "Token"]
 
+    /// A leading scheme word and the whitespace after it, in an
+    /// `Authorization` header. Recognising the shape rather than a list is what
+    /// reaches `Negotiate`, `Digest`, `Hawk` and `AWS4-HMAC-SHA256`: any one of
+    /// them missing from a list leaves the token after it in the clear.
+    private static let schemePrefix = Pattern(#"^[A-Za-z][A-Za-z0-9\-]*[ \t]+"#)
+
     /// Ends an unquoted value at the first character that is more likely to be
     /// a delimiter than part of the secret: whitespace, a closing quote left
     /// over from a shell-quoted header, or a bracket that would otherwise let
@@ -57,11 +63,26 @@ public struct CredentialContextDetector {
                 guard afterSeparator < nsLine.length else { continue }
 
                 let rest = nsLine.substring(from: afterSeparator)
-                guard let scheme = Self.skippingScheme(rest) else { continue }
-                guard let valueRange = Self.valueRange(in: scheme.remainder) else { continue }
+                let offset: Int
+                let valueRange: NSRange
+                if CredentialName.namesAuthorizationHeader(nsLine.substring(with: nameRange)) {
+                    guard
+                        let found = Self.authorizationValueRange(
+                            in: rest,
+                            openedBy: Self.quoteBefore(nameRange, in: nsLine)
+                        )
+                    else { continue }
+                    offset = 0
+                    valueRange = found
+                } else {
+                    guard let scheme = Self.skippingScheme(rest) else { continue }
+                    guard let found = Self.valueRange(in: scheme.remainder) else { continue }
+                    offset = scheme.offset
+                    valueRange = found
+                }
 
                 let range = NSRange(
-                    location: lineRange.location + afterSeparator + scheme.offset + valueRange.location,
+                    location: lineRange.location + afterSeparator + offset + valueRange.location,
                     length: valueRange.length
                 )
                 let value = nsText.substring(with: range)
@@ -85,20 +106,95 @@ public struct CredentialContextDetector {
         let nsRest = rest as NSString
         guard nsRest.length > 0 else { return nil }
 
-        let opening = nsRest.substring(to: 1)
-        if opening == "\"" || opening == "'" {
-            let closing = nsRest.range(
-                of: opening,
-                range: NSRange(location: 1, length: nsRest.length - 1)
-            )
-            guard closing.location != NSNotFound, closing.location > 1 else { return nil }
-            return NSRange(location: 1, length: closing.location - 1)
+        if Self.isQuote(nsRest.substring(to: 1)) {
+            return quotedValueRange(in: nsRest)
         }
 
         let terminator = nsRest.rangeOfCharacter(from: unquotedTerminators)
         let length = terminator.location == NSNotFound ? nsRest.length : terminator.location
         guard length > 0 else { return nil }
         return NSRange(location: 0, length: length)
+    }
+
+    /// The content between a value's own quotes, or nil when the quote never
+    /// closes or encloses nothing.
+    static func quotedValueRange(in nsRest: NSString) -> NSRange? {
+        let opening = nsRest.substring(to: 1)
+        let closing = nsRest.range(
+            of: opening,
+            range: NSRange(location: 1, length: nsRest.length - 1)
+        )
+        guard closing.location != NSNotFound, closing.location > 1 else { return nil }
+        return NSRange(location: 1, length: closing.location - 1)
+    }
+
+    /// The value of an `Authorization`-style header, in `rest`'s coordinates.
+    ///
+    /// This slot is unlike every other one: the whole header value is
+    /// credential material, and the only part that is not secret is the leading
+    /// scheme word. Ending the value at the first space — the ordinary rule —
+    /// reports the scheme word itself as the secret for every scheme outside
+    /// `schemeWords` and leaves the token beside it in the clear.
+    ///
+    /// - Parameter openingQuote: the quote immediately before the header name,
+    ///   when there is one. That quote — `curl -H "Authorization: …"` — is the
+    ///   only one that can be trusted to close the value. Stopping at any quote
+    ///   would cut `Digest username="bob", response=…` down to `username=`,
+    ///   leaving the response hash visible next to a placeholder that tells the
+    ///   reader the line is safe.
+    static func authorizationValueRange(in rest: String, openedBy openingQuote: String?) -> NSRange? {
+        let nsRest = rest as NSString
+        guard nsRest.length > 0 else { return nil }
+
+        // A value inside quotes of its own, as in `{"Authorization": "Bearer
+        // xyz"}`. Those quotes delimit it, and the scheme word sits within them.
+        if Self.isQuote(nsRest.substring(to: 1)) {
+            guard let quoted = quotedValueRange(in: nsRest),
+                let value = schemeSkippedRange(in: nsRest.substring(with: quoted))
+            else { return nil }
+            return NSRange(location: quoted.location + value.location, length: value.length)
+        }
+
+        var end = nsRest.length
+        if let quote = openingQuote {
+            let closing = nsRest.range(of: quote)
+            if closing.location != NSNotFound { end = closing.location }
+        }
+        while end > 0, Self.isSpaceOrTab(nsRest, at: end - 1) { end -= 1 }
+        guard end > 0 else { return nil }
+
+        return schemeSkippedRange(in: nsRest.substring(to: end))
+    }
+
+    /// What follows the scheme word, or the whole of `value` when no scheme
+    /// word introduces it. Nil when the value is nothing but a scheme word:
+    /// `Authorization: Bearer` names no secret, and reporting the word itself
+    /// is a false positive.
+    ///
+    /// A lone word that is not a known scheme is kept, because an opaque token
+    /// written with no scheme at all is still the credential.
+    static func schemeSkippedRange(in value: String) -> NSRange? {
+        let nsValue = value as NSString
+        guard nsValue.length > 0 else { return nil }
+        if let prefix = schemePrefix.matchRanges(in: value).first, prefix.length < nsValue.length {
+            return NSRange(location: prefix.length, length: nsValue.length - prefix.length)
+        }
+        if schemeWords.contains(where: { $0.caseInsensitiveCompare(value) == .orderedSame }) {
+            return nil
+        }
+        return NSRange(location: 0, length: nsValue.length)
+    }
+
+    /// The quote that opened the argument a header name sits in, when there is
+    /// one.
+    static func quoteBefore(_ nameRange: NSRange, in line: NSString) -> String? {
+        guard nameRange.location > 0 else { return nil }
+        let character = line.substring(with: NSRange(location: nameRange.location - 1, length: 1))
+        return isQuote(character) ? character : nil
+    }
+
+    private static func isQuote(_ character: String) -> Bool {
+        character == "\"" || character == "'"
     }
 
     /// Steps over a scheme word and the whitespace after it, reporting how far

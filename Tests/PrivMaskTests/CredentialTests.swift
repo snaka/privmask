@@ -205,6 +205,69 @@ struct CredentialContextDetectorTests {
         #expect(masked("Authorization: Bearer abc123def456") == "Authorization: Bearer [SECRET_1]")
     }
 
+    /// An unlisted scheme used to fall through to the ordinary unquoted rule,
+    /// which stops at the first space: the scheme word became the masked span
+    /// and the token stayed in the clear. `Negotiate` is everywhere in Active
+    /// Directory, and SigV4's `Signature=` is credential-equivalent.
+    @Test("Every scheme keeps its word and loses its token", arguments: [
+        (
+            "Authorization: Negotiate YIIGabcdef1234567890",
+            "Authorization: Negotiate [SECRET_1]"
+        ),
+        (
+            "Authorization: AWS4-HMAC-SHA256 Credential=AKIAEXAMPLE/20260911, Signature=abcdef123456",
+            "Authorization: AWS4-HMAC-SHA256 [SECRET_1]"
+        ),
+        (
+            "Authorization: Hawk id=\"dh37fgj\", mac=\"6R4rV5iE+NPoym\"",
+            "Authorization: Hawk [SECRET_1]"
+        ),
+        (
+            "Proxy-Authorization: Negotiate YIIGabcdef1234567890",
+            "Proxy-Authorization: Negotiate [SECRET_1]"
+        ),
+    ])
+    func unlistedSchemeLosesItsToken(_ input: String, _ expected: String) {
+        #expect(masked(input) == expected)
+    }
+
+    /// Terminating at any quote would leave `response=` beside a placeholder
+    /// that tells the reader the line is safe — a partial mask, which is worse
+    /// than either an obvious leak or an over-mask.
+    @Test("A Digest header is masked whole, its inner quotes included")
+    func digestHeaderIsMaskedWhole() {
+        let text = #"Authorization: Digest username="bob", response=abcdef123456"#
+        #expect(masked(text) == "Authorization: Digest [SECRET_1]")
+        #expect(!masked(text).contains("abcdef123456"))
+    }
+
+    /// The quote that opened the header is the one that closes its value, so
+    /// the rest of the shell command survives.
+    @Test("An Authorization header inside a shell command stops at the closing quote")
+    func authorizationInsideShellCommand() {
+        let text = #"curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.abcdefghijklmnop" https://api.example.com/v1/orders"#
+        #expect(
+            masked(text)
+                == #"curl -H "Authorization: Bearer [SECRET_1]" https://api.example.com/v1/orders"#
+        )
+    }
+
+    @Test("A quoted Authorization value keeps its quotes and its scheme word")
+    func quotedAuthorizationValue() {
+        #expect(
+            masked(#"{"Authorization": "Bearer xyz123abc"}"#)
+                == #"{"Authorization": "Bearer [SECRET_1]"}"#
+        )
+    }
+
+    /// A token written with no scheme at all is still the credential, so a
+    /// lone word is only dropped when it is a scheme word already known to be
+    /// one.
+    @Test("An Authorization value with no scheme word is the credential")
+    func authorizationWithoutScheme() {
+        #expect(masked("Authorization: abc123def456") == "Authorization: [SECRET_1]")
+    }
+
     @Test("A quoted header inside a shell command stops at the quote")
     func headerInsideShellCommand() {
         let text = #"curl -H "X-Api-Key: abc123def456" https://api.example.com/v1/orders"#

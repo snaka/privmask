@@ -30,6 +30,13 @@ enum CredentialName {
     /// documents, and `primary_key` names a column.
     private static let qualifiedTail = "token"
 
+    /// True when the identifier names an Authorization-style header, where the
+    /// entire value after the scheme word is credential material — unlike an
+    /// ordinary slot, where the value ends at the first delimiter.
+    static func namesAuthorizationHeader(_ identifier: String) -> Bool {
+        words(in: identifier).contains("authorization")
+    }
+
     static func claimsCredential(_ identifier: String) -> Bool {
         let parts = words(in: identifier)
         guard !parts.isEmpty else { return false }
