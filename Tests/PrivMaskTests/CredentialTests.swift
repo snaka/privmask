@@ -402,3 +402,34 @@ struct CredentialContextDetectorTests {
         #expect(confidence(of: text) == .low)
     }
 }
+
+/// The corpus cannot see this. `Evaluator` grounds a hit by range *overlap*, so
+/// a second finding covering the same token — longer, or offset by a character
+/// — still scores as full recall and is not reported as over-masking. The
+/// invariant that two detectors reaching one value produce one finding has to
+/// be asserted directly.
+@Suite("Two detectors reaching one value")
+struct MergeInvariantTests {
+    @Test("A Slack token found by both its prefix and its name is one finding")
+    func slackTokenIsOneFinding() throws {
+        let token = "xoxb-123456789012-123456789012-abcdefghijklmnopqrstuvwx"
+        let text = "SLACK_BOT_TOKEN=\(token)"
+        let tokenRange = (text as NSString).range(of: token)
+
+        let covering = DetectionPipeline().detect(in: text).filter {
+            $0.kind == .credential && NSIntersectionRange($0.range, tokenRange).length > 0
+        }
+        #expect(covering.count == 1)
+
+        let candidate = try #require(covering.first)
+        #expect(candidate.range == tokenRange)
+        #expect(candidate.text == token)
+        // `sources` is a sorted array rather than a set, so this asks what it
+        // holds rather than comparing it to a literal in some fixed order.
+        #expect(candidate.sources.contains(.credentialContext))
+        #expect(candidate.sources.contains(.regex))
+        // Independent agreement is the promotion, and the only visible sign
+        // that the two were merged rather than one of them being dropped.
+        #expect(candidate.confidence == .high)
+    }
+}
