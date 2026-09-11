@@ -9,11 +9,22 @@ public struct RegexDetectors {
 
     public func detect(in text: String) -> [DetectedMatch] {
         var matches: [DetectedMatch] = []
-        matches += Self.emails.matches(in: text, kind: .email)
         matches += Self.postalCodes.matches(in: text, kind: .postalCode)
         for pattern in Self.credentials {
             matches += pattern.matches(in: text, kind: .credential)
         }
+        let urlCredentials = Self.urlCredential.matches(in: text, kind: .credential, group: 1)
+        matches += urlCredentials
+
+        // The userinfo component of a URL is not an email address, even though it
+        // has the same shape. Drop any email match that overlaps with a URL credential.
+        let emailMatches = Self.emails.matches(in: text, kind: .email)
+        for email in emailMatches {
+            if !urlCredentials.contains(where: { rangesOverlap(email.range, $0.range) }) {
+                matches.append(email)
+            }
+        }
+
         return matches
     }
 
@@ -33,6 +44,14 @@ public struct RegexDetectors {
         // OpenAI-style secret keys
         Pattern(#"\bsk-(?:proj-)?[A-Za-z0-9_\-]{20,}\b"#),
     ]
+
+    /// Credentials embedded in a URL. Group 1 is the password.
+    ///
+    /// `@` and `/` are excluded from both halves so the match cannot run past
+    /// the authority component into a path that happens to contain a colon.
+    private static let urlCredential = Pattern(
+        #"[A-Za-z][A-Za-z0-9+.\-]*://[^\s:/?#@]+:([^\s/?#@]+)@"#
+    )
 }
 
 /// A compiled regular expression that yields `DetectedMatch` values.
@@ -63,5 +82,31 @@ struct Pattern {
         let nsText = text as NSString
         return regex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
             .map(\.range)
+    }
+
+    /// Matches reported at one capture group rather than the whole match.
+    ///
+    /// The URL-credential pattern needs this: the match has to span
+    /// `scheme://user:pass@` to know what it is looking at, but only the
+    /// password is the secret.
+    func matches(in text: String, kind: SensitiveKind, group: Int) -> [DetectedMatch] {
+        let nsText = text as NSString
+        return results(in: text).compactMap { result in
+            let range = result.range(at: group)
+            guard range.location != NSNotFound, range.length > 0 else { return nil }
+            return DetectedMatch(
+                kind: kind,
+                source: .regex,
+                range: range,
+                text: nsText.substring(with: range)
+            )
+        }
+    }
+
+    /// Raw results, for a caller that needs match positions rather than a
+    /// finished `DetectedMatch`.
+    func results(in text: String) -> [NSTextCheckingResult] {
+        let nsText = text as NSString
+        return regex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
     }
 }
