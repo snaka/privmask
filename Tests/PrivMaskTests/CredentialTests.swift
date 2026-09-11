@@ -97,4 +97,22 @@ struct KnownPrefixTests {
     func publicCounterparts(_ value: String) {
         #expect(!findsWholeValue(value, in: "value: \(value)"))
     }
+
+    /// A truncated block must not reach forward to a later key's END, which
+    /// would mask everything in between.
+    @Test("A block with no END of its own does not swallow the text up to the next key")
+    func danglingBlockDoesNotBridge() {
+        let text = """
+            -----BEGIN PRIVATE KEY-----
+            TRUNCATEDMATERIAL
+            この行は絶対にマスクされてはいけない
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7
+            -----END RSA PRIVATE KEY-----
+            """
+        let found = detectors.detect(in: text).filter { $0.kind == .credential }
+        #expect(found.count == 1)
+        #expect(found.first?.text.hasPrefix("-----BEGIN RSA PRIVATE KEY-----") == true)
+        #expect(found.allSatisfy { !$0.text.contains("この行は") })
+    }
 }

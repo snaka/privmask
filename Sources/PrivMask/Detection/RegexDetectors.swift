@@ -60,9 +60,11 @@ public struct RegexDetectors {
         Pattern(#"\bSG\.[A-Za-z0-9_\-]{16,}\.[A-Za-z0-9_\-]{16,}\b"#),
         // JWT: header.payload.signature, both halves base64url-encoded JSON
         Pattern(#"\beyJ[A-Za-z0-9_\-]{8,}\.eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\b"#),
-        // A private key block, newlines included. `PUBLIC KEY` is not matched.
+        // A private key block, newlines included. A block with no END of its own
+        // must not reach forward to a later key's END and mask the text in between.
+        // `PUBLIC KEY` is not matched.
         Pattern(
-            #"-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----[\s\S]*?-----END (?:[A-Z]+ )?PRIVATE KEY-----"#
+            #"-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----(?:(?!-----BEGIN )[\s\S])*?-----END (?:[A-Z]+ )?PRIVATE KEY-----"#
         ),
     ]
 
