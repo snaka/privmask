@@ -175,8 +175,13 @@ straight away, and the model's findings are folded in when they arrive.
 - If a chunk fails, the names in the other chunks are still found and the chunk
   that failed is named in a warning. A warning means that part of the text was
   not examined — not that nothing was.
-- The model varies between runs. It finds every name in the test corpus most
-  times, not every time.
+- A name that competes with others on the same line is missed, run after run.
+  In the test corpus a name sharing a line with a company name, a phone number
+  and an email is not found at all — not occasionally, every time. Smaller
+  chunks do find it, and make the model mask commit hashes and version numbers
+  instead ([#1](https://github.com/snaka/privmask/issues/1)).
+- Separately, the model varies between runs. A name it finds in one run can be
+  missed in the next.
 - A credential with neither a recognisable name nor a published prefix is not
   found — scoring values by randomness was rejected because that would also
   flag the commit hash and request ID this README's own example keeps intact.
