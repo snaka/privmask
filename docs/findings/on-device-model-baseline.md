@@ -410,3 +410,80 @@ Truncation caused the failure and truncation is what the report denies.
 - **Isolate failures per chunk.** One runaway must not lose the names the other
   chunks found, and a chunk that failed has to be reported as unexamined rather
   than silently dropped.
+
+## Chunk size: what it trades, and why the default stays
+
+- Measured: 2026-09-13
+- Harness: `PRIVMASK_CHUNK_CHARS=<n> swift run FoundationModelProbe`, three runs
+  per size
+
+[The batching change](#batching-what-a-second-round-of-measurement-added) left
+one number unsettled. `defaultCharacterLimit = 1500` was chosen to keep a single
+call inside the context window; once the cap stopped being a ceiling on
+coverage, what it trades is per-call overhead against
+[the recall gap for a name that comes after others](#the-recall-gap-that-is-left-a-name-that-comes-after-others),
+which argues for smaller chunks. [#1](https://github.com/snaka/privmask/issues/1)
+proposed exactly that as the mitigation.
+
+It was measured. **It works, and the way it works is unacceptable.**
+
+| Chunk | personalName | Over-masking | Unexpected | Latency |
+|---:|---|---:|---:|---:|
+| 1500 | 10/12, 10/12, 10/12 | 1 | 2 | ~26s |
+| 800 | 10/12, 9/12, 11/12 | 1 | 2 | ~22s |
+| 400 | 10/12, 10/12, 10/12 | 1 | 2 | ~25s |
+| 200 | 10/12, 10/12, 10/12 | 1, **2**, 1 | 2–3 | ~22s |
+| 100 | 11/12, 10/12, 10/12 | 1, **2**, 1 | 2–4 | ~41s |
+| 60 | **12/12, 12/12, 12/12** | **3, 4, 4** | 5–7 | ~39s |
+| 40 | 12/12, 11/12, 12/12 | **2, 3, 3** | 3–5 | 21–48s |
+
+### The first three rows are the same measurement
+
+No corpus sample is longer than 393 characters, so at 1500, 800 and 400 every
+sample is a single chunk and the computation is identical. The spread across
+those nine runs — 9/12 to 11/12 — is the model's own variance, and it is the
+scale against which any real effect has to be judged.
+
+### At 60 the missing name is found, every run
+
+`鈴木一郎` is the name [#1](https://github.com/snaka/privmask/issues/1) is about.
+It sits on a line that also carries a company name, a phone number and an email,
+and the competition is *within that line* — 62 characters of it. Chunking above
+that does nothing, which is why 200 and 100 do not move it: they never split the
+line. At 60 the line splits, and the name is found in all three runs.
+
+### And the model starts masking the things the README promises to leave alone
+
+| Chunk | What it called a personal name |
+|---:|---|
+| 1500 | `田中`, decomposed out of `田中式アルゴリズム` — the single documented case |
+| 60 | `田中`, and also `commit`, `v2.14.3`, `4f2a1c9e8b3d` |
+
+The README's opening example is a deploy line kept intact:
+
+> `デプロイ: commit 4f2a1c9e8b3d / v2.14.3 / req 550e8400-e29b-41d4` — the commit
+> hash, version and request ID are left alone, because masking those would have
+> ruined the report.
+
+At 60 characters a chunk, that line becomes a chunk of its own with no names in
+it, and [what happens then was already measured](#reducing-the-models-false-positives-where-it-plateaued):
+asked to find names in text that has none, the model offers the nearest
+available word. Small chunks manufacture exactly that situation, over and over.
+Three to four over-masking violations against a documented baseline of one is
+not variance.
+
+At 100 there is a second cost, the one #1 predicted: `高橋 由美`, found at every
+larger size, is missed in two runs of three. A name split from the sentence that
+identifies it as a name gets harder to spot, not easier.
+
+### Conclusion
+
+**The default stays at 1500.** Chunk size buys recall by destroying precision,
+and the precision it destroys is the property the tool is built around — that
+the surrounding document survives. A name left in place is visible in the
+confirmation list; a masked commit hash is a report nobody can read.
+
+This does not close #1. It rules out the mitigation #1 proposed, and names the
+reason: the competition is inside a line, so nothing that splits *between* lines
+can reach it, and splitting *within* a line costs more than it returns. A fix
+would have to make the model better at a crowded line, not give it less to read.
