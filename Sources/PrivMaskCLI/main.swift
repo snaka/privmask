@@ -53,12 +53,20 @@ var chunkFailures: [BatchedNameRun.ChunkFailure] = []
 
 if options.useModel {
     if #available(macOS 26.0, *), FoundationModelDetector.isAvailable {
+        // The model reads a chunk at a time and each chunk costs seconds, so a
+        // document with much Japanese in it is a long silence. Nothing is drawn
+        // unless stderr is a terminal.
+        let progress = ProgressIndicator.isSupported ? ProgressIndicator() : nil
         do {
-            let outcome = try await FoundationModelDetector().detect(in: input)
+            let outcome = try await FoundationModelDetector().detect(in: input) { chunk, total in
+                if chunk == 1 { await progress?.start(total: total) } else { await progress?.advance(to: chunk) }
+            }
+            await progress?.stop()
             candidates = pipeline.detect(in: input, additional: outcome.matches)
             chunkFailures = outcome.failures
             modelStatus = .used
         } catch {
+            await progress?.stop()
             // Fail open: the model is an addition, and losing it must not lose
             // everything the deterministic layers already found. The degradation
             // is reported rather than hidden.

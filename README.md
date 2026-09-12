@@ -167,7 +167,8 @@ straight away, and the model's findings are folded in when they arrive.
   on-device model runs them one at a time whatever you do, so a document with a
   lot of Japanese in it takes proportionally longer. Everything is examined; the
   cost is time. `--no-model` skips the whole layer when you would rather have
-  the speed.
+  the speed. In a terminal, a line on stderr says which chunk it is reading; in
+  a pipe, nothing is drawn.
 - If a chunk fails, the names in the other chunks are still found and the chunk
   that failed is named in a warning. A warning means that part of the text was
   not examined — not that nothing was.

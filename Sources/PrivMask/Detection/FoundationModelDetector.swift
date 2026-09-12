@@ -127,7 +127,12 @@ public struct FoundationModelDetector {
         }
     }
 
-    public func detect(in text: String) async throws -> Outcome {
+    /// - Parameter onChunkStart: see `BatchedNameRun.run`. The default does
+    ///   nothing, so a caller that has nowhere to draw need not care.
+    public func detect(
+        in text: String,
+        onChunkStart: (Int, Int) async -> Void = { _, _ in }
+    ) async throws -> Outcome {
         guard Self.isAvailable else {
             throw Unavailability.modelUnavailable(Self.availabilityDescription)
         }
@@ -148,7 +153,11 @@ public struct FoundationModelDetector {
         let started = Date()
         let debug = ProcessInfo.processInfo.environment["PRIVMASK_DEBUG"] == "1"
 
-        let result = await BatchedNameRun.run(text: text, batches: batches) { batchText in
+        let result = await BatchedNameRun.run(
+            text: text,
+            batches: batches,
+            onChunkStart: onChunkStart
+        ) { batchText in
             // A fresh session per chunk. Carrying one session across chunks
             // would accumulate the transcript in the context window, which is
             // the thing the chunking exists to stay inside.

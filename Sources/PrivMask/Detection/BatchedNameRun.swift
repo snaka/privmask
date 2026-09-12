@@ -43,9 +43,14 @@ public enum BatchedNameRun {
     /// `respond` returns spans the caller already considers name-shaped; this
     /// only decides whether they are really there and where. Every chunk is
     /// attempted: one failure costs that chunk, not the run.
+    /// - Parameter onChunkStart: called with the chunk about to be read,
+    ///   counted from one, and how many there are. The calls run one after
+    ///   another and each takes seconds, so a caller with a terminal has
+    ///   something to say for itself while it waits.
     public static func run(
         text: String,
         batches: [JapaneseText.Batch],
+        onChunkStart: (Int, Int) async -> Void = { _, _ in },
         respond: (String) async throws -> [String]
     ) async -> Result {
         let original = text as NSString
@@ -54,6 +59,7 @@ public enum BatchedNameRun {
         var failures: [ChunkFailure] = []
 
         for (offset, batch) in batches.enumerated() {
+            await onChunkStart(offset + 1, batches.count)
             let spans: [String]
             do {
                 spans = try await respond(batch.text)
