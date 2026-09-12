@@ -413,6 +413,10 @@ struct CredentialContextDetectorTests {
         "primary_key = orders.id",
         "パスワードを再設定してください",
         "Authorization:",
+        // Every listed scheme word, alone, introduces no value.
+        "Authorization: Negotiate",
+        "Authorization: NTLM",
+        "Authorization: Digest",
         "auth: enabled",
         "auth_provider: google",
         "secretName: db-tls-cert",

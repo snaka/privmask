@@ -299,9 +299,10 @@ public struct CredentialContextDetector {
     /// Steps over a scheme word for an ordinary slot, reporting how far it
     /// moved. Nil when the scheme word introduces no value at all.
     ///
-    /// Shares `schemeSkippedRange` rather than repeating the lookup. Two copies
-    /// of it is what let the quote search in one path stay escape-unaware while
-    /// the other counted backslashes.
+    /// Shares `schemeSkippedRange` rather than repeating the lookup, so
+    /// `schemeWords` stays the one answer to which words are schemes. A second
+    /// copy would let this path and the Authorization path drift apart on that
+    /// question with nothing to notice.
     static func skippingScheme(_ rest: String) -> (offset: Int, remainder: String)? {
         guard let value = schemeSkippedRange(in: rest) else { return nil }
         return (value.location, (rest as NSString).substring(from: value.location))
