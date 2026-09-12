@@ -66,6 +66,23 @@ jobs:
           fi
           echo "FoundationModels is present in the SDK"
 
+      # NSDataDetector finds nothing in a Japanese address unless the process
+      # has Japanese among its preferred languages or Japan as its region — see
+      # #13. The runner is US English with a US region, so every address in the
+      # corpus goes undetected and the characterisation tests fail.
+      #
+      # This makes CI match the environment the tests describe. It does not fix
+      # or hide #13: the shipped binary behaves exactly as before, and a user
+      # whose Mac is neither still gets no address masking.
+      - name: Run in a Japanese locale, so the address tests measure what they claim
+        run: |
+          set -euo pipefail
+          defaults write NSGlobalDomain AppleLanguages -array "ja-JP" "en-US"
+          defaults write NSGlobalDomain AppleLocale -string "ja_JP"
+          killall cfprefsd || true
+          echo "AppleLanguages: $(defaults read NSGlobalDomain AppleLanguages | tr -d '\n')"
+          echo "AppleLocale:    $(defaults read NSGlobalDomain AppleLocale)"
+
       - name: Test
         run: swift test
 
