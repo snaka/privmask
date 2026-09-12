@@ -230,9 +230,10 @@ public struct CredentialContextDetector {
         }
 
         var end = nsRest.length
-        if let quote = openingQuote {
-            let closing = nsRest.range(of: quote)
-            if closing.location != NSNotFound { end = closing.location }
+        if let quote = openingQuote,
+            let closing = Self.unescapedIndex(of: quote, in: nsRest, from: 0)
+        {
+            end = closing
         }
         while end > 0, Self.isSpaceOrTab(nsRest, at: end - 1) { end -= 1 }
         guard end > 0 else { return nil }

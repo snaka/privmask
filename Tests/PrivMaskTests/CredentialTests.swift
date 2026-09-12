@@ -328,6 +328,19 @@ struct CredentialContextDetectorTests {
         )
     }
 
+    /// The header's own closing quote is the value's terminator, and finding it
+    /// means counting backslashes the way `quotedValueRange` does. A plain
+    /// search stopped at the first `\"` inside a Hawk header, leaving the `mac`
+    /// — which is the credential — beside the placeholder.
+    @Test("An escaped quote inside a shell-quoted header does not end the value")
+    func escapedQuoteInsideShellQuotedHeader() {
+        let text = #"curl -H "Authorization: Hawk id=\"dh37fgj\", mac=\"6R4rV5iE7NPoym\"""#
+        let output = masked(text)
+        #expect(output == #"curl -H "Authorization: Hawk [SECRET_1]""#)
+        #expect(!output.contains("6R4rV5iE7NPoym"))
+        #expect(!output.contains("dh37fgj"))
+    }
+
     @Test("A quoted Authorization value keeps its quotes and its scheme word")
     func quotedAuthorizationValue() {
         #expect(
