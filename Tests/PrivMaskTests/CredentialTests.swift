@@ -277,9 +277,34 @@ struct CredentialContextDetectorTests {
             "Proxy-Authorization: Negotiate YIIGabcdef1234567890",
             "Proxy-Authorization: Negotiate [SECRET_1]"
         ),
+        ("Authorization: NTLM TlRMTVNTUAABAAAA", "Authorization: NTLM [SECRET_1]"),
+        ("Authorization: ApiKey abcdef123456", "Authorization: ApiKey [SECRET_1]"),
     ])
     func unlistedSchemeLosesItsToken(_ input: String, _ expected: String) {
         #expect(masked(input) == expected)
+    }
+
+    /// The shape rule that used to recognise a scheme word — any leading word
+    /// followed by whitespace — read the token itself as the scheme whenever
+    /// the value carried a trailing anything. The token stayed in the clear
+    /// beside a placeholder, which is the failure the Authorization rule exists
+    /// to prevent.
+    @Test("A value that opens with no scheme word is masked from its first character", arguments: [
+        ("Authorization: abc123def456 # honban", "Authorization: [SECRET_1]"),
+        ("Authorization: a1b2c3d4e5f6 (expires 2026-12)", "Authorization: [SECRET_1]"),
+        ("Authorization: 550e8400-e29b-41d4-a716-446655440000 prod", "Authorization: [SECRET_1]"),
+    ])
+    func schemelessValueIsMaskedWhole(_ input: String, _ expected: String) {
+        #expect(masked(input) == expected)
+        #expect(!masked(input).contains("abc123def456"))
+    }
+
+    /// An unlisted scheme costs a masked scheme word rather than a leaked
+    /// token. That is the direction a list fails in, and the reason the shape
+    /// rule was given up.
+    @Test("An unlisted scheme is over-masked, not leaked")
+    func unlistedSchemeIsOverMasked() {
+        #expect(masked("Authorization: Concealed abcdef123456") == "Authorization: [SECRET_1]")
     }
 
     /// Terminating at any quote would leave `response=` beside a placeholder

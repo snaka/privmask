@@ -21,14 +21,22 @@ public struct CredentialContextDetector {
     /// quoted.
     private static let assignment = Pattern(#"([A-Za-z][A-Za-z0-9_.\-]*)["']?[ \t]*[:=][ \t]*"#)
 
-    /// An authentication scheme word is not the secret.
-    private static let schemeWords = ["Bearer", "Basic", "Token"]
-
-    /// A leading scheme word and the whitespace after it, in an
-    /// `Authorization` header. Recognising the shape rather than a list is what
-    /// reaches `Negotiate`, `Digest`, `Hawk` and `AWS4-HMAC-SHA256`: any one of
-    /// them missing from a list leaves the token after it in the clear.
-    private static let schemePrefix = Pattern(#"^[A-Za-z][A-Za-z0-9\-]*[ \t]+"#)
+    /// The authentication schemes whose leading word is not the secret.
+    ///
+    /// A list, and deliberately not a shape. Treating any leading word followed
+    /// by whitespace as the scheme reached every scheme without naming them,
+    /// but it read the token itself as a scheme whenever a value carried a
+    /// trailing anything: `Authorization: abc123def456 # honban` masked the
+    /// comment and left the token beside the placeholder.
+    ///
+    /// The two rules fail in opposite directions, and only one of those
+    /// directions is acceptable here. A word missing from this list costs a
+    /// masked scheme word — visible, and no secret lost. A shape rule costs the
+    /// credential.
+    private static let schemeWords = [
+        "Bearer", "Basic", "Token", "Negotiate", "Digest", "Hawk", "NTLM",
+        "ApiKey", "AWS4-HMAC-SHA256",
+    ]
 
     /// Ends an unquoted value at the first character that is more likely to be
     /// a delimiter than part of the secret: whitespace, a closing quote left
@@ -149,18 +157,30 @@ public struct CredentialContextDetector {
     /// the JSON around it — the thing `jsonStaysParseable` exists to prevent.
     static func quotedValueRange(in nsRest: NSString) -> NSRange? {
         let opening = nsRest.substring(to: 1)
-        var searchFrom = 1
-        while searchFrom < nsRest.length {
-            let closing = nsRest.range(
-                of: opening,
-                range: NSRange(location: searchFrom, length: nsRest.length - searchFrom)
+        guard let closing = unescapedIndex(of: opening, in: nsRest, from: 1), closing > 1 else {
+            return nil
+        }
+        return NSRange(location: 1, length: closing - 1)
+    }
+
+    /// Where `character` first occurs without the text escaping it, or nil when
+    /// it never does.
+    ///
+    /// Both quote searches go through this. They did not, and the one that did
+    /// not count backslashes ended a Hawk header at its first `\"`, leaving the
+    /// `mac` — which is the credential — beside the placeholder.
+    static func unescapedIndex(of character: String, in nsString: NSString, from start: Int) -> Int? {
+        var searchFrom = start
+        while searchFrom < nsString.length {
+            let found = nsString.range(
+                of: character,
+                range: NSRange(location: searchFrom, length: nsString.length - searchFrom)
             )
-            guard closing.location != NSNotFound else { return nil }
-            if backslashesBefore(closing.location, in: nsRest).isMultiple(of: 2) {
-                guard closing.location > 1 else { return nil }
-                return NSRange(location: 1, length: closing.location - 1)
+            guard found.location != NSNotFound else { return nil }
+            if backslashesBefore(found.location, in: nsString).isMultiple(of: 2) {
+                return found.location
             }
-            searchFrom = closing.location + closing.length
+            searchFrom = found.location + found.length
         }
         return nil
     }
@@ -220,23 +240,47 @@ public struct CredentialContextDetector {
         return schemeSkippedRange(in: nsRest.substring(to: end))
     }
 
-    /// What follows the scheme word, or the whole of `value` when no scheme
-    /// word introduces it. Nil when the value is nothing but a scheme word:
+    /// What follows the scheme word, or the whole of `value` when no scheme word
+    /// introduces it. Nil when the value is nothing but a scheme word:
     /// `Authorization: Bearer` names no secret, and reporting the word itself
     /// is a false positive.
     ///
-    /// A lone word that is not a known scheme is kept, because an opaque token
-    /// written with no scheme at all is still the credential.
+    /// A value that does not open with a listed scheme is taken whole, from its
+    /// first character. Anything else exposes it — a leading word that is not
+    /// in the list is the credential, not a scheme.
+    ///
+    /// The word is located in `value`'s own coordinates rather than measured
+    /// from the constant. Taking the distance from the constant broke as soon
+    /// as the separator was a tab or a run of spaces, and it did not fail
+    /// safely: `Authorization: Bearer\tabc…` masked the word `Bearer` and left
+    /// the token in the clear.
     static func schemeSkippedRange(in value: String) -> NSRange? {
         let nsValue = value as NSString
         guard nsValue.length > 0 else { return nil }
-        if let prefix = schemePrefix.matchRanges(in: value).first, prefix.length < nsValue.length {
-            return NSRange(location: prefix.length, length: nsValue.length - prefix.length)
+        let whole = NSRange(location: 0, length: nsValue.length)
+
+        for word in schemeWords {
+            let found = nsValue.range(
+                of: word,
+                options: [.caseInsensitive, .anchored],
+                range: whole
+            )
+            guard found.location != NSNotFound else { continue }
+
+            var cursor = found.length
+            while cursor < nsValue.length, Self.isSpaceOrTab(nsValue, at: cursor) {
+                cursor += 1
+            }
+
+            // `Bearer` with nothing after it introduces no value, and reporting
+            // the word itself as a secret is a false positive.
+            guard cursor < nsValue.length else { return nil }
+            // `Bearerfoo` is not a scheme word introducing a value; treat the
+            // whole thing as an opaque value rather than losing it.
+            guard cursor > found.length else { break }
+            return NSRange(location: cursor, length: nsValue.length - cursor)
         }
-        if schemeWords.contains(where: { $0.caseInsensitiveCompare(value) == .orderedSame }) {
-            return nil
-        }
-        return NSRange(location: 0, length: nsValue.length)
+        return whole
     }
 
     /// The quote that opened the argument a header name sits in, when there is
@@ -251,38 +295,15 @@ public struct CredentialContextDetector {
         character == "\"" || character == "'"
     }
 
-    /// Steps over a scheme word and the whitespace after it, reporting how far
-    /// it moved. Returns nil when the scheme word introduces no value at all.
+    /// Steps over a scheme word for an ordinary slot, reporting how far it
+    /// moved. Nil when the scheme word introduces no value at all.
     ///
-    /// The word is located in `rest`'s own coordinates rather than measured
-    /// from the constant. Taking the distance from the constant broke as soon
-    /// as the separator was a tab or a run of spaces, and it did not fail
-    /// safely: `Authorization: Bearer\tabc…` masked the word `Bearer` and left
-    /// the token in the clear.
+    /// Shares `schemeSkippedRange` rather than repeating the lookup. Two copies
+    /// of it is what let the quote search in one path stay escape-unaware while
+    /// the other counted backslashes.
     static func skippingScheme(_ rest: String) -> (offset: Int, remainder: String)? {
-        let nsRest = rest as NSString
-        for word in schemeWords {
-            let found = nsRest.range(
-                of: word,
-                options: [.caseInsensitive, .anchored],
-                range: NSRange(location: 0, length: nsRest.length)
-            )
-            guard found.location != NSNotFound else { continue }
-
-            var cursor = found.length
-            while cursor < nsRest.length, Self.isSpaceOrTab(nsRest, at: cursor) {
-                cursor += 1
-            }
-
-            // `Bearer` with nothing after it introduces no value, and reporting
-            // the word itself as a secret is a false positive.
-            guard cursor < nsRest.length else { return nil }
-            // `Bearerfoo` is not a scheme word introducing a value; treat the
-            // whole thing as an opaque value rather than losing it.
-            guard cursor > found.length else { return (0, rest) }
-            return (cursor, nsRest.substring(from: cursor))
-        }
-        return (0, rest)
+        guard let value = schemeSkippedRange(in: rest) else { return nil }
+        return (value.location, (rest as NSString).substring(from: value.location))
     }
 
     private static func isSpaceOrTab(_ nsString: NSString, at index: Int) -> Bool {
