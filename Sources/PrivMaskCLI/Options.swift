@@ -25,6 +25,11 @@ struct Options {
         see the confidence of each finding. Nothing is sent anywhere: all
         detection runs locally.
 
+        Anything privmask did not examine is named on stderr, and in the
+        "warnings" array under --json. That array is empty only when every
+        layer ran over the whole input, so it is what to check before treating
+        the output as safe to pass on.
+
         OPTIONS
           --json               Report findings as JSON instead of masked text.
           --dictionary PATH    Term list to use.
@@ -33,10 +38,13 @@ struct Options {
           --no-model           Skip the on-device language model layer, which is
                                used by default wherever it is available.
                                Japanese personal names are found only by that
-                               layer, so this turns their detection off. The
-                               layer itself needs macOS 26 with Apple
-                               Intelligence enabled; without it, names are not
-                               detected either way and privmask says so.
+                               layer, so this turns their detection off, and it
+                               is the way to trade them for speed: the layer
+                               reads the Japanese in chunks, one call after
+                               another, so a long document takes proportionally
+                               longer. The layer itself needs macOS 26 with
+                               Apple Intelligence enabled; without it, names are
+                               not detected either way and privmask says so.
           --version            Print the version.
           -h, --help           Print this message.
         """

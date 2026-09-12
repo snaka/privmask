@@ -1,4 +1,5 @@
 import Foundation
+import PrivMask
 
 enum PrivMaskVersion {
     static let current = "0.2.0"
@@ -22,8 +23,31 @@ struct Report: Encodable {
 
     let masked: String
     let findings: [Finding]
-    let model: String
-    let modelInputTruncated: Bool
+    let model: ModelStatus
+    /// Chunks of the input the model layer never examined. Empty is the normal
+    /// case: the layer sends as many calls as the input takes, so a chunk is
+    /// missing only because its call failed.
+    let chunkFailures: [BatchedNameRun.ChunkFailure]
+
+    var warnings: [String] {
+        Degradation.warnings(model: model, chunkFailures: chunkFailures)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case masked, findings, model, modelDetail, warnings
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(masked, forKey: .masked)
+        try container.encode(findings, forKey: .findings)
+        try container.encode(model.token, forKey: .model)
+        // Written even when nil. A key that comes and goes makes a caller test
+        // for its presence before its value, which is one more thing to get
+        // wrong than reading null.
+        try container.encode(model.detail, forKey: .modelDetail)
+        try container.encode(warnings, forKey: .warnings)
+    }
 }
 
 enum ModelStatus {
@@ -32,12 +56,23 @@ enum ModelStatus {
     case unavailable(String)
     case failed(String)
 
-    var description: String {
+    /// The state, as a token from a closed set: `used`, `disabled`,
+    /// `unavailable`, `failed`. A caller switches on this; the reason it was in
+    /// that state is `detail`, and is prose.
+    var token: String {
         switch self {
         case .used: return "used"
         case .disabled: return "disabled"
-        case .unavailable(let reason): return "unavailable: \(reason)"
-        case .failed(let reason): return "failed: \(reason)"
+        case .unavailable: return "unavailable"
+        case .failed: return "failed"
+        }
+    }
+
+    /// Why, where there is a why. Never parsed — shown.
+    var detail: String? {
+        switch self {
+        case .used, .disabled: return nil
+        case .unavailable(let reason), .failed(let reason): return reason
         }
     }
 
@@ -53,5 +88,30 @@ enum ModelStatus {
         case .failed(let reason):
             return "language model failed (\(reason)); Japanese personal names were not looked for"
         }
+    }
+}
+
+/// Every way in which a run examined less than the whole input.
+///
+/// The contract a caller is told to rely on: **this is empty if and only if
+/// every layer ran over the whole input.** A caller deciding whether the masked
+/// text can be passed on has one thing to check, and a layer added later that
+/// can degrade adds an entry here rather than a field nobody knows to look at.
+///
+/// It lives apart from `Report` because the plain-text mode needs the same list
+/// for stderr without paying to build the findings it will not print — one
+/// source of wording, two callers.
+enum Degradation {
+    static func warnings(
+        model: ModelStatus,
+        chunkFailures: [BatchedNameRun.ChunkFailure]
+    ) -> [String] {
+        var warnings: [String] = []
+        if let warning = model.warning { warnings.append(warning) }
+        warnings += chunkFailures.map { failure in
+            "chunk \(failure.index) of \(failure.total) (\(failure.characters) characters) "
+                + "was not examined for names: \(failure.reason)"
+        }
+        return warnings
     }
 }

@@ -49,8 +49,8 @@ func runProbe() async throws {
             }
             let id = sample.id.padding(toLength: 26, withPad: " ", startingAt: 0)
             let timing = String(format: "%6.2fs", outcome.duration)
-            let truncated = outcome.truncated ? "  TRUNCATED" : ""
-            print("  \(id) \(sample.text.count) chars  \(outcome.linesExamined) ja-lines  \(timing)  \(outcome.matches.count) matches\(truncated)")
+            let failed = outcome.failures.isEmpty ? "" : "  \(outcome.failures.count)/\(outcome.chunks) CHUNKS FAILED"
+            print("  \(id) \(sample.text.count) chars  \(outcome.linesExamined) ja-lines  \(outcome.chunks) chunks  \(timing)  \(outcome.matches.count) matches\(failed)")
         } catch {
             let kept = detections[sample.id]?.count ?? 0
             print("  \(sample.id.padding(toLength: 26, withPad: " ", startingAt: 0)) model failed, keeping \(kept) deterministic matches — \(error)")

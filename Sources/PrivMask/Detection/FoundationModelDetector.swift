@@ -40,25 +40,30 @@ public struct FoundationModelDetector {
         /// counted: a rising number means the prompt is inviting paraphrase.
         public let ungroundedTexts: [String]
         public let duration: TimeInterval
-        /// True when the input held more Japanese than the cap allowed, so part
-        /// of it was never examined. The UI must say so: a silent miss is the
-        /// failure this tool exists to prevent.
-        public let truncated: Bool
-        /// Number of Japanese-bearing lines actually sent to the model.
+        /// How many calls the input took.
+        public let chunks: Int
+        /// Chunks that were never examined. Each one is text the caller was not
+        /// told about by any other means, so it has to be reported: a silent
+        /// miss is the failure this tool exists to prevent.
+        public let failures: [BatchedNameRun.ChunkFailure]
+        /// Number of Japanese-bearing lines sent to the model.
         public let linesExamined: Int
 
         public static func empty(duration: TimeInterval = 0) -> Outcome {
-            Outcome(matches: [], ungroundedTexts: [], duration: duration, truncated: false, linesExamined: 0)
+            Outcome(
+                matches: [], ungroundedTexts: [], duration: duration,
+                chunks: 0, failures: [], linesExamined: 0
+            )
         }
     }
 
     /// How much Japanese text is sent to the model in one call.
     ///
-    /// The context window runs out somewhere between 1.8K and 3.6K characters of
-    /// Japanese, and a request that exceeds it still burns around 20 seconds
-    /// before failing. Latency also grows with input: roughly 13s at 891
-    /// characters and 30s at 1803 on entity-dense text. This default keeps the
-    /// worst case inside the window with room to spare.
+    /// A chunk size, not a ceiling on coverage: an input larger than this costs
+    /// more calls, not less examination. The number keeps one call inside the
+    /// context window with room to spare, and smaller chunks put fewer
+    /// candidates in front of the model at once, which is what the recall gap
+    /// for a name that comes after others turns on.
     /// See docs/findings/on-device-model-baseline.md.
     public static let defaultCharacterLimit = 1500
 
@@ -92,6 +97,15 @@ public struct FoundationModelDetector {
         available word instead.
         """
 
+    /// A ceiling on what one call may generate.
+    ///
+    /// Handed a fragment with no names in it, the model has been measured
+    /// generating until the context window was exhausted — 58 seconds for four
+    /// characters of input. This bounds that; not sending fragments is what
+    /// prevents it. A dense chunk holding ten names returned all ten under this
+    /// cap. See docs/findings/on-device-model-baseline.md.
+    static let maximumResponseTokens = 1024
+
     private let characterLimit: Int
 
     public init(characterLimit: Int = FoundationModelDetector.defaultCharacterLimit) {
@@ -113,7 +127,12 @@ public struct FoundationModelDetector {
         }
     }
 
-    public func detect(in text: String) async throws -> Outcome {
+    /// - Parameter onChunkStart: see `BatchedNameRun.run`. The default does
+    ///   nothing, so a caller that has nowhere to draw need not care.
+    public func detect(
+        in text: String,
+        onChunkStart: (Int, Int) async -> Void = { _, _ in }
+    ) async throws -> Outcome {
         guard Self.isAvailable else {
             throw Unavailability.modelUnavailable(Self.availabilityDescription)
         }
@@ -126,85 +145,74 @@ public struct FoundationModelDetector {
         let segments = JapaneseText.japaneseLines(of: text)
         guard !segments.isEmpty else { return .empty() }
 
-        let batch = JapaneseText.batch(segments, characterLimit: characterLimit)
-        guard !batch.text.isEmpty else {
-            return Outcome(
-                matches: [], ungroundedTexts: [], duration: 0,
-                truncated: true, linesExamined: 0
-            )
-        }
+        // As many calls as the input takes. Nothing is left unexamined for being
+        // late in the document; the cost is that the calls cannot be overlapped,
+        // because the on-device model serialises.
+        let batches = JapaneseText.batches(segments, characterLimit: characterLimit)
 
         let started = Date()
-        let session = LanguageModelSession(instructions: Self.instructions)
-        let response = try await session.respond(to: batch.text, generating: Findings.self)
-        let duration = Date().timeIntervalSince(started)
-
-        let batchText = batch.text as NSString
-        let originalText = text as NSString
-        var matches: [DetectedMatch] = []
-        var ungrounded: [String] = []
-
         let debug = ProcessInfo.processInfo.environment["PRIVMASK_DEBUG"] == "1"
-        for entity in response.content.entities {
-            if debug {
-                FileHandle.standardError.write(
-                    Data("    model: \(entity.kind) \(entity.text.debugDescription) plausible=\(Self.isPlausibleName(entity.text))\n".utf8)
-                )
-            }
-            guard let kind = Self.kind(from: entity.kind) else { continue }
-            // The model is instructed to copy substrings verbatim, but it is a
-            // language model: it has been observed normalising full-width digits
-            // to half-width. Anything that does not occur in what was sent is
-            // discarded rather than trusted.
-            guard Self.isPlausibleName(entity.text) else { continue }
-            let batchRanges = Self.occurrences(of: entity.text, in: batchText)
-            if batchRanges.isEmpty {
-                ungrounded.append(entity.text)
-                continue
-            }
-            for batchRange in batchRanges {
-                guard let range = batch.originalRange(for: batchRange) else { continue }
-                matches.append(
-                    DetectedMatch(
-                        kind: kind,
-                        source: .languageModel,
-                        range: range,
-                        text: originalText.substring(with: range)
+
+        let result = await BatchedNameRun.run(
+            text: text,
+            batches: batches,
+            onChunkStart: onChunkStart
+        ) { batchText in
+            // A fresh session per chunk. Carrying one session across chunks
+            // would accumulate the transcript in the context window, which is
+            // the thing the chunking exists to stay inside.
+            let session = LanguageModelSession(instructions: Self.instructions)
+            let response = try await session.respond(
+                to: batchText,
+                generating: Findings.self,
+                options: GenerationOptions(maximumResponseTokens: Self.maximumResponseTokens)
+            )
+            return response.content.entities.compactMap { entity in
+                if debug {
+                    FileHandle.standardError.write(
+                        Data("    model: \(entity.kind) \(entity.text.debugDescription) plausible=\(Self.isPlausibleName(entity.text))\n".utf8)
                     )
-                )
+                }
+                // The model is instructed to copy substrings verbatim, but it is
+                // a language model: it has been observed normalising full-width
+                // digits to half-width. Anything that does not occur in what was
+                // sent is discarded downstream rather than trusted.
+                guard Self.isPlausibleName(entity.text) else { return nil }
+                return entity.text
             }
         }
 
         return Outcome(
-            matches: matches,
-            ungroundedTexts: ungrounded,
-            duration: duration,
-            truncated: batch.truncated,
-            linesExamined: batch.mapping.count
+            matches: result.matches,
+            ungroundedTexts: result.ungroundedTexts,
+            duration: Date().timeIntervalSince(started),
+            chunks: batches.count,
+            failures: result.failures,
+            linesExamined: batches.reduce(0) { $0 + $1.mapping.count }
         )
     }
 
-    /// The model's own label is ignored; only its span is used, and only as a
-    /// personal name.
+    /// Rejects spans that cannot be a name, and is the only thing that decides
+    /// what this layer emits.
     ///
-    /// The label is not reliable — `鈴木一郎` came back as an organisation name in
-    /// two runs out of three, and dropping it on that basis lost a real name.
-    /// The span is decided by `isPlausibleName` instead, which checks how the
-    /// text is written rather than what the model called it. A genuine company
-    /// name does not begin with a family name, so it is rejected there and left
-    /// to the user dictionary, which is how the design treats organisations.
+    /// The model's own label is ignored. It is not reliable — `鈴木一郎` came back
+    /// as an organisation name in two runs out of three, and dropping it on that
+    /// basis lost a real name — so the span is judged here instead, by how the
+    /// text is written rather than by what the model called it. A genuine
+    /// company name does not begin with a family name, so it is rejected here
+    /// and left to the user dictionary, which is how the design treats
+    /// organisations.
     ///
-    /// Nothing but names is taken from the model at all. The deterministic layer
-    /// has full recall on phone numbers, addresses, postal codes, emails, My
-    /// Numbers and credentials, so the model's opinion on those only costs: it
-    /// read `8080`, `1,234,567円` and `E-4521-9` as addresses.
-    private static func kind(from raw: String) -> SensitiveKind? {
-        .personalName
-    }
-
-    /// Rejects spans that cannot be a name. The model sometimes returns a whole
-    /// line — `マイナンバー: 123456789018` was reported as a personal name — and a
-    /// line is recognisable by its structural punctuation and its length.
+    /// Nothing but names is taken from the model at all, which is why
+    /// `BatchedNameRun` records every span it keeps as a personal name. The
+    /// deterministic layer has full recall on phone numbers, addresses, postal
+    /// codes, emails, My Numbers and credentials, so the model's opinion on
+    /// those only costs: it read `8080`, `1,234,567円` and `E-4521-9` as
+    /// addresses.
+    ///
+    /// The model also returns whole lines — `マイナンバー: 123456789018` was
+    /// reported as a personal name — and a line is recognisable by its
+    /// structural punctuation and its length.
     static func isPlausibleName(_ text: String) -> Bool {
         guard !text.isEmpty, text.count <= 24 else { return false }
 
@@ -273,20 +281,6 @@ public struct FoundationModelDetector {
 
         guard hasKanji || hasKatakana else { return true }
         return JapaneseSurnames.beginsWithSurname(text)
-    }
-
-    private static func occurrences(of needle: String, in haystack: NSString) -> [NSRange] {
-        guard !needle.isEmpty else { return [] }
-        var found: [NSRange] = []
-        var cursor = 0
-        while cursor < haystack.length {
-            let searchRange = NSRange(location: cursor, length: haystack.length - cursor)
-            let range = haystack.range(of: needle, range: searchRange)
-            if range.location == NSNotFound { break }
-            found.append(range)
-            cursor = range.location + max(range.length, 1)
-        }
-        return found
     }
 }
 #endif

@@ -49,16 +49,24 @@ if let url = options.dictionaryURL {
 let pipeline = DetectionPipeline(dictionaryTerms: terms)
 var candidates = pipeline.detect(in: input)
 var modelStatus = ModelStatus.disabled
-var truncated = false
+var chunkFailures: [BatchedNameRun.ChunkFailure] = []
 
 if options.useModel {
     if #available(macOS 26.0, *), FoundationModelDetector.isAvailable {
+        // The model reads a chunk at a time and each chunk costs seconds, so a
+        // document with much Japanese in it is a long silence. Nothing is drawn
+        // unless stderr is a terminal.
+        let progress = ProgressIndicator.isSupported ? ProgressIndicator() : nil
         do {
-            let outcome = try await FoundationModelDetector().detect(in: input)
+            let outcome = try await FoundationModelDetector().detect(in: input) { chunk, total in
+                if chunk == 1 { await progress?.start(total: total) } else { await progress?.advance(to: chunk) }
+            }
+            await progress?.stop()
             candidates = pipeline.detect(in: input, additional: outcome.matches)
-            truncated = outcome.truncated
+            chunkFailures = outcome.failures
             modelStatus = .used
         } catch {
+            await progress?.stop()
             // Fail open: the model is an addition, and losing it must not lose
             // everything the deterministic layers already found. The degradation
             // is reported rather than hidden.
@@ -87,8 +95,8 @@ if options.json {
                 placeholder: result.replacements.first { $0.range == candidate.range }?.placeholder
             )
         },
-        model: modelStatus.description,
-        modelInputTruncated: truncated
+        model: modelStatus,
+        chunkFailures: chunkFailures
     )
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
@@ -99,14 +107,13 @@ if options.json {
 } else {
     // The masked text already carries whatever trailing newline the input had.
     print(result.text, terminator: "")
-    // Degradation goes to stderr so that stdout stays pipeable, but it is never
-    // silent: the user has to be able to tell that names were not looked for.
-    if let warning = modelStatus.warning {
-        FileHandle.standardError.write(Data("privmask: \(warning)\n".utf8))
-    }
-    if truncated {
-        FileHandle.standardError.write(
-            Data("privmask: input was longer than the model layer accepts; the tail was not examined for names\n".utf8)
-        )
-    }
+}
+
+// Degradation goes to stderr so that stdout stays pipeable, but it is never
+// silent: the caller has to be able to tell that names were not looked for.
+// This runs in both modes. --json carries the same list in `warnings`, and the
+// machine-readable mode being the quieter one was a trap for anyone who piped
+// stdout and watched the terminal.
+for warning in Degradation.warnings(model: modelStatus, chunkFailures: chunkFailures) {
+    FileHandle.standardError.write(Data("privmask: \(warning)\n".utf8))
 }
