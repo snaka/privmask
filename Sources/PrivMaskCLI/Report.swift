@@ -22,8 +22,42 @@ struct Report: Encodable {
 
     let masked: String
     let findings: [Finding]
-    let model: String
+    let model: ModelStatus
     let modelInputTruncated: Bool
+
+    /// Every way in which this run examined less than the whole input.
+    ///
+    /// The contract a caller is told to rely on: **this is empty if and only if
+    /// every layer ran over the whole input.** A caller deciding whether the
+    /// masked text can be passed on has one thing to check, and a layer added
+    /// later that can degrade adds an entry here rather than a field nobody
+    /// knows to look at.
+    var warnings: [String] {
+        var warnings: [String] = []
+        if let warning = model.warning { warnings.append(warning) }
+        if modelInputTruncated { warnings.append(Self.truncationWarning) }
+        return warnings
+    }
+
+    static let truncationWarning =
+        "input was longer than the model layer accepts; the tail was not examined for names"
+
+    private enum CodingKeys: String, CodingKey {
+        case masked, findings, model, modelDetail, modelInputTruncated, warnings
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(masked, forKey: .masked)
+        try container.encode(findings, forKey: .findings)
+        try container.encode(model.token, forKey: .model)
+        // Written even when nil. A key that comes and goes makes a caller test
+        // for its presence before its value, which is one more thing to get
+        // wrong than reading null.
+        try container.encode(model.detail, forKey: .modelDetail)
+        try container.encode(modelInputTruncated, forKey: .modelInputTruncated)
+        try container.encode(warnings, forKey: .warnings)
+    }
 }
 
 enum ModelStatus {
@@ -32,12 +66,23 @@ enum ModelStatus {
     case unavailable(String)
     case failed(String)
 
-    var description: String {
+    /// The state, as a token from a closed set: `used`, `disabled`,
+    /// `unavailable`, `failed`. A caller switches on this; the reason it was in
+    /// that state is `detail`, and is prose.
+    var token: String {
         switch self {
         case .used: return "used"
         case .disabled: return "disabled"
-        case .unavailable(let reason): return "unavailable: \(reason)"
-        case .failed(let reason): return "failed: \(reason)"
+        case .unavailable: return "unavailable"
+        case .failed: return "failed"
+        }
+    }
+
+    /// Why, where there is a why. Never parsed — shown.
+    var detail: String? {
+        switch self {
+        case .used, .disabled: return nil
+        case .unavailable(let reason), .failed(let reason): return reason
         }
     }
 

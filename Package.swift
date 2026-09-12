@@ -20,6 +20,6 @@ let package = Package(
         // product: it is a development tool, not something consumers depend on.
         .executableTarget(name: "AppleAPIProbe", dependencies: ["PrivMask"]),
         .executableTarget(name: "FoundationModelProbe", dependencies: ["PrivMask"]),
-        .testTarget(name: "PrivMaskTests", dependencies: ["PrivMask"]),
+        .testTarget(name: "PrivMaskTests", dependencies: ["PrivMask", "PrivMaskCLI"]),
     ]
 )
