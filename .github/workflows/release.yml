@@ -1,0 +1,163 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 0.2.1). Manual runs are a dry run: the binary is uploaded as an artifact, but no Release is created and the tap is not touched.'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # Needs an SDK that has FoundationModels. The CLI target references
+    # FoundationModelDetector without a canImport guard, so an older SDK fails
+    # the build rather than quietly producing a binary that cannot find Japanese
+    # personal names — but failing in the toolchain check below says so plainly.
+    runs-on: macos-26
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "::error::version is empty"; exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION"
+
+      - name: Check the source version matches
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          SOURCE=$(sed -n 's/.*static let current = "\(.*\)".*/\1/p' Sources/PrivMaskCLI/Report.swift)
+          echo "PrivMaskVersion.current = $SOURCE"
+          if [ "$SOURCE" != "$VERSION" ]; then
+            echo "::error::Tag says $VERSION but Sources/PrivMaskCLI/Report.swift says $SOURCE. Bump it before tagging — the Homebrew formula's test asserts privmask --version matches, so a mismatch only surfaces after the release is published."
+            exit 1
+          fi
+
+      - name: Show toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Require an SDK with FoundationModels
+        run: |
+          set -euo pipefail
+          echo 'import FoundationModels' > "$RUNNER_TEMP/fm.swift"
+          if ! swiftc -typecheck "$RUNNER_TEMP/fm.swift" 2>/dev/null; then
+            echo "::error::This runner's SDK has no FoundationModels. Japanese personal names are found only by that layer, so a binary built here would silently detect none of them. Use a runner image with Xcode 26 or later."
+            exit 1
+          fi
+          echo "FoundationModels is present in the SDK"
+
+      - name: Test
+        run: swift test
+
+      - name: Build universal binary
+        run: swift build -c release --arch arm64 --arch x86_64
+
+      - name: Verify the binary
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          BIN="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/privmask"
+          lipo -archs "$BIN"
+          lipo -archs "$BIN" | grep -q x86_64
+          lipo -archs "$BIN" | grep -q arm64
+          "$BIN" --version
+          "$BIN" --version | grep -qx "privmask $VERSION"
+          echo "bin=$BIN" >> "$GITHUB_ENV"
+
+      - name: Package
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          STAGE="$RUNNER_TEMP/stage"
+          mkdir -p "$STAGE"
+          # The formula installs both of these; keep them in step.
+          cp "$bin" README.md "$STAGE/"
+          tar -czf "$RUNNER_TEMP/privmask-${VERSION}-macos-universal.tar.gz" \
+            -C "$STAGE" privmask README.md
+
+      - name: Compute SHA256
+        id: hash
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          SHA256=$(shasum -a 256 "$RUNNER_TEMP/privmask-${VERSION}-macos-universal.tar.gz" | awk '{print $1}')
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo "sha256: $SHA256"
+
+      - name: Upload the tarball as an artifact (always)
+        uses: actions/upload-artifact@v4
+        with:
+          name: privmask-${{ steps.ver.outputs.version }}-macos-universal
+          path: ${{ runner.temp }}/privmask-${{ steps.ver.outputs.version }}-macos-universal.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ runner.temp }}/privmask-${{ steps.ver.outputs.version }}-macos-universal.tar.gz
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+
+      - name: Bump tap formula
+        if: github.event_name == 'push'
+        env:
+          TAP_PUSH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          SHA256: ${{ steps.hash.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          # A fresh clone every time: the tap holds other projects' formulae and
+          # moves without this repository knowing.
+          git clone "https://x-access-token:${TAP_PUSH_TOKEN}@github.com/snaka/homebrew-tap.git" "$RUNNER_TEMP/tap"
+          cd "$RUNNER_TEMP/tap"
+
+          # Three fields, edited in place. The formula's caveats and test block
+          # are real content and belong in the tap, not copied into this file
+          # where they would drift.
+          sed -i '' \
+            -e "s|^  url \".*\"|  url \"https://github.com/snaka/privmask/releases/download/v${VERSION}/privmask-${VERSION}-macos-universal.tar.gz\"|" \
+            -e "s|^  version \".*\"|  version \"${VERSION}\"|" \
+            -e "s|^  sha256 \".*\"|  sha256 \"${SHA256}\"|" \
+            Formula/privmask.rb
+
+          # A sed that matched nothing leaves a stale sha256 pointing at a URL
+          # that no longer exists, and Homebrew would fail for everyone.
+          grep -q "download/v${VERSION}/privmask-${VERSION}-macos-universal.tar.gz" Formula/privmask.rb
+          grep -q "version \"${VERSION}\"" Formula/privmask.rb
+          grep -q "sha256 \"${SHA256}\"" Formula/privmask.rb
+          git --no-pager diff -- Formula/privmask.rb
+
+          git config user.email "snaka@hey.com"
+          git config user.name "snaka (release CI)"
+          git add Formula/privmask.rb
+          if git diff --cached --quiet; then
+            echo "Formula already at ${VERSION}; nothing to commit"
+          else
+            git commit -m "chore: bump privmask to ${VERSION}"
+            git push
+          fi
