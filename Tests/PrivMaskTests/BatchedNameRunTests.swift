@@ -15,13 +15,17 @@ struct BatchedNameRunTests {
         var description: String { "exceededContextWindowSize" }
     }
 
+    /// Ten lines, each carrying the same name. Swift Testing builds a fresh
+    /// suite value per test, so sharing it costs nothing.
+    private let text = (1...10).map { "第\($0)報。担当は田中健一です。" }.joined(separator: "\n")
+
+
     private func setUp(_ text: String, characterLimit: Int) -> (String, [JapaneseText.Batch]) {
         (text, JapaneseText.batches(JapaneseText.japaneseLines(of: text), characterLimit: characterLimit))
     }
 
     @Test("A name found in any chunk lands at its offset in the original text")
     func matchesMapToTheOriginal() async {
-        let text = (1...10).map { "第\($0)報。担当は田中健一です。" }.joined(separator: "\n")
         let (original, batches) = setUp(text, characterLimit: 60)
         #expect(batches.count > 1)
 
@@ -37,7 +41,6 @@ struct BatchedNameRunTests {
 
     @Test("A chunk that fails does not lose what the other chunks found")
     func failureIsIsolated() async {
-        let text = (1...10).map { "第\($0)報。担当は田中健一です。" }.joined(separator: "\n")
         let (original, batches) = setUp(text, characterLimit: 60)
 
         var call = 0
@@ -53,7 +56,6 @@ struct BatchedNameRunTests {
 
     @Test("A failure says which chunk, of how many, and how much text went unexamined")
     func failureNamesTheChunk() async {
-        let text = (1...10).map { "第\($0)報。担当は田中健一です。" }.joined(separator: "\n")
         let (original, batches) = setUp(text, characterLimit: 60)
 
         var call = 0
@@ -84,7 +86,6 @@ struct BatchedNameRunTests {
 
     @Test("Every chunk is asked, even after one fails")
     func everyChunkIsAttempted() async {
-        let text = (1...10).map { "第\($0)報。担当は田中健一です。" }.joined(separator: "\n")
         let (original, batches) = setUp(text, characterLimit: 60)
 
         var seen = 0

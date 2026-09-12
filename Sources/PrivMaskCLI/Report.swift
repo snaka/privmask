@@ -29,21 +29,8 @@ struct Report: Encodable {
     /// missing only because its call failed.
     let chunkFailures: [BatchedNameRun.ChunkFailure]
 
-    /// Every way in which this run examined less than the whole input.
-    ///
-    /// The contract a caller is told to rely on: **this is empty if and only if
-    /// every layer ran over the whole input.** A caller deciding whether the
-    /// masked text can be passed on has one thing to check, and a layer added
-    /// later that can degrade adds an entry here rather than a field nobody
-    /// knows to look at.
     var warnings: [String] {
-        var warnings: [String] = []
-        if let warning = model.warning { warnings.append(warning) }
-        warnings += chunkFailures.map { failure in
-            "chunk \(failure.index) of \(failure.total) (\(failure.characters) characters) "
-                + "was not examined for names: \(failure.reason)"
-        }
-        return warnings
+        Degradation.warnings(model: model, chunkFailures: chunkFailures)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -101,5 +88,30 @@ enum ModelStatus {
         case .failed(let reason):
             return "language model failed (\(reason)); Japanese personal names were not looked for"
         }
+    }
+}
+
+/// Every way in which a run examined less than the whole input.
+///
+/// The contract a caller is told to rely on: **this is empty if and only if
+/// every layer ran over the whole input.** A caller deciding whether the masked
+/// text can be passed on has one thing to check, and a layer added later that
+/// can degrade adds an entry here rather than a field nobody knows to look at.
+///
+/// It lives apart from `Report` because the plain-text mode needs the same list
+/// for stderr without paying to build the findings it will not print — one
+/// source of wording, two callers.
+enum Degradation {
+    static func warnings(
+        model: ModelStatus,
+        chunkFailures: [BatchedNameRun.ChunkFailure]
+    ) -> [String] {
+        var warnings: [String] = []
+        if let warning = model.warning { warnings.append(warning) }
+        warnings += chunkFailures.map { failure in
+            "chunk \(failure.index) of \(failure.total) (\(failure.characters) characters) "
+                + "was not examined for names: \(failure.reason)"
+        }
+        return warnings
     }
 }

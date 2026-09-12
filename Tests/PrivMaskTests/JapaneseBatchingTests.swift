@@ -169,6 +169,27 @@ struct BatchingTests {
         #expect((batches.last?.text.count ?? 0) > 100)
     }
 
+    @Test("A heading before a long paragraph is carried too, not just a trailing crumb")
+    func aLeadingCrumbIsCarriedAsWell() {
+        // The ordinary shape of a markdown document, and the one that prompted
+        // the change: a short heading, then a paragraph too long to join it.
+        let text = "# 報告\n" + String(repeating: "報告。", count: 32)
+        let batches = JapaneseText.batches(segments(text), characterLimit: 100, minimumChunkCharacters: 32)
+
+        #expect(batches.count == 1, "sizes: \(batches.map(\.text.count))")
+        #expect(batches[0].text.hasPrefix("# 報告"))
+    }
+
+    @Test("A crumb between two long paragraphs is carried")
+    func aCrumbInTheMiddleIsCarried() {
+        let paragraph = String(repeating: "報告。", count: 32)
+        let text = [paragraph, "短い。", paragraph].joined(separator: "\n")
+        let batches = JapaneseText.batches(segments(text), characterLimit: 100, minimumChunkCharacters: 32)
+
+        #expect(batches.allSatisfy { $0.text.count >= 32 }, "sizes: \(batches.map(\.text.count))")
+        #expect(batches.map(\.text).joined().contains("短い。"))
+    }
+
     @Test("A single short line is still sent, because there is nothing to carry it")
     func theOnlyChunkIsSentEvenIfSmall() {
         let batches = JapaneseText.batches(segments("報告"), characterLimit: 100, minimumChunkCharacters: 32)

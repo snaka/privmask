@@ -73,26 +73,23 @@ if options.useModel {
 
 let result = Masker().mask(input, candidates: candidates)
 
-// Built in both modes: it is what knows which layers fell short, and that has
-// to reach the caller whether or not they asked for JSON.
-let report = Report(
-    masked: result.text,
-    findings: candidates.map { candidate in
-        Report.Finding(
-            kind: candidate.kind.rawValue,
-            confidence: candidate.confidence.name,
-            sources: candidate.sources.map(\.rawValue),
-            text: candidate.text,
-            location: candidate.range.location,
-            length: candidate.range.length,
-            placeholder: result.replacements.first { $0.range == candidate.range }?.placeholder
-        )
-    },
-    model: modelStatus,
-    chunkFailures: chunkFailures
-)
-
 if options.json {
+    let report = Report(
+        masked: result.text,
+        findings: candidates.map { candidate in
+            Report.Finding(
+                kind: candidate.kind.rawValue,
+                confidence: candidate.confidence.name,
+                sources: candidate.sources.map(\.rawValue),
+                text: candidate.text,
+                location: candidate.range.location,
+                length: candidate.range.length,
+                placeholder: result.replacements.first { $0.range == candidate.range }?.placeholder
+            )
+        },
+        model: modelStatus,
+        chunkFailures: chunkFailures
+    )
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
     guard let data = try? encoder.encode(report), let text = String(data: data, encoding: .utf8) else {
@@ -109,6 +106,6 @@ if options.json {
 // This runs in both modes. --json carries the same list in `warnings`, and the
 // machine-readable mode being the quieter one was a trap for anyone who piped
 // stdout and watched the terminal.
-for warning in report.warnings {
+for warning in Degradation.warnings(model: modelStatus, chunkFailures: chunkFailures) {
     FileHandle.standardError.write(Data("privmask: \(warning)\n".utf8))
 }

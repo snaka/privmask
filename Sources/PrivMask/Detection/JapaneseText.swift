@@ -58,11 +58,13 @@ public enum JapaneseText {
     }
 
     /// Ends a sentence. Cutting after one of these leaves both pieces readable.
-    private static let sentenceEnds: Set<Character> = ["。", "！", "？", "!", "?"]
+    /// Held as UTF-16 code units because that is what `NSString.character(at:)`
+    /// returns, and every one of them is a single unit.
+    private static let sentenceEnds: Set<unichar> = Set("。！？!?".utf16)
 
     /// Ends a clause. Second choice: the pieces are fragments of a sentence, but
     /// a name is not split across one.
-    private static let clauseEnds: Set<Character> = ["、", "，", ",", "；", ";", "　", " "]
+    private static let clauseEnds: Set<unichar> = Set("、，,；;　 ".utf16)
 
     /// A line broken into pieces that each fit one model call.
     ///
@@ -85,38 +87,37 @@ public enum JapaneseText {
         var pieces: [Segment] = []
         var start = 0
         while start < text.length {
-            let remaining = text.length - start
-            if remaining <= characterLimit {
-                pieces.append(
-                    Segment(text: text.substring(from: start), offset: segment.offset + start)
-                )
-                break
-            }
-            let window = NSRange(location: start, length: characterLimit)
-            let cut = breakPoint(in: text, window: window)
+            let end =
+                text.length - start <= characterLimit
+                ? text.length
+                : breakPoint(in: text, window: NSRange(location: start, length: characterLimit))
             pieces.append(
                 Segment(
-                    text: text.substring(with: NSRange(location: start, length: cut - start)),
+                    text: text.substring(with: NSRange(location: start, length: end - start)),
                     offset: segment.offset + start
                 )
             )
-            start = cut
+            start = end
         }
         return pieces
     }
 
     /// The offset to cut at, always within `window` and always past its start so
     /// that the walk terminates.
+    ///
+    /// One backward pass: the first sentence end it meets is the rightmost one
+    /// and wins immediately; the rightmost clause end is remembered in case
+    /// there is no sentence end at all.
     private static func breakPoint(in text: NSString, window: NSRange) -> Int {
-        for group in [sentenceEnds, clauseEnds] {
-            var index = NSMaxRange(window) - 1
-            while index > window.location {
-                let character = Character(UnicodeScalar(text.character(at: index)) ?? " ")
-                if group.contains(character) { return index + 1 }
-                index -= 1
-            }
+        var clause: Int?
+        var index = NSMaxRange(window) - 1
+        while index > window.location {
+            let unit = text.character(at: index)
+            if sentenceEnds.contains(unit) { return index + 1 }
+            if clause == nil, clauseEnds.contains(unit) { clause = index + 1 }
+            index -= 1
         }
-        return NSMaxRange(window)
+        return clause ?? NSMaxRange(window)
     }
 
     /// Segments joined into one string for a single model call. Carries the
@@ -158,38 +159,62 @@ public enum JapaneseText {
 
         for piece in pieces {
             let length = (piece.text as NSString).length
-            let cost = current.isEmpty ? length : length + 1  // the joining newline
-            if !current.isEmpty, currentLength + cost > characterLimit {
+            if !current.isEmpty, currentLength + length + 1 > characterLimit {
                 groups.append(current)
                 current = []
                 currentLength = 0
             }
+            currentLength += current.isEmpty ? length : length + 1  // the joining newline
             current.append(piece)
-            currentLength += current.count == 1 ? length : length + 1
         }
         if !current.isEmpty { groups.append(current) }
 
-        // A last group too small to send on its own goes to the group before it.
-        // Overshooting the limit by less than the minimum is safe; sending a
-        // crumb is not.
-        if groups.count > 1, let last = groups.last {
-            let length = last.reduce(0) { $0 + ($1.text as NSString).length + 1 } - 1
-            if length < minimumChunkCharacters {
-                groups.removeLast()
-                groups[groups.count - 1].append(contentsOf: last)
+        return merged(groups, minimumChunkCharacters: minimumChunkCharacters).map(build)
+    }
+
+    /// Groups too small to send on their own, joined to a neighbour.
+    ///
+    /// A group closes when the *next* piece will not fit, so an undersized one
+    /// turns up anywhere — a short heading before a long paragraph is left alone
+    /// exactly as a short trailing line is, and a heading before a paragraph is
+    /// the ordinary shape of a markdown document. Overshooting the limit by less
+    /// than the minimum is safe; sending a crumb is not.
+    private static func merged(_ groups: [[Segment]], minimumChunkCharacters: Int) -> [[Segment]] {
+        var merged: [[Segment]] = []
+        for group in groups {
+            let previousIsCrumb = merged.last.map {
+                joinedLength($0) < minimumChunkCharacters
+            } ?? false
+            if previousIsCrumb || (!merged.isEmpty && joinedLength(group) < minimumChunkCharacters) {
+                merged[merged.count - 1].append(contentsOf: group)
+            } else {
+                merged.append(group)
             }
         }
+        return merged
+    }
 
-        return groups.map(build)
+    /// The length the group will have once joined with newlines.
+    private static func joinedLength(_ group: [Segment]) -> Int {
+        group.reduce(0) { $0 + ($1.text as NSString).length + 1 } - 1
     }
 
     private static func build(_ group: [Segment]) -> Batch {
         var joined = ""
         var mapping: [(Int, Int, Int)] = []
+        // Tracked rather than re-measured: `joined` is mutated every iteration,
+        // so asking it for its UTF-16 length again would rescan the whole string
+        // each time.
+        var offset = 0
         for segment in group {
-            let offsetInBatch = (joined as NSString).length + (joined.isEmpty ? 0 : 1)
-            joined += joined.isEmpty ? segment.text : "\n" + segment.text
-            mapping.append((offsetInBatch, segment.offset, (segment.text as NSString).length))
+            if !joined.isEmpty {
+                joined += "\n"
+                offset += 1
+            }
+            let length = (segment.text as NSString).length
+            mapping.append((offset, segment.offset, length))
+            joined += segment.text
+            offset += length
         }
         return Batch(text: joined, mapping: mapping)
     }

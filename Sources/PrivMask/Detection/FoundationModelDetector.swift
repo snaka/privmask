@@ -144,7 +144,6 @@ public struct FoundationModelDetector {
         // late in the document; the cost is that the calls cannot be overlapped,
         // because the on-device model serialises.
         let batches = JapaneseText.batches(segments, characterLimit: characterLimit)
-        guard !batches.isEmpty else { return .empty() }
 
         let started = Date()
         let debug = ProcessInfo.processInfo.environment["PRIVMASK_DEBUG"] == "1"
@@ -165,7 +164,6 @@ public struct FoundationModelDetector {
                         Data("    model: \(entity.kind) \(entity.text.debugDescription) plausible=\(Self.isPlausibleName(entity.text))\n".utf8)
                     )
                 }
-                guard Self.kind(from: entity.kind) != nil else { return nil }
                 // The model is instructed to copy substrings verbatim, but it is
                 // a language model: it has been observed normalising full-width
                 // digits to half-width. Anything that does not occur in what was
@@ -185,27 +183,27 @@ public struct FoundationModelDetector {
         )
     }
 
-    /// The model's own label is ignored; only its span is used, and only as a
-    /// personal name.
+    /// Rejects spans that cannot be a name, and is the only thing that decides
+    /// what this layer emits.
     ///
-    /// The label is not reliable — `鈴木一郎` came back as an organisation name in
-    /// two runs out of three, and dropping it on that basis lost a real name.
-    /// The span is decided by `isPlausibleName` instead, which checks how the
-    /// text is written rather than what the model called it. A genuine company
-    /// name does not begin with a family name, so it is rejected there and left
-    /// to the user dictionary, which is how the design treats organisations.
+    /// The model's own label is ignored. It is not reliable — `鈴木一郎` came back
+    /// as an organisation name in two runs out of three, and dropping it on that
+    /// basis lost a real name — so the span is judged here instead, by how the
+    /// text is written rather than by what the model called it. A genuine
+    /// company name does not begin with a family name, so it is rejected here
+    /// and left to the user dictionary, which is how the design treats
+    /// organisations.
     ///
-    /// Nothing but names is taken from the model at all. The deterministic layer
-    /// has full recall on phone numbers, addresses, postal codes, emails, My
-    /// Numbers and credentials, so the model's opinion on those only costs: it
-    /// read `8080`, `1,234,567円` and `E-4521-9` as addresses.
-    private static func kind(from raw: String) -> SensitiveKind? {
-        .personalName
-    }
-
-    /// Rejects spans that cannot be a name. The model sometimes returns a whole
-    /// line — `マイナンバー: 123456789018` was reported as a personal name — and a
-    /// line is recognisable by its structural punctuation and its length.
+    /// Nothing but names is taken from the model at all, which is why
+    /// `BatchedNameRun` records every span it keeps as a personal name. The
+    /// deterministic layer has full recall on phone numbers, addresses, postal
+    /// codes, emails, My Numbers and credentials, so the model's opinion on
+    /// those only costs: it read `8080`, `1,234,567円` and `E-4521-9` as
+    /// addresses.
+    ///
+    /// The model also returns whole lines — `マイナンバー: 123456789018` was
+    /// reported as a personal name — and a line is recognisable by its
+    /// structural punctuation and its length.
     static func isPlausibleName(_ text: String) -> Bool {
         guard !text.isEmpty, text.count <= 24 else { return false }
 
@@ -274,20 +272,6 @@ public struct FoundationModelDetector {
 
         guard hasKanji || hasKatakana else { return true }
         return JapaneseSurnames.beginsWithSurname(text)
-    }
-
-    private static func occurrences(of needle: String, in haystack: NSString) -> [NSRange] {
-        guard !needle.isEmpty else { return [] }
-        var found: [NSRange] = []
-        var cursor = 0
-        while cursor < haystack.length {
-            let searchRange = NSRange(location: cursor, length: haystack.length - cursor)
-            let range = haystack.range(of: needle, range: searchRange)
-            if range.location == NSNotFound { break }
-            found.append(range)
-            cursor = range.location + max(range.length, 1)
-        }
-        return found
     }
 }
 #endif

@@ -71,7 +71,7 @@ public enum BatchedNameRun {
 
             let batchText = batch.text as NSString
             for span in spans {
-                let hits = occurrences(of: span, in: batchText)
+                let hits = batchText.allRanges(of: span)
                 if hits.isEmpty {
                     ungrounded.append(span)
                     continue
@@ -91,19 +91,5 @@ public enum BatchedNameRun {
         }
 
         return Result(matches: matches, ungroundedTexts: ungrounded, failures: failures)
-    }
-
-    private static func occurrences(of needle: String, in haystack: NSString) -> [NSRange] {
-        guard !needle.isEmpty else { return [] }
-        var found: [NSRange] = []
-        var cursor = 0
-        while cursor < haystack.length {
-            let searchRange = NSRange(location: cursor, length: haystack.length - cursor)
-            let range = haystack.range(of: needle, range: searchRange)
-            if range.location == NSNotFound { break }
-            found.append(range)
-            cursor = range.location + max(range.length, 1)
-        }
-        return found
     }
 }
