@@ -11,8 +11,9 @@ case "${1:-}" in
   4|credentials) file=4-credentials.txt ;;
   5|english)     file=5-english.txt ;;
   6|long)        file=6-long.txt ;;
+  7|named)       file=7-named-credentials.txt ;;
   *)
-    echo "usage: Examples/use <1-6>"
+    echo "usage: Examples/use <1-7>"
     echo
     for f in "$here"/*.txt; do
       printf "  %-24s %5s characters\n" "$(basename "$f")" "$(wc -m < "$f" | tr -d ' ')"

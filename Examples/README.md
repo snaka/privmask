@@ -19,6 +19,7 @@ Examples/use 1                           # or put it on the clipboard
 | `3-false-positives.txt` | Nothing here should be masked, except that `田中` inside `田中式アルゴリズム` still is. IP addresses, ports, error codes, a SHA and a 12-digit order number must all survive. |
 | `4-credentials.txt` | AWS, GitHub and OpenAI key shapes, all found by their published prefix. `DB_PASSWORD=hunter2` has no prefix to recognise and is found by the name that introduces it instead — the route that also reaches an AWS secret access key. |
 | `5-english.txt` | English names, which come from `NLTagger` rather than the model. |
+| `7-named-credentials.txt` | The second detection route, on its own. An AWS secret access key with no prefix to match on, a password inside a connection string, `Authorization` headers under two different schemes, a key inside a shell-quoted `curl` argument, and two template values that are reported at low confidence rather than dropped. Read this one with `--json`: the `sources` field is what tells a name-based finding from a prefix-based one. |
 | `6-long.txt` | 2,300 characters — past the model's input cap. The tail keeps its real names and the truncation notice fires, which is what that limit looks like in practice. |
 
 `3-false-positives.txt` matters as much as the rest. Over-masking corrupts the

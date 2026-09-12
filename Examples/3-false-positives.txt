@@ -8,3 +8,15 @@
 - ビルド: 2026-09-08 / SHA a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0
 - 注文番号 123456789010 の集計を修正
 - 内線 7788 の記載を削除
+
+設定ファイルの差分（マスクされてはいけない行）
+
+auth: enabled
+secretName: db-tls-cert
+api_key_count: 3
+password_file: /run/secrets/db_password
+authorization_url: https://idp.example.com/oauth/authorize
+token_count: 1500
+secretary: unassigned
+primary_key = orders.id
+STRIPE_PUBLISHABLE_KEY=pk_live_51H1234567890abcdefghijkl
