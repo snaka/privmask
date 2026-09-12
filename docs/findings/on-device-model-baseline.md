@@ -284,3 +284,122 @@ will do for a dense record — the more people a text mentions, the more likely 
 of them survives. The less obvious one is that a corpus sample where nothing is
 missed would have hidden it: `name-after-others` exists to keep the number
 honest, and `FoundationModelProbe` is expected to report it as a miss.
+
+## Batching: what a second round of measurement added
+
+- Measured: 2026-09-12
+- Environment: macOS 26.6.2 (25G83), Apple Intelligence enabled
+- Harness: targeted probes against `FoundationModels` directly, plus
+  `privmask --json` over markdown-shaped input
+
+The cap above was chosen to keep one model call inside the context window. The
+question this round asks is what it would cost to stop truncating and send the
+whole input as several calls instead.
+
+### Concurrent sessions do not overlap
+
+Four chunks of ~712 characters each, run as four `LanguageModelSession`s:
+
+| | Wall clock |
+|---|---:|
+| Sequential | 9.96s |
+| Concurrent (`withThrowingTaskGroup`) | 9.35s |
+| Speed-up | **1.06x** |
+
+The on-device model serialises. Whatever the framework accepts, the work queues,
+so splitting an input into N chunks costs N times the latency however the calls
+are issued. **Concurrency is not a way to pay for coverage.**
+
+### Splitting does not cost latency
+
+The same 2,812 characters, as four calls and as one:
+
+| | Duration | Entities |
+|---|---:|---:|
+| 712 chars × 4, sequential | 9.96s | 40 |
+| 2,815 chars × 1 | 12.32s | 39 |
+
+Per-call overhead is low enough that chunking is not the slower option. The
+entity counts are one run of a non-deterministic model and are not evidence of a
+recall gain; they are consistent with
+[the name-after-others effect](#the-recall-gap-that-is-left-a-name-that-comes-after-others),
+which predicts that fewer candidates per call should help. Three runs over the
+corpus are what would settle it.
+
+### These numbers disagree with the table above, and that is unresolved
+
+The 2026-09-06 table reports 13.29s at 891 characters and
+`exceededContextWindowSize` at 3,622. This round measured roughly 280 characters
+per second and completed a single 2,815-character call — inside the range the
+earlier run reported as failing, and about five times faster.
+
+Two candidate explanations, neither tested: the model changed under a system
+update, or the probe's shortened instructions changed the cost. **Treat the
+throughput figures here as provisional** and re-measure with
+`FoundationModelProbe` over the corpus, which holds the instructions constant.
+
+### A degenerate fragment makes the model run away
+
+Truncation does not only drop text. When the cap leaves behind a fragment too
+small to mean anything, the model is handed an input with no names in it and
+asked for a list. Sending it the four characters `# 報告`:
+
+| Run | Result |
+|---|---|
+| 1 | `exceededContextWindowSize` after **58.2s** |
+| 2 | ok, 1.1s, 3 entities — none of them names |
+| 3 | ok, 0.8s, 2 entities — none of them names |
+
+The instructions say an empty list is the expected answer. It still reaches for
+something, and two runs in three it generates until the 4,096-token context is
+exhausted. The invented spans are rejected downstream by `isPlausibleName`, so
+they cost nothing but time; the runaway costs most of a minute.
+
+`GenerationOptions(maximumResponseTokens:)` bounds that cost without removing
+the behaviour:
+
+| Cap | Fragment `# 報告` |
+|---|---|
+| none | 58.2s failure, or ~1s with invented entities |
+| 512 | ~6s `decodingFailure`, or ~1s with invented entities |
+
+A cap is a ceiling on the damage, not a fix. The fix is to not send fragments.
+
+The cap does not cut legitimate output. A dense 589-character chunk containing
+ten names returned all ten under no cap, under 512, and under 1,024, in 2.4–3.0s
+each.
+
+### Line granularity is the limit that actually bites
+
+`JapaneseText.batch` packs whole lines and stops at the first line that will not
+fit. That suits log-shaped input, where a line is short. It does not suit
+markdown, where a paragraph is one line.
+
+A real report — 10,037 characters, of which the Japanese was **3 lines totalling
+2,138 characters** — puts roughly 713 characters on a line. Two lines fit under
+the 1,500 cap and the third is dropped, so a name in the third paragraph is
+never looked for.
+
+A single paragraph longer than the cap is worse: no part of it is sent, and what
+remains may be the fragment case above.
+
+| Input | What happened |
+|---|---|
+| 713 chars × 3 lines | third name left unmasked, `modelInputTruncated: true` |
+| one 1,746-char line | nothing of it examined; the 4-character heading went instead, and the model exhausted the context in 2 of 3 runs |
+
+In the second case the CLI reported `modelInputTruncated: false`, because the
+`catch` around the model call discards the `Outcome` that carries the flag.
+Truncation caused the failure and truncation is what the report denies.
+
+### Consequences
+
+- **Chunk, do not truncate.** Coverage costs latency in proportion to the
+  Japanese in the input, and there is no way to buy it back with concurrency.
+- **Split inside a line.** Line granularity is an assumption about logs that
+  markdown breaks.
+- **Never send a fragment**, and set `maximumResponseTokens` so that the case
+  that slips through is bounded.
+- **Isolate failures per chunk.** One runaway must not lose the names the other
+  chunks found, and a chunk that failed has to be reported as unexamined rather
+  than silently dropped.
