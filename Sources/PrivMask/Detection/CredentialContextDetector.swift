@@ -66,34 +66,27 @@ public struct CredentialContextDetector {
 
             for result in Self.assignment.results(in: line) {
                 let nameRange = result.range(at: 1)
-                guard nameRange.location != NSNotFound,
-                    CredentialName.claimsCredential(nsLine.substring(with: nameRange))
-                else { continue }
+                guard nameRange.location != NSNotFound else { continue }
+                let name = nsLine.substring(with: nameRange)
+                guard CredentialName.claimsCredential(name) else { continue }
 
                 let afterSeparator = result.range.location + result.range.length
                 guard afterSeparator < nsLine.length else { continue }
 
+                // Both paths answer in `rest`'s own coordinates, so the reported
+                // range is the line, the separator and the value — no fourth frame.
                 let rest = nsLine.substring(from: afterSeparator)
-                let offset: Int
-                let valueRange: NSRange
-                if CredentialName.namesAuthorizationHeader(nsLine.substring(with: nameRange)) {
-                    guard
-                        let found = Self.authorizationValueRange(
-                            in: rest,
-                            openedBy: Self.quoteBefore(nameRange, in: nsLine)
-                        )
-                    else { continue }
-                    offset = 0
-                    valueRange = found
-                } else {
-                    guard let scheme = Self.skippingScheme(rest) else { continue }
-                    guard let found = Self.valueRange(in: scheme.remainder) else { continue }
-                    offset = scheme.offset
-                    valueRange = found
-                }
+                let found =
+                    CredentialName.namesAuthorizationHeader(name)
+                    ? Self.authorizationValueRange(
+                        in: rest,
+                        openedBy: Self.quoteBefore(nameRange, in: nsLine)
+                    )
+                    : Self.ordinaryValueRange(in: rest)
+                guard let valueRange = found else { continue }
 
                 let range = NSRange(
-                    location: lineRange.location + afterSeparator + offset + valueRange.location,
+                    location: lineRange.location + afterSeparator + valueRange.location,
                     length: valueRange.length
                 )
                 let value = nsText.substring(with: range)
@@ -303,9 +296,15 @@ public struct CredentialContextDetector {
     /// `schemeWords` stays the one answer to which words are schemes. A second
     /// copy would let this path and the Authorization path drift apart on that
     /// question with nothing to notice.
-    static func skippingScheme(_ rest: String) -> (offset: Int, remainder: String)? {
-        guard let value = schemeSkippedRange(in: rest) else { return nil }
-        return (value.location, (rest as NSString).substring(from: value.location))
+    /// The value an ordinary slot holds, in `rest`'s own coordinates.
+    ///
+    /// The scheme skip and the terminator scan each answer relative to what they
+    /// were handed, so composing them here keeps the caller down to one frame.
+    static func ordinaryValueRange(in rest: String) -> NSRange? {
+        guard let skipped = schemeSkippedRange(in: rest),
+            let found = valueRange(in: (rest as NSString).substring(from: skipped.location))
+        else { return nil }
+        return NSRange(location: skipped.location + found.location, length: found.length)
     }
 
     private static func isSpaceOrTab(_ nsString: NSString, at index: Int) -> Bool {
@@ -323,7 +322,7 @@ public struct CredentialContextDetector {
     /// Values that cannot be a live credential.
     static func looksLikePlaceholder(_ value: String) -> Bool {
         let trimmed = value.trimmingCharacters(in: .whitespaces)
-        if trimmed.isEmpty || trimmed.count < 6 { return true }
+        if trimmed.count < 6 { return true }
         if trimmed.allSatisfy(\.isNumber) { return true }
         if trimmed.hasPrefix("<") && trimmed.hasSuffix(">") { return true }
         if !variableReference.matchRanges(in: trimmed).isEmpty { return true }

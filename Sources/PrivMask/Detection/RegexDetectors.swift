@@ -88,31 +88,12 @@ struct Pattern {
         regex = try! NSRegularExpression(pattern: pattern, options: options)
     }
 
-    func matches(in text: String, kind: SensitiveKind) -> [DetectedMatch] {
-        let nsText = text as NSString
-        return regex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
-            .map { result in
-                DetectedMatch(
-                    kind: kind,
-                    source: .regex,
-                    range: result.range,
-                    text: nsText.substring(with: result.range)
-                )
-            }
-    }
-
-    func matchRanges(in text: String) -> [NSRange] {
-        let nsText = text as NSString
-        return regex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
-            .map(\.range)
-    }
-
-    /// Matches reported at one capture group rather than the whole match.
+    /// Matches reported at one capture group, the whole match by default.
     ///
-    /// The URL-credential pattern needs this: the match has to span
-    /// `scheme://user:pass@` to know what it is looking at, but only the
-    /// password is the secret.
-    func matches(in text: String, kind: SensitiveKind, group: Int) -> [DetectedMatch] {
+    /// The URL-credential pattern is what needs a group other than 0: its match
+    /// has to span `scheme://user:pass@` to know what it is looking at, but only
+    /// the password is the secret.
+    func matches(in text: String, kind: SensitiveKind, group: Int = 0) -> [DetectedMatch] {
         let nsText = text as NSString
         return results(in: text).compactMap { result in
             let range = result.range(at: group)
@@ -126,8 +107,12 @@ struct Pattern {
         }
     }
 
-    /// Raw results, for a caller that needs match positions rather than a
-    /// finished `DetectedMatch`.
+    func matchRanges(in text: String) -> [NSRange] {
+        results(in: text).map(\.range)
+    }
+
+    /// The one place a pattern is run. Everything else here is built on it, so
+    /// a change to the search range or the options reaches every caller.
     func results(in text: String) -> [NSTextCheckingResult] {
         let nsText = text as NSString
         return regex.matches(in: text, range: NSRange(location: 0, length: nsText.length))

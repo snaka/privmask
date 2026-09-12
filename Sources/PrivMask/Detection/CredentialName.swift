@@ -10,17 +10,41 @@ import Foundation
 /// Matching is on whole words, never substrings. `secretary: 山田健一` contains
 /// `secret`, and treating that as a claim would report a person's name as a key.
 enum CredentialName {
-    /// Words that make the claim on their own.
+    /// What must sit before a word for it to claim.
+    private enum Qualification {
+        /// Claims on its own: `password`, `secret`, `authorization`.
+        case unqualified
+        /// Claims only when something precedes it. A bare `token` matches
+        /// `token_count: 1500` and `入力トークン数: 3,200`, and pasting a report
+        /// about an LLM is squarely the intended use.
+        case anyWord
+        /// Claims only after one of these. `key` on its own opens a mapping in
+        /// most YAML documents and names a column in `primary_key`; `api_key`
+        /// and `AUTH_KEY=` are the shapes that hold a secret.
+        case oneOf(Set<String>)
+    }
+
+    /// The words that can claim, and what each needs in front of it.
     ///
-    /// A bare `auth` is not among them. It names a switch far more often than
-    /// a secret — `auth: enabled`, `auth_provider: google`. Dropping it does
-    /// cost something, though: `AUTH_KEY=` in a `.env` stopped being a claim
-    /// until `["auth", "key"]` was added to `phrases`. `auth_token` and
-    /// `Authorization` were never at risk, being reached by the qualified
-    /// `token` rule and by the word `authorization`.
-    private static let claims: Set<String> = [
-        "apikey", "secret", "password", "passwd", "pwd",
-        "credential", "credentials", "authorization",
+    /// One table rather than a word set, a phrase list and a special case for
+    /// `token`, because all three answered the same question and a reader had
+    /// to consult all three to predict any one name.
+    ///
+    /// A bare `auth` is deliberately absent: it names a switch far more often
+    /// than a secret — `auth: enabled`, `auth_provider: google`. The shapes that
+    /// do hold one are reached by other entries, `AUTH_KEY=` through `key`,
+    /// `auth_token` through `token`, `Authorization` through `authorization`.
+    private static let claimWords: [String: Qualification] = [
+        "apikey": .unqualified,
+        "secret": .unqualified,
+        "password": .unqualified,
+        "passwd": .unqualified,
+        "pwd": .unqualified,
+        "credential": .unqualified,
+        "credentials": .unqualified,
+        "authorization": .unqualified,
+        "token": .anyWord,
+        "key": .oneOf(["api", "auth"]),
     ]
 
     /// Tails that make the identifier a reference to a secret rather than the
@@ -29,36 +53,18 @@ enum CredentialName {
     /// `secretName: db-tls-cert` is in nearly every Kubernetes Ingress
     /// manifest, `password_file: /run/secrets/db_password` in every compose
     /// file that does secrets properly, and `api_key_count: 3` is the direct
-    /// sibling of the `token_count` that `qualifiedTail` already exists for.
+    /// sibling of the `token_count` that `token`'s qualification already covers.
     /// Masking any of them destroys a line that was never sensitive, and
     /// `password_file` in particular replaces the one piece of information the
     /// reader needed: which file to look in.
     ///
-    /// This is the reasoning behind `qualifiedTail`, applied where it belongs.
-    /// It is checked ahead of every claim, so it governs the Authorization
-    /// rule too — which is what stops `authorization_url:` from masking to the
-    /// end of the line.
+    /// This is the reasoning behind `token`'s qualification, applied where it
+    /// belongs. It is checked ahead of every claim, so it governs the
+    /// Authorization rule too — which is what stops `authorization_url:` from
+    /// masking to the end of the line.
     private static let referenceTails: Set<String> = [
         "count", "file", "path", "name", "id", "length", "url",
     ]
-
-    /// Claims written as adjacent words: `API_KEY`, `X-Api-Key`, `apiKey`.
-    ///
-    /// `["auth", "key"]` is here rather than in `claims` because it is the pair
-    /// that claims, not either word alone. `AUTH_KEY=` is an ordinary `.env`
-    /// shape; a bare `auth` names a switch.
-    private static let phrases: [[String]] = [["api", "key"], ["auth", "key"]]
-
-    /// `token` is a claim only when something qualifies it.
-    ///
-    /// A bare `token` matches `token_count: 1500` and `入力トークン数: 3,200`.
-    /// Pasting a report about an LLM is squarely the intended use, so this is
-    /// fixed by narrowing the name rule rather than by an exclusion list — an
-    /// exclusion list cannot tell you when it has eaten something real.
-    ///
-    /// `key` is absent for the same reason: `key:` opens a mapping in most YAML
-    /// documents, and `primary_key` names a column.
-    private static let qualifiedTail = "token"
 
     /// True when the identifier names an Authorization-style header, where the
     /// entire value after the scheme word is credential material — unlike an
@@ -72,10 +78,15 @@ enum CredentialName {
     static func claimsCredential(_ identifier: String) -> Bool {
         let parts = words(in: identifier)
         guard !parts.isEmpty, !namesAReference(parts) else { return false }
-        if parts.contains(where: claims.contains) { return true }
-        if phrases.contains(where: { contains(parts, $0) }) { return true }
-        if let index = parts.firstIndex(of: qualifiedTail), index > 0 { return true }
-        return false
+        return parts.indices.contains { index in
+            guard let qualification = claimWords[parts[index]] else { return false }
+            switch qualification {
+            case .unqualified: return true
+            case .anyWord: return index > 0
+            case .oneOf(let qualifiers):
+                return index > 0 && qualifiers.contains(parts[index - 1])
+            }
+        }
     }
 
     /// True when the identifier names something *about* a secret rather than
@@ -112,12 +123,5 @@ enum CredentialName {
         }
         if !current.isEmpty { parts.append(current.lowercased()) }
         return parts
-    }
-
-    private static func contains(_ parts: [String], _ phrase: [String]) -> Bool {
-        guard parts.count >= phrase.count else { return false }
-        return (0...(parts.count - phrase.count)).contains { start in
-            Array(parts[start..<(start + phrase.count)]) == phrase
-        }
     }
 }

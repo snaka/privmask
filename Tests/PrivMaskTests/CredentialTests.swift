@@ -385,10 +385,10 @@ struct CredentialContextDetectorTests {
         #expect(masked("retries = 3\r\napi_key = abcdef123456") == "retries = 3\r\napi_key = [SECRET_1]")
     }
 
-    /// `skippingScheme` measured its skip distance from the constant's own
-    /// length, which happened to match only when the separator after the
-    /// scheme word was exactly one ASCII space. A tab or a second space left
-    /// the token itself unmasked or, worse, masked the scheme word instead.
+    /// The skip distance used to be measured from the scheme word constant's own
+    /// length, which happened to match only when the separator after the scheme
+    /// word was exactly one ASCII space. A tab or a second space left the token
+    /// itself unmasked or, worse, masked the scheme word instead.
     @Test("A tab after the scheme word does not leak the token")
     func schemeWordFollowedByTab() {
         #expect(masked("Authorization: Bearer\tabc123def456") == "Authorization: Bearer\t[SECRET_1]")
@@ -492,7 +492,7 @@ struct MergeInvariantTests {
         let tokenRange = (text as NSString).range(of: token)
 
         let covering = DetectionPipeline().detect(in: text).filter {
-            $0.kind == .credential && NSIntersectionRange($0.range, tokenRange).length > 0
+            $0.kind == .credential && rangesOverlap($0.range, tokenRange)
         }
         #expect(covering.count == 1)
 
