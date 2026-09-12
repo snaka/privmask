@@ -15,7 +15,14 @@ func runProbe() async throws {
     }
 
     let corpus = try Corpus.load(contentsOf: ProbeLocator.corpusURL())
-    let detector = FoundationModelDetector()
+    // The chunk size is the one number the batching design left to be settled by
+    // measurement, and recall for a name that comes after others is what it
+    // trades against latency. PRIVMASK_CHUNK_CHARS varies it.
+    let chunkCharacters =
+        ProcessInfo.processInfo.environment["PRIVMASK_CHUNK_CHARS"].flatMap(Int.init)
+        ?? FoundationModelDetector.defaultCharacterLimit
+    print("chunk size: \(chunkCharacters) characters")
+    let detector = FoundationModelDetector(characterLimit: chunkCharacters)
     // Evaluate what the product actually produces: the deterministic pipeline
     // plus whatever the model adds. Measuring the model alone understates it,
     // because English names are NLTagger's job and never reach the model.
