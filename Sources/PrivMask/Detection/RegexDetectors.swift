@@ -9,11 +9,22 @@ public struct RegexDetectors {
 
     public func detect(in text: String) -> [DetectedMatch] {
         var matches: [DetectedMatch] = []
-        matches += Self.emails.matches(in: text, kind: .email)
         matches += Self.postalCodes.matches(in: text, kind: .postalCode)
         for pattern in Self.credentials {
             matches += pattern.matches(in: text, kind: .credential)
         }
+        let urlCredentials = Self.urlCredential.matches(in: text, kind: .credential, group: 1)
+        matches += urlCredentials
+
+        // The userinfo component of a URL is not an email address, even though it
+        // has the same shape. Drop any email match that overlaps with a URL credential.
+        let emailMatches = Self.emails.matches(in: text, kind: .email)
+        for email in emailMatches {
+            if !urlCredentials.contains(where: { rangesOverlap(email.range, $0.range) }) {
+                matches.append(email)
+            }
+        }
+
         return matches
     }
 
@@ -32,7 +43,38 @@ public struct RegexDetectors {
         Pattern(#"\bgh[pousr]_[A-Za-z0-9]{36,255}\b"#),
         // OpenAI-style secret keys
         Pattern(#"\bsk-(?:proj-)?[A-Za-z0-9_\-]{20,}\b"#),
+        // GitHub fine-grained personal access token
+        Pattern(#"\bgithub_pat_[A-Za-z0-9_]{22,}\b"#),
+        // Slack bot / user / app-level tokens
+        Pattern(#"\bxox[baprs]-[A-Za-z0-9\-]{10,}"#),
+        Pattern(#"\bxapp-[0-9]-[A-Za-z0-9\-]{10,}"#),
+        // Slack incoming webhook: the URL is the credential
+        Pattern(#"https://hooks\.slack\.com/services/[A-Za-z0-9/_\-]{20,}"#),
+        // Google API key
+        Pattern(#"\bAIza[0-9A-Za-z_\-]{35}\b"#),
+        // Stripe secret and restricted keys. `pk_` is publishable: left alone.
+        Pattern(#"\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,}\b"#),
+        // npm access token
+        Pattern(#"\bnpm_[A-Za-z0-9]{36}\b"#),
+        // SendGrid API key
+        Pattern(#"\bSG\.[A-Za-z0-9_\-]{16,}\.[A-Za-z0-9_\-]{16,}\b"#),
+        // JWT: header.payload.signature, both halves base64url-encoded JSON
+        Pattern(#"\beyJ[A-Za-z0-9_\-]{8,}\.eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\b"#),
+        // A private key block, newlines included. A block with no END of its own
+        // must not reach forward to a later key's END and mask the text in between.
+        // `PUBLIC KEY` is not matched.
+        Pattern(
+            #"-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----(?:(?!-----BEGIN )[\s\S])*?-----END (?:[A-Z]+ )?PRIVATE KEY-----"#
+        ),
     ]
+
+    /// Credentials embedded in a URL. Group 1 is the password.
+    ///
+    /// `@` and `/` are excluded from both halves so the match cannot run past
+    /// the authority component into a path that happens to contain a colon.
+    private static let urlCredential = Pattern(
+        #"[A-Za-z][A-Za-z0-9+.\-]*://[^\s:/?#@]+:([^\s/?#@]+)@"#
+    )
 }
 
 /// A compiled regular expression that yields `DetectedMatch` values.
@@ -46,22 +88,33 @@ struct Pattern {
         regex = try! NSRegularExpression(pattern: pattern, options: options)
     }
 
-    func matches(in text: String, kind: SensitiveKind) -> [DetectedMatch] {
+    /// Matches reported at one capture group, the whole match by default.
+    ///
+    /// The URL-credential pattern is what needs a group other than 0: its match
+    /// has to span `scheme://user:pass@` to know what it is looking at, but only
+    /// the password is the secret.
+    func matches(in text: String, kind: SensitiveKind, group: Int = 0) -> [DetectedMatch] {
         let nsText = text as NSString
-        return regex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
-            .map { result in
-                DetectedMatch(
-                    kind: kind,
-                    source: .regex,
-                    range: result.range,
-                    text: nsText.substring(with: result.range)
-                )
-            }
+        return results(in: text).compactMap { result in
+            let range = result.range(at: group)
+            guard range.location != NSNotFound, range.length > 0 else { return nil }
+            return DetectedMatch(
+                kind: kind,
+                source: .regex,
+                range: range,
+                text: nsText.substring(with: range)
+            )
+        }
     }
 
     func matchRanges(in text: String) -> [NSRange] {
+        results(in: text).map(\.range)
+    }
+
+    /// The one place a pattern is run. Everything else here is built on it, so
+    /// a change to the search range or the options reaches every caller.
+    func results(in text: String) -> [NSTextCheckingResult] {
         let nsText = text as NSString
         return regex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
-            .map(\.range)
     }
 }

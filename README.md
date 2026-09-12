@@ -62,10 +62,23 @@ this on a hotkey, with a confirmation step before anything is replaced.
 |---|---|
 | Phone numbers, addresses | `NSDataDetector`, including full-width and unhyphenated Japanese forms |
 | My Number | Pattern plus check digit, so an order number is not mistaken for one |
-| Email, postal codes, API keys and tokens | Patterns |
+| Email, postal codes | Patterns |
+| Credentials — API keys, tokens, secrets | A published prefix, or the name that introduces the value |
 | Your own terms | A list you keep |
 | Japanese personal names | Apple Intelligence, on device |
 | English personal names | `NLTagger` |
+
+Credentials are found two ways. A value with a published prefix — an AWS access
+key ID, a GitHub token, a Slack token, a Stripe secret key, a private key block,
+a JWT — is recognised by its shape. Any other value is found by the name that
+introduces it: the right-hand side of `api_key = "…"` is a secret whatever it
+contains. That second route is the only one that reaches an AWS *secret* access
+key, which is 40 characters with no prefix to recognise, or a key issued by a
+service that never published a prefix at all.
+
+A value that cannot be live — `YOUR_API_KEY_HERE`, `xxxxxxxx`, digits only — is
+reported at low confidence rather than dropped. A rule that dropped it would
+eventually drop a real numeric password, and nobody would see it go.
 
 IP addresses, hostnames and internal URLs are deliberately left alone. Whether
 they are sensitive is not something a detector can decide, and masking them
@@ -101,7 +114,8 @@ flowchart TB
 
     subgraph mac["Your Mac"]
         direction TB
-        pat["Patterns<br/>email · API keys · postal code<br/>My Number, check digit validated"]
+        pat["Patterns<br/>email · postal code · keys with a published prefix<br/>My Number, check digit validated"]
+        named["The name that introduces a value<br/>api_key = … · Authorization: …<br/>whatever the value looks like"]
         dd["NSDataDetector<br/>phone numbers · addresses<br/>full-width and unhyphenated"]
         terms["Your term list<br/>~/.config/privmask/terms.txt"]
         fm["Apple Intelligence<br/>on-device foundation model<br/>Japanese personal names"]
@@ -112,11 +126,13 @@ flowchart TB
     out["Masked text<br/>numbered placeholders"]
 
     in --> pat
+    in --> named
     in --> dd
     in --> terms
     in --> fm
 
     pat -->|milliseconds| merge
+    named -->|milliseconds| merge
     dd -->|milliseconds| merge
     terms -->|milliseconds| merge
     fm -->|seconds| merge
@@ -148,6 +164,13 @@ straight away, and the model's findings are folded in when they arrive.
   that, names are left in place and a warning is printed.
 - The model varies between runs. It finds every name in the test corpus most
   times, not every time.
+- A credential with neither a recognisable name nor a published prefix is not
+  found — scoring values by randomness was rejected because that would also
+  flag the commit hash and request ID this README's own example keeps intact.
+  The name rule is ASCII only, so `パスワード: hunter2` is not found either.
+- An unquoted value is masked only as far as the first space, quote, comma,
+  semicolon or closing bracket — stopping there is what keeps the surrounding
+  document intact — so a passphrase with spaces in it is only partly covered.
 - Masking is **not reversible**. There is no way to recover the original text
   from the output.
 - `--no-model` makes privmask fully deterministic and much faster, at the cost

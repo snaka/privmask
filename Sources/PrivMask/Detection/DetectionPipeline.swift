@@ -37,6 +37,7 @@ public struct DetectionPipeline {
     private let myNumber = MyNumberDetector()
     private let dataDetector = AppleDataDetector()
     private let nameTagger = AppleNameTagger()
+    private let credentialContext = CredentialContextDetector()
     private let dictionary: DictionaryDetector
 
     public init(dictionaryTerms: [String] = []) {
@@ -56,6 +57,7 @@ public struct DetectionPipeline {
         matches += myNumber.detect(in: text)
         matches += dictionary.detect(in: text)
         matches += regex.detect(in: text)
+        matches += credentialContext.detect(in: text)
         matches += dataDetector.detect(in: text)
         matches += nameTagger.detect(in: text)
         matches += additional
@@ -82,7 +84,7 @@ public struct DetectionPipeline {
 
         return groups.values.map { group in
             let sources = group.map(\.source)
-            let base = sources.map(\.baseConfidence).max() ?? .low
+            let base = group.map(\.effectiveConfidence).max() ?? .low
             let distinctSources = Set(sources)
             let confidence = distinctSources.count > 1 ? base.promoted : base
             let first = group[0]
