@@ -139,6 +139,7 @@ struct CredentialNameTests {
         "credential", "credentials", "authorization", "Authorization",
         "access_token", "refresh_token", "GITHUB_TOKEN",
         "auth_token", "X-Auth-Token",
+        "AUTH_KEY", "auth_key", "authKey",
     ])
     func claims(_ identifier: String) {
         #expect(CredentialName.claimsCredential(identifier))

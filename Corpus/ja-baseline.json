@@ -291,7 +291,7 @@
         "orders.id",
         "enabled",
         "db-tls-cert",
-        "3",
+        "api_key_count: 3",
         "pk_live_51H1234567890abcdefghijkl",
         "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvQ9m"
       ]

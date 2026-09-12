@@ -13,9 +13,11 @@ enum CredentialName {
     /// Words that make the claim on their own.
     ///
     /// A bare `auth` is not among them. It names a switch far more often than
-    /// a secret — `auth: enabled`, `auth_provider: google` — and nothing real
-    /// is lost by dropping it: `auth_token` is still reached by the qualified
-    /// `token` rule, and `Authorization` by the word `authorization`.
+    /// a secret — `auth: enabled`, `auth_provider: google`. Dropping it does
+    /// cost something, though: `AUTH_KEY=` in a `.env` stopped being a claim
+    /// until `["auth", "key"]` was added to `phrases`. `auth_token` and
+    /// `Authorization` were never at risk, being reached by the qualified
+    /// `token` rule and by the word `authorization`.
     private static let claims: Set<String> = [
         "apikey", "secret", "password", "passwd", "pwd",
         "credential", "credentials", "authorization",
@@ -41,7 +43,11 @@ enum CredentialName {
     ]
 
     /// Claims written as adjacent words: `API_KEY`, `X-Api-Key`, `apiKey`.
-    private static let phrases: [[String]] = [["api", "key"]]
+    ///
+    /// `["auth", "key"]` is here rather than in `claims` because it is the pair
+    /// that claims, not either word alone. `AUTH_KEY=` is an ordinary `.env`
+    /// shape; a bare `auth` names a switch.
+    private static let phrases: [[String]] = [["api", "key"], ["auth", "key"]]
 
     /// `token` is a claim only when something qualifies it.
     ///
