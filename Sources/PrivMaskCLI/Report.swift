@@ -1,4 +1,5 @@
 import Foundation
+import PrivMask
 
 enum PrivMaskVersion {
     static let current = "0.2.0"
@@ -23,7 +24,10 @@ struct Report: Encodable {
     let masked: String
     let findings: [Finding]
     let model: ModelStatus
-    let modelInputTruncated: Bool
+    /// Chunks of the input the model layer never examined. Empty is the normal
+    /// case: the layer sends as many calls as the input takes, so a chunk is
+    /// missing only because its call failed.
+    let chunkFailures: [BatchedNameRun.ChunkFailure]
 
     /// Every way in which this run examined less than the whole input.
     ///
@@ -35,15 +39,15 @@ struct Report: Encodable {
     var warnings: [String] {
         var warnings: [String] = []
         if let warning = model.warning { warnings.append(warning) }
-        if modelInputTruncated { warnings.append(Self.truncationWarning) }
+        warnings += chunkFailures.map { failure in
+            "chunk \(failure.index) of \(failure.total) (\(failure.characters) characters) "
+                + "was not examined for names: \(failure.reason)"
+        }
         return warnings
     }
 
-    static let truncationWarning =
-        "input was longer than the model layer accepts; the tail was not examined for names"
-
     private enum CodingKeys: String, CodingKey {
-        case masked, findings, model, modelDetail, modelInputTruncated, warnings
+        case masked, findings, model, modelDetail, warnings
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -55,7 +59,6 @@ struct Report: Encodable {
         // for its presence before its value, which is one more thing to get
         // wrong than reading null.
         try container.encode(model.detail, forKey: .modelDetail)
-        try container.encode(modelInputTruncated, forKey: .modelInputTruncated)
         try container.encode(warnings, forKey: .warnings)
     }
 }

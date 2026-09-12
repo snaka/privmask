@@ -49,14 +49,14 @@ if let url = options.dictionaryURL {
 let pipeline = DetectionPipeline(dictionaryTerms: terms)
 var candidates = pipeline.detect(in: input)
 var modelStatus = ModelStatus.disabled
-var truncated = false
+var chunkFailures: [BatchedNameRun.ChunkFailure] = []
 
 if options.useModel {
     if #available(macOS 26.0, *), FoundationModelDetector.isAvailable {
         do {
             let outcome = try await FoundationModelDetector().detect(in: input)
             candidates = pipeline.detect(in: input, additional: outcome.matches)
-            truncated = outcome.truncated
+            chunkFailures = outcome.failures
             modelStatus = .used
         } catch {
             // Fail open: the model is an addition, and losing it must not lose
@@ -89,7 +89,7 @@ let report = Report(
         )
     },
     model: modelStatus,
-    modelInputTruncated: truncated
+    chunkFailures: chunkFailures
 )
 
 if options.json {

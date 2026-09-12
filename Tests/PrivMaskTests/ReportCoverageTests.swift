@@ -1,4 +1,5 @@
 import Foundation
+import PrivMask
 import Testing
 
 @testable import PrivMaskCLI
@@ -18,9 +19,18 @@ struct ReportCoverageTests {
         return object as? [String: Any] ?? [:]
     }
 
-    private func report(model: ModelStatus, truncated: Bool = false) -> Report {
-        Report(masked: "text", findings: [], model: model, modelInputTruncated: truncated)
+    private func report(
+        model: ModelStatus,
+        failures: [BatchedNameRun.ChunkFailure] = []
+    ) -> Report {
+        Report(masked: "text", findings: [], model: model, chunkFailures: failures)
     }
+
+    private static let oneFailure = [
+        BatchedNameRun.ChunkFailure(
+            index: 2, total: 5, characters: 1204, reason: "exceededContextWindowSize"
+        )
+    ]
 
     @Test(
         "model is a bare token, never a sentence",
@@ -57,16 +67,20 @@ struct ReportCoverageTests {
         #expect(warnings.first?.contains("Japanese personal names were not looked for") == true)
     }
 
-    @Test("warnings reports input the model never saw")
-    func warnsWhenInputWasTruncated() throws {
-        let warnings = try encode(report(model: .used, truncated: true))["warnings"] as? [String] ?? []
+    @Test("warnings reports a chunk the model never examined, and says which")
+    func warnsWhenAChunkWasNotExamined() throws {
+        let json = try encode(report(model: .used, failures: Self.oneFailure))
+        let warnings = json["warnings"] as? [String] ?? []
         #expect(warnings.count == 1)
-        #expect(warnings.first?.contains("not examined") == true)
+        let warning = warnings.first ?? ""
+        #expect(warning.contains("chunk 2 of 5"))
+        #expect(warning.contains("1204 characters"))
+        #expect(warning.contains("not examined"))
     }
 
     @Test("warnings carries every degradation at once")
     func warningsAccumulate() throws {
-        let report = report(model: .failed("boom"), truncated: true)
+        let report = report(model: .failed("boom"), failures: Self.oneFailure)
         #expect(try encode(report)["warnings"] as? [String] ?? [] == report.warnings)
         #expect(report.warnings.count == 2)
     }

@@ -90,8 +90,10 @@ macOS 13 or later.
 
 **Japanese personal names additionally need macOS 26 with Apple Intelligence
 enabled.** They are found only by the on-device model, which runs by default
-wherever it is available. Where it is not, privmask says so on stderr — read
-those warnings rather than assuming the text was checked.
+wherever it is available. Where it is not, privmask says so on stderr — and in
+the `warnings` array under `--json`. That array is empty only when every layer
+ran over the whole input, so it is the one thing to check before treating the
+output as safe to pass on.
 
 ## Your own terms
 
@@ -160,8 +162,15 @@ straight away, and the model's findings are folded in when they arrive.
 | **Japanese personal names** | ❌ | ❌ | ✅ |
 | Spelling variants of your terms | ❌ | ❌ | ✅ |
 
-- Only the first 1,500 characters of Japanese are examined for names. Beyond
-  that, names are left in place and a warning is printed.
+- Finding names takes as long as there is Japanese to read. The text is sent to
+  the model in chunks of about 1,500 characters, one call after another — the
+  on-device model runs them one at a time whatever you do, so a document with a
+  lot of Japanese in it takes proportionally longer. Everything is examined; the
+  cost is time. `--no-model` skips the whole layer when you would rather have
+  the speed.
+- If a chunk fails, the names in the other chunks are still found and the chunk
+  that failed is named in a warning. A warning means that part of the text was
+  not examined — not that nothing was.
 - The model varies between runs. It finds every name in the test corpus most
   times, not every time.
 - A credential with neither a recognisable name nor a published prefix is not
