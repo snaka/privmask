@@ -86,6 +86,10 @@ names can be handled deterministically and the model does not need to see them.
 
 ## Latency and size limits
 
+> **Superseded on 2026-09-12.** The cap measured here was later replaced by
+> chunking, and the throughput figures did not reproduce. See
+> [*Batching*](#batching-what-a-second-round-of-measurement-added) below.
+
 Measured on entity-dense synthetic Japanese logs (a name, phone, and address on
 every line), with varied content so the model cannot short-circuit on repetition:
 
@@ -107,6 +111,9 @@ Sparser text is faster — the corpus samples (37–258 chars) ran in 1.3–5.0s
 output length, not just input length, drives the cost.
 
 ## Consequences for the design
+
+*Superseded in part on 2026-09-12: the cap below became a chunk size, and
+nothing is skipped beyond it.*
 
 - The LLM layer must be given only the Japanese-bearing lines, both to avoid the
   language rejection and to stay inside the context window.

@@ -154,15 +154,19 @@ struct BatchingTests {
 
     @Test("A trailing crumb is carried by the previous call, never sent alone")
     func noCrumbIsSentOnItsOwn() {
-        // 3 x 90 characters, then a 4-character heading: greedy packing would
-        // leave the heading as a call of its own, and a fragment that small is
-        // what makes the model generate until the context window is gone.
-        let body = (1...3).map { _ in String(repeating: "報告。", count: 30) }
+        // 96 characters a line against a limit of 100, so the 4-character
+        // heading cannot join the line before it by ordinary packing: greedy
+        // packing leaves it as a call of its own. A fragment that small is what
+        // makes the model generate until the context window is gone.
+        let body = (1...3).map { _ in String(repeating: "報告。", count: 32) }
         let text = (body + ["# 報告"]).joined(separator: "\n")
         let batches = JapaneseText.batches(segments(text), characterLimit: 100, minimumChunkCharacters: 32)
 
+        #expect(batches.count == 3, "sizes: \(batches.map(\.text.count))")
         #expect(batches.allSatisfy { $0.text.count >= 32 }, "sizes: \(batches.map(\.text.count))")
-        #expect(batches.map(\.text).joined().contains("# 報告"))
+        // The crumb overshoots the limit rather than travelling alone.
+        #expect(batches.last?.text.hasSuffix("# 報告") == true)
+        #expect((batches.last?.text.count ?? 0) > 100)
     }
 
     @Test("A single short line is still sent, because there is nothing to carry it")
