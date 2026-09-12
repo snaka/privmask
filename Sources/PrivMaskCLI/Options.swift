@@ -47,6 +47,23 @@ struct Options {
                                not detected either way and privmask says so.
           --version            Print the version.
           -h, --help           Print this message.
+
+        FOR AN AGENT RUNNING THIS
+          Use --json and check "warnings". It is empty only when every layer
+          ran over the whole input. A non-empty "warnings" means something was
+          not looked for — most often Japanese personal names, which no other
+          layer finds — so the text has not been cleared for sharing just
+          because it went through privmask.
+
+          The --json report carries the original, unmasked values in
+          findings[].text. It is as sensitive as the input: do not write it to
+          a file, quote it, or attach it anywhere.
+
+          Masking is not reversible. Feeding masked text back in recovers
+          nothing.
+
+          Do not reach for --no-model to make a run faster. It turns off the
+          only layer that finds Japanese personal names.
         """
 
     static func parse(_ arguments: [String]) throws -> Options {
@@ -71,6 +88,11 @@ struct Options {
                 options.showVersion = true
             case "-h", "--help":
                 options.showHelp = true
+            // A file path is not a misspelled flag, and saying "unknown option"
+            // leaves the caller no better off. It is the first thing anyone
+            // tries, an agent included.
+            case let argument where !argument.hasPrefix("-"):
+                throw CLIError.positionalArgument(argument)
             case let unknown:
                 throw CLIError.unknownOption(unknown)
             }
@@ -83,11 +105,17 @@ struct Options {
 enum CLIError: Error, CustomStringConvertible {
     case missingValue(String)
     case unknownOption(String)
+    /// An argument that is not a flag — almost always a file, because that is
+    /// how most tools take input.
+    case positionalArgument(String)
 
     var description: String {
         switch self {
         case .missingValue(let option): return "\(option) needs a value"
         case .unknownOption(let option): return "unknown option: \(option)"
+        case .positionalArgument(let argument):
+            // No leading "privmask": `fail` already prefixes the line.
+            return "input is read from stdin — try: privmask < \(argument)"
         }
     }
 }

@@ -53,6 +53,9 @@ cat app.log | privmask          # or anything on stdin
 cat app.log | privmask --json   # findings as JSON, for tooling
 ```
 
+Input comes from stdin — there is no file argument. `--help` carries a section
+for an agent running this rather than a person.
+
 There is a [Raycast extension](https://github.com/snaka/privacy-mask) that puts
 this on a hotkey, with a confirmation step before anything is replaced.
 

@@ -85,3 +85,54 @@ struct ReportCoverageTests {
         #expect(report.warnings.count == 2)
     }
 }
+
+/// What the CLI tells a caller that is not a person.
+///
+/// `--json` gained a `warnings` array that says whether the text was fully
+/// examined, but nothing pointed anyone at it, and the first thing an agent
+/// reaches for — a file path — was answered with a non sequitur.
+@Suite("What the CLI tells an agent")
+struct AgentFacingCLITests {
+    /// The message a caller actually sees, which is what is being asserted —
+    /// `fail` interpolates the error into its output.
+    private func message(parsing arguments: [String]) -> String {
+        do {
+            _ = try Options.parse(arguments)
+            return ""
+        } catch {
+            return "\(error)"
+        }
+    }
+
+    @Test("A file path is answered with the way to pass the file")
+    func aPositionalArgumentSaysToUseStdin() {
+        let message = message(parsing: ["incident.txt"])
+        #expect(message.contains("stdin"))
+        #expect(message.contains("privmask < incident.txt"))
+    }
+
+    @Test("A misspelled flag is still an unknown option, not a file")
+    func anUnknownFlagIsUnchanged() {
+        #expect(message(parsing: ["--nope"]).contains("unknown option: --nope"))
+    }
+
+    @Test("The help points at warnings, which is the one thing worth checking")
+    func helpNamesTheCoverageContract() {
+        #expect(Options.usage.contains("warnings"))
+    }
+
+    @Test("The help says the report carries the unmasked values")
+    func helpWarnsThatTheReportIsSensitive() {
+        #expect(Options.usage.contains("findings[].text"))
+    }
+
+    @Test("The help says masking cannot be undone")
+    func helpSaysMaskingIsIrreversible() {
+        #expect(Options.usage.lowercased().contains("not reversible"))
+    }
+
+    @Test("The help says not to reach for --no-model to go faster")
+    func helpWarnsAgainstDisablingTheModelForSpeed() {
+        #expect(Options.usage.contains("Do not reach for --no-model"))
+    }
+}
