@@ -42,15 +42,34 @@ public struct AppleDataDetector {
     /// Rejects matches that cannot be what the detector says they are.
     ///
     /// A run of digits with no separator and no country code is only a phone
-    /// number at Japanese lengths: 10 (03-1234-5678, 0120-123-456) or 11
-    /// (090-1234-5678). NSDataDetector claimed the 12-digit order number
-    /// `123456789010` as a phone number, which would have masked it. Matches
-    /// that carry separators or a leading + are left alone, so an international
-    /// number written normally is unaffected.
+    /// number at Japanese lengths — 10 (03-1234-5678, 0120-123-456) or 11
+    /// (090-1234-5678) — and only when it carries the domestic prefix `0`.
+    /// Every Japanese number does: fixed-line, mobile, PHS, IP (050), 0120 and
+    /// 0800 alike. `110` and `119` are three-digit service codes, which the
+    /// length rule already excludes.
+    ///
+    /// Both halves were paid for by a real over-mask. NSDataDetector claimed the
+    /// 12-digit order number `123456789010` as a phone number; it also claimed
+    /// the Unix timestamp `1789049614`, which is ten digits. Requiring the `0`
+    /// reaches further than rejecting timestamps would: a JSON number cannot
+    /// have a leading zero, so a bare digit run in a JSON numeric position is
+    /// never a Japanese phone number, whether it is a timestamp, a counter or an
+    /// ID. That matters because masking one produces `"timestamp": [PHONE_1]`,
+    /// which no longer parses.
+    ///
+    /// Matches that carry separators or a leading `+` do not normalise to digits
+    /// alone and never reach the rule, so an international number written
+    /// normally is unaffected.
+    ///
+    /// What it costs is a Japanese number whose leading `0` has been stripped —
+    /// by a spreadsheet, say. That is the same direction as the length rule: a
+    /// number the reader has to notice for themselves, rather than a document
+    /// this tool has broken.
     static func isPlausible(kind: SensitiveKind, text: String) -> Bool {
         guard kind == .phoneNumber else { return true }
         let normalized = MyNumberDetector.normalizeDigits(text)
         guard normalized.allSatisfy(\.isNumber) else { return true }
+        guard normalized.hasPrefix("0") else { return false }
         return (10...11).contains(normalized.count)
     }
 

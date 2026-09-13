@@ -295,6 +295,23 @@
         "pk_live_51H1234567890abcdefghijkl",
         "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvQ9m"
       ]
+    },
+    {
+      "id": "error-tracker-payload",
+      "note": "An error-tracker payload of the kind an engineer pastes whole. Fictional throughout. Most of it is machine-generated structure that must survive: a Unix timestamp, values the service already scrubbed, and one Japanese sentence a user typed. Only the CSRF token, the email and the phone number are real findings. The two hiragana spans are listed because the model returned them as names; CorpusRegressionTests cannot see that, since personalName is not a deterministic kind, but FoundationModelProbe reports it.",
+      "text": "{\n  \"timestamp\": 1789049614,\n  \"level\": \"error\",\n  \"notifier\": {\n    \"configured_options\": {\n      \"access_token\": \"******\",\n      \"scrub_fields\": [\"password\", \"secret\"]\n    }\n  },\n  \"request\": {\n    \"POST\": {\n      \"authenticity_token\": \"******\",\n      \"message\": \"どこを見れば良いのでしょうか？\"\n    },\n    \"headers\": {\n      \"X-Csrf-Token\": \"9WkQm2TnbY4xLpZa7Rv0cHuJeS1dFgIoA6yNtB3rMwXk\"\n    },\n    \"session\": {\n      \"_csrf_token\": \"[FILTERED]\"\n    }\n  },\n  \"person\": {\n    \"email\": \"suzuki@example.co.jp\",\n    \"phone\": \"090-1234-5678\"\n  }\n}",
+      "expected": [
+        { "kind": "credential", "text": "9WkQm2TnbY4xLpZa7Rv0cHuJeS1dFgIoA6yNtB3rMwXk" },
+        { "kind": "email", "text": "suzuki@example.co.jp" },
+        { "kind": "phoneNumber", "text": "090-1234-5678" }
+      ],
+      "mustNotDetect": [
+        "1789049614",
+        "******",
+        "[FILTERED]",
+        "どこ",
+        "のでしょうか"
+      ]
     }
   ],
   "dictionary": [

@@ -57,6 +57,43 @@ struct DataDetectorTests {
         #expect(matches.contains { $0.kind == .phoneNumber })
     }
 
+    /// Every Japanese number carries the domestic prefix `0`, so a separator-less
+    /// run that starts with anything else is some other ten- or eleven-digit
+    /// number. A JSON number cannot have a leading zero either, which makes every
+    /// bare digit run in a JSON numeric position — timestamps, counters, IDs —
+    /// fall out of the same rule.
+    @Test(
+        "A separator-less digit run that does not start with 0 is not a phone number",
+        arguments: [
+            "1789049614",  // unix timestamp in seconds
+            "2147483647",
+            "12345678901",
+            "9876543210",
+        ]
+    )
+    func digitRunsWithoutDomesticPrefix(_ digits: String) {
+        #expect(!AppleDataDetector.isPlausible(kind: .phoneNumber, text: digits))
+    }
+
+    @Test(
+        "A separator-less digit run starting with 0 is still a phone number",
+        arguments: ["09012345678", "0312345678", "0120123456"]
+    )
+    func bareDigitRunsWithDomesticPrefix(_ digits: String) {
+        #expect(AppleDataDetector.isPlausible(kind: .phoneNumber, text: digits))
+    }
+
+    /// The plausibility rule only judges runs that normalise to digits alone, so
+    /// a number written with separators or an international prefix never reaches
+    /// it. Holding that here keeps the new rule from narrowing to domestic form.
+    @Test(
+        "A number carrying separators or a country code is left to the detector",
+        arguments: ["+81 90-1234-5678", "+81-3-1234-5678", "090-1234-5678", "03 1234 5678"]
+    )
+    func separatedNumbersAreExempt(_ number: String) {
+        #expect(AppleDataDetector.isPlausible(kind: .phoneNumber, text: number))
+    }
+
     @Test(
         "Japanese addresses are recognised",
         arguments: [
@@ -173,6 +210,44 @@ struct ModelPlausibilityTests {
     )
     func rejectsNonNames(_ span: String) {
         #expect(!FoundationModelDetector.isPlausibleName(span))
+    }
+
+    /// Kanji and katakana candidates are checked against the family-name list;
+    /// hiragana had no equivalent, so the model's filler words came through
+    /// whole. `どこを見れば良いのでしょうか？` was masked as
+    /// `[NAME_1]を見れば良い[NAME_2]？`. See #15.
+    @available(macOS 26.0, *)
+    @Test(
+        "Hiragana spans that are grammar rather than names are rejected",
+        arguments: [
+            "どこ",  // returned by the model on a real payload
+            "のでしょうか",  // likewise
+            "これ", "それ", "ここ", "そこ", "なぜ", "いつ", "だれ", "どちら",
+            "ですか", "ますか", "ました", "ません", "ください", "でしょうか",
+            "わかりました",
+        ]
+    )
+    func rejectsHiraganaGrammar(_ span: String) {
+        #expect(!FoundationModelDetector.isPlausibleName(span))
+    }
+
+    /// The exclusion list may not reach into names that merely start the same
+    /// way: `ここ` must not take `こころ`, and no prefix rule may take `のぞみ`.
+    @available(macOS 26.0, *)
+    @Test(
+        "Hiragana given names are still accepted",
+        arguments: [
+            "さくら", "ゆい", "あおい", "ひなた", "つむぎ", "のぞみ", "みお",
+            "ことね", "すみれ", "はるか", "こころ", "いつき", "なぎさ",
+            // Two-mora names that collide with grammar. 蒼 and 奏 are both
+            // written そう, 航 and 光 both こう, and 成 is なる. An entry in the
+            // exclusion list that is also a name loses it silently, which is
+            // the failure an allow list was rejected for.
+            "そう", "こう", "なる",
+        ]
+    )
+    func acceptsHiraganaNames(_ name: String) {
+        #expect(FoundationModelDetector.isPlausibleName(name))
     }
 
     /// A single-token name may begin with a character that is also a particle.

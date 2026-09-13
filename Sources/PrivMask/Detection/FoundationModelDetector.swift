@@ -257,11 +257,19 @@ public struct FoundationModelDetector {
 
     /// Checks a candidate against how Japanese names are actually written.
     ///
-    /// Text in Latin or hiragana alone is accepted as-is: there is no reliable
-    /// signal to apply, and the cost of a wrong rejection is a missed name.
-    /// Kanji and katakana candidates are checked against the surname list,
-    /// which is what rejects the words the model reaches for when a text
-    /// contains no names.
+    /// Kanji and katakana candidates are checked against the surname list, which
+    /// is what rejects the words the model reaches for when a text contains no
+    /// names. Hiragana candidates are checked against `JapaneseNonNameWords`,
+    /// which is the same idea in the other direction — a denial list, because
+    /// hiragana given names are an open set that no allow list could hold.
+    ///
+    /// Hiragana used to be accepted as-is, on the grounds that there was no
+    /// reliable signal and a wrong rejection costs a name. What that missed is
+    /// that the same words recur: the model returned `どこ` and `のでしょうか`
+    /// from one sentence, and both are grammar no name could be confused with.
+    ///
+    /// Latin text is still accepted as-is. `AppleNameTagger` covers English
+    /// names deterministically, and there is no equivalent list to apply here.
     static func isNameShaped(_ text: String) -> Bool {
         var hasKanji = false
         var hasKatakana = false
@@ -279,7 +287,9 @@ public struct FoundationModelDetector {
         // Japanese names are written in one script. `サポート窓口` mixes them.
         if hasKanji && hasKatakana { return false }
 
-        guard hasKanji || hasKatakana else { return true }
+        guard hasKanji || hasKatakana else {
+            return !JapaneseNonNameWords.isGrammar(text)
+        }
         return JapaneseSurnames.beginsWithSurname(text)
     }
 }

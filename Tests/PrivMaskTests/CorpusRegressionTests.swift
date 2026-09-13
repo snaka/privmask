@@ -60,6 +60,28 @@ struct CorpusRegressionTests {
         #expect(violations.isEmpty, Comment(rawValue: detail))
     }
 
+    /// The harm, checked directly rather than through the finding list.
+    ///
+    /// A JSON payload is ordinary input for this tool, and masking a value in a
+    /// numeric position writes a bare `[PHONE_1]` where a number belongs, which
+    /// no parser will accept. The finding list can look reasonable while the
+    /// document is already broken, so the property is asserted on the output.
+    @Test("Masking a JSON sample leaves it parseable")
+    func maskedJSONStaysParseable() throws {
+        let corpus = try Self.loadCorpus()
+        let pipeline = DetectionPipeline(dictionaryTerms: corpus.dictionary)
+        let masker = Masker()
+
+        for sample in corpus.samples where sample.text.hasPrefix("{") {
+            let candidates = pipeline.detect(in: sample.text)
+            let masked = masker.mask(sample.text, candidates: candidates).text
+            #expect(
+                (try? JSONSerialization.jsonObject(with: Data(masked.utf8))) != nil,
+                Comment(rawValue: "[\(sample.id)] masked output does not parse:\n\(masked)")
+            )
+        }
+    }
+
     @Test("No detections beyond what the corpus expects")
     func noUnexpectedDetections() throws {
         let unexpected = try Self.report().unexpected
