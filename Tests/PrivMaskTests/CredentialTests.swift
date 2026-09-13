@@ -210,6 +210,47 @@ struct CredentialContextDetectorTests {
         #expect(masked("DB_PASSWORD=hunter2") == "DB_PASSWORD=[SECRET_1]")
     }
 
+    /// A value the upstream service already scrubbed is not a finding at all.
+    /// Masking it replaces one scrub marker with another and spends a
+    /// placeholder number doing it, which tells the reader a distinct secret was
+    /// there. Unlike `xxxxxx` or a numeric value, there is no credential a run
+    /// of asterisks could be, so the argument for reporting it at `.low` does
+    /// not apply. See #15.
+    @Test(
+        "A value that is only a scrub marker is not reported",
+        arguments: ["******", "***", "●●●●●●", "••••", "■■■■", "████████"]
+    )
+    func scrubbedValuesAreNotFindings(_ value: String) {
+        #expect(detector.detect(in: "access_token: \"\(value)\"").isEmpty)
+    }
+
+    /// `[FILTERED]` is what Rails and Rollbar emit. It was reported at `medium`,
+    /// because `markers` carries `REDACTED` but not `FILTERED`.
+    @Test(
+        "A scrub sentinel is not reported",
+        arguments: ["[FILTERED]", "[filtered]", "[REDACTED]", "<REDACTED>", "[Scrubbed]"]
+    )
+    func scrubSentinelsAreNotFindings(_ value: String) {
+        #expect(detector.detect(in: "csrf_token: \"\(value)\"").isEmpty)
+    }
+
+    /// Matching is exact so it cannot reach privmask's own output, which is a
+    /// separate problem (#16), and narrow so that the values `looksLikePlaceholder`
+    /// covers keep being reported at `.low` rather than dropped.
+    @Test(
+        "Values that merely look like placeholders are still reported",
+        arguments: ["xxxxxx", "<your-key-here>", "12345678", "${AWS_SECRET}", "CHANGEME"]
+    )
+    func placeholdersAreStillReported(_ value: String) {
+        #expect(confidence(of: "api_key: \"\(value)\"") == .low)
+    }
+
+    /// A run of asterisks is a marker; a password that merely contains one is not.
+    @Test("A value containing a masking glyph among other characters is still a finding")
+    func partiallyMaskedValueIsStillAFinding() {
+        #expect(!detector.detect(in: "password: \"ab**cd12\"").isEmpty)
+    }
+
     /// Swallowing the comma would corrupt the document.
     @Test("A quoted value ends at its closing quote")
     func jsonStaysParseable() throws {
@@ -465,11 +506,14 @@ struct CredentialContextDetectorTests {
 
     /// A placeholder is still a candidate. A rule that dropped it would
     /// eventually drop a real numeric password, and nobody would see it go.
+    ///
+    /// A run of asterisks used to be in this list. It moved to `isScrubbed`,
+    /// which drops it: the reasoning above needs a value a real credential could
+    /// occupy, and `****************` is not one. See #15.
     @Test("A value that cannot be live is low confidence, not discarded", arguments: [
         "api_key = YOUR_API_KEY_HERE",
         "api_key = xxxxxxxxxx",
         "api_key = <your-key-here>",
-        "api_key = ****************",
         "refresh_token_expires_at: 3600",
         "password = abc",
     ])

@@ -10,6 +10,9 @@ import Foundation
 /// Confidence is `.medium`, lowered to `.low` for a value that cannot be a live
 /// credential. Such a value is still reported: an exclusion rule that dropped it
 /// could not tell you when it had dropped a real numeric password.
+///
+/// The one exception is a value that is a scrub marker — see `isScrubbed`. That
+/// argument does not apply to it, because there is no credential it could be.
 public struct CredentialContextDetector {
     public init() {}
 
@@ -90,6 +93,7 @@ public struct CredentialContextDetector {
                     length: valueRange.length
                 )
                 let value = nsText.substring(with: range)
+                guard !Self.isScrubbed(value) else { continue }
                 matches.append(
                     DetectedMatch(
                         kind: .credential,
@@ -318,6 +322,48 @@ public struct CredentialContextDetector {
     private static let variableReference = Pattern(
         #"^\$(\{[A-Za-z_][A-Za-z0-9_]*\}|[A-Za-z_][A-Za-z0-9_]*)$"#
     )
+
+    /// Characters a tool reaches for when it replaces a secret with a mark.
+    ///
+    /// Latin letters are deliberately absent. `xxxxxx` reads as a scrub too, but
+    /// it is also a password somebody chose, and `looksLikePlaceholder` already
+    /// lowers it. None of these is typeable as a password in the same way.
+    private static let maskingGlyphs: Set<Character> = ["*", "●", "•", "■", "█"]
+
+    /// Whole words a tool writes in place of a value it removed.
+    ///
+    /// Matched in full rather than as a substring, so this cannot reach
+    /// privmask's own `[SECRET_1]` — masking already-masked text is a separate
+    /// problem, tracked in #16 — and cannot reach a secret that merely contains
+    /// one of these words.
+    private static let scrubSentinels: Set<String> = [
+        "[FILTERED]", "[REDACTED]", "[SCRUBBED]", "[REMOVED]",
+        "<FILTERED>", "<REDACTED>", "<SCRUBBED>", "<REMOVED>",
+    ]
+
+    /// A value some other tool has already replaced.
+    ///
+    /// This is the one exclusion the detector makes, and it is narrow on
+    /// purpose. Reporting `access_token: "******"` costs more than the noise of
+    /// one low-confidence finding: masking it writes `[SECRET_1]` over a mark
+    /// that was already safe, which spends a placeholder number and tells the
+    /// reader a distinct secret stood there. A Rollbar payload arrived with
+    /// eight of them.
+    ///
+    /// Unlike the values `looksLikePlaceholder` lowers, there is no live
+    /// credential these could be, so dropping them cannot hide the day a real
+    /// one was dropped.
+    ///
+    /// Three of the same glyph is the floor: `**` is more likely emphasis or a
+    /// glob than a scrub.
+    static func isScrubbed(_ value: String) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespaces)
+        if scrubSentinels.contains(trimmed.uppercased()) { return true }
+        guard trimmed.count >= 3, let first = trimmed.first, maskingGlyphs.contains(first) else {
+            return false
+        }
+        return trimmed.allSatisfy { $0 == first }
+    }
 
     /// Values that cannot be a live credential.
     static func looksLikePlaceholder(_ value: String) -> Bool {
