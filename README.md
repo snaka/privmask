@@ -54,10 +54,11 @@ cat app.log | privmask --json   # findings as JSON, for tooling
 ```
 
 Input comes from stdin — there is no file argument. `--help` carries a section
-for an agent running this rather than a person.
+for an agent running this rather than a person, and
+[Checking what it found](#checking-what-it-found) describes the `--json` report.
 
-There is a [Raycast extension](https://github.com/snaka/privacy-mask) that puts
-this on a hotkey, with a confirmation step before anything is replaced.
+A Raycast extension is planned, to put this on a hotkey with a confirmation
+step before anything is replaced. It is not published yet.
 
 ## What it finds
 
@@ -86,6 +87,88 @@ eventually drop a real numeric password, and nobody would see it go.
 IP addresses, hostnames and internal URLs are deliberately left alone. Whether
 they are sensitive is not something a detector can decide, and masking them
 wrongly ruins the text.
+
+## Checking what it found
+
+`--json` reports every finding instead of the masked text, so you can see what
+was flagged and why before you act on it.
+
+```console
+$ printf '担当: 田中健一\nAPI_KEY=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLE\n連絡先 090-1234-5678\n' | privmask --json
+{
+  "findings" : [
+    {
+      "confidence" : "low",
+      "kind" : "personalName",
+      "length" : 4,
+      "location" : 4,
+      "placeholder" : "[NAME_1]",
+      "sources" : [
+        "languageModel"
+      ],
+      "text" : "田中健一"
+    },
+    {
+      "confidence" : "medium",
+      "kind" : "credential",
+      "length" : 35,
+      "location" : 17,
+      "placeholder" : "[SECRET_1]",
+      "sources" : [
+        "credentialContext"
+      ],
+      "text" : "wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLE"
+    },
+    {
+      "confidence" : "medium",
+      "kind" : "phoneNumber",
+      "length" : 13,
+      "location" : 57,
+      "placeholder" : "[PHONE_1]",
+      "sources" : [
+        "dataDetector"
+      ],
+      "text" : "090-1234-5678"
+    }
+  ],
+  "masked" : "担当: [NAME_1]\nAPI_KEY=[SECRET_1]\n連絡先 [PHONE_1]\n",
+  "model" : "used",
+  "modelDetail" : null,
+  "warnings" : [
+
+  ]
+}
+```
+
+**`text` carries the original value, so this report is as sensitive as the input
+was.** A caller needs it to show someone what is about to be masked, which is
+why it is there — but it means the report is the one output you must not paste
+anywhere you would not have pasted the input itself. privmask writes it to
+stdout and never to a file.
+
+Each finding:
+
+| Field | |
+|---|---|
+| `kind` | `email`, `phoneNumber`, `address`, `postalCode`, `personalName`, `organizationName`, `placeName`, `myNumber`, `credential`, `dictionaryTerm` |
+| `confidence` | `low`, `medium` or `high`. Normally a property of the detector that produced the match, promoted one step when two detectors find the same span independently — agreement is the only cheap evidence there is |
+| `sources` | Which detectors found it: `dataDetector`, `nameTagger`, `regex`, `dictionary`, `languageModel`, `credentialContext` |
+| `text` | The original value |
+| `location`, `length` | Where it sits, as UTF-16 offsets |
+| `placeholder` | What replaced it in `masked`, or `null` — two findings can overlap, and only one of them is replaced |
+
+And around them:
+
+| Field | |
+|---|---|
+| `masked` | The same text `privmask` would have written without `--json` |
+| `model` | `used`, `disabled`, `unavailable` or `failed` — a closed set |
+| `modelDetail` | Why, when that is not `used`. Otherwise `null` |
+| `warnings` | What was not examined. See [Requirements](#requirements): empty is the only value that means every layer ran over the whole input |
+
+Everything found is masked, including low-confidence findings — there is no
+confidence threshold to set. The report gives you what you need to decide
+otherwise; deciding is the caller's job.
 
 ## Requirements
 
