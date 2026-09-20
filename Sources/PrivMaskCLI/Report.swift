@@ -2,7 +2,7 @@ import Foundation
 import PrivMask
 
 enum PrivMaskVersion {
-    static let current = "0.3.1"
+    static let current = "0.4.0"
 }
 
 /// What `--json` emits.
