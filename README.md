@@ -280,10 +280,11 @@ straight away, and the model's findings are folded in when they arrive.
 ## Development
 
 ```sh
-swift test                      # unit, corpus regression and characterisation tests
-swift run AppleAPIProbe         # measure the deterministic layer against the corpus
-swift run FoundationModelProbe  # measure the full pipeline, model included (slow)
-Examples/use 1                  # put a sample text on the clipboard
+swift test                        # unit, corpus regression and characterisation tests
+swift run AppleAPIProbe           # measure the deterministic layer against the corpus
+swift run FoundationModelProbe    # measure the full pipeline, model included (slow)
+Examples/use 1                    # put a sample text on the clipboard
+python3 Scripts/generate-surnames.py   # rebuild the family-name list from SudachiDict
 ```
 
 [`Corpus/ja-baseline.json`](Corpus/ja-baseline.json) carries both what must be
@@ -299,10 +300,23 @@ output, not by reasoning about the APIs.
 Sources/PrivMask/       library: detection and masking
 Sources/PrivMaskCLI/    the privmask CLI
 Sources/*Probe/         measurement harnesses
+Scripts/                generators for the data the detectors check against
 Corpus/                 ground truth for the regression test
 Examples/               sample texts for trying it by hand
 ```
 
+`JapaneseSurnames.swift` is generated, not written. The model proposes a span and
+that list decides whether it is a name, so a family name missing from it is a
+name we found and discarded — which is why it holds every family name
+SudachiDict records rather than the few hundred anyone would think to type.
+
 ## License
 
-MIT
+MIT.
+
+The Japanese family-name list in
+[`JapaneseSurnames.swift`](Sources/PrivMask/Detection/JapaneseSurnames.swift) is
+generated from [SudachiDict](https://github.com/WorksApplications/SudachiDict),
+Copyright (c) Works Applications Co., Ltd., licensed under the Apache License,
+Version 2.0. SudachiDict's `small_lex.csv` contains a part of UniDic, Copyright
+(c) 2011-2013 The UniDic Consortium, under a 3-clause BSD licence.
