@@ -51,6 +51,36 @@ jobs:
             exit 1
           fi
 
+      # The tap push is the last step of a twenty-minute job, and it has failed
+      # twice now with a token that was no longer valid — both times after the
+      # Release had already been published, leaving the formula pointing at the
+      # previous version and `brew install` handing out the old binary. Checking
+      # the token first makes a bad one cost seconds, and stops the release
+      # half-happening.
+      #
+      # It has to be a write check. The tap is a public repository, so
+      # `git ls-remote` with a garbage token still exits 0 by falling back to
+      # anonymous read — which is how the expired token got as far as the push
+      # in the first place.
+      - name: Check the tap token can write to the tap
+        env:
+          GH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::TAP_PUSH_TOKEN is not set. It needs contents:write on snaka/homebrew-tap."
+            exit 1
+          fi
+          if ! PUSH=$(gh api repos/snaka/homebrew-tap --jq '.permissions.push' 2>&1); then
+            echo "::error::TAP_PUSH_TOKEN cannot read snaka/homebrew-tap — it has expired or was revoked. Reported: $PUSH"
+            exit 1
+          fi
+          if [ "$PUSH" != "true" ]; then
+            echo "::error::TAP_PUSH_TOKEN reaches snaka/homebrew-tap but cannot push to it. A fine-grained token needs that repository selected, with contents:write."
+            exit 1
+          fi
+          echo "TAP_PUSH_TOKEN can write to the tap"
+
       - name: Show toolchain
         run: |
           swift --version
