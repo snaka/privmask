@@ -382,7 +382,7 @@ each.
 fit. That suits log-shaped input, where a line is short. It does not suit
 markdown, where a paragraph is one line.
 
-A real report — 10,037 characters, of which the Japanese was **3 lines totalling
+A report of 10,037 characters, of which the Japanese was **3 lines totalling
 2,138 characters** — puts roughly 713 characters on a line. Two lines fit under
 the 1,500 cap and the third is dropped, so a name in the third paragraph is
 never looked for.

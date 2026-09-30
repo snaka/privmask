@@ -347,7 +347,7 @@ public struct CredentialContextDetector {
     /// purpose. Reporting `access_token: "******"` costs more than the noise of
     /// one low-confidence finding: masking it writes `[SECRET_1]` over a mark
     /// that was already safe, which spends a placeholder number and tells the
-    /// reader a distinct secret stood there. A Rollbar payload arrived with
+    /// reader a distinct secret stood there. An error-tracker payload arrived with
     /// eight of them.
     ///
     /// Unlike the values `looksLikePlaceholder` lowers, there is no live
