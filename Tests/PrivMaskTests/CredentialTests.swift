@@ -224,7 +224,7 @@ struct CredentialContextDetectorTests {
         #expect(detector.detect(in: "access_token: \"\(value)\"").isEmpty)
     }
 
-    /// `[FILTERED]` is what Rails and Rollbar emit. It was reported at `medium`,
+    /// `[FILTERED]` is what Rails and error trackers emit. It was reported at `medium`,
     /// because `markers` carries `REDACTED` but not `FILTERED`.
     @Test(
         "A scrub sentinel is not reported",
