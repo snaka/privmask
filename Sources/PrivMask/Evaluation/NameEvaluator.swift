@@ -211,11 +211,16 @@ extension NameEvaluator {
 
         var out = "## Recall (covered / expected)\n\n"
         out += cell("row") + "     n  " + reports.map { cell($0.system) }.joined() + "\n"
-        let breakdowns = reports.map(\.breakdown)
-        for (index, row) in (breakdowns.first ?? []).enumerated() {
-            out += cell(row.label) + String(format: "%6d  ", row.tally.expected)
+        // Rows with nothing expected are dropped per report, so line reports up
+        // by label: the union in first-seen order, "—" where a report has none.
+        let breakdowns = reports.map { Dictionary($0.breakdown.map { ($0.label, $0.tally) }, uniquingKeysWith: { first, _ in first }) }
+        var labels: [String] = []
+        for report in reports { for row in report.breakdown where !labels.contains(row.label) { labels.append(row.label) } }
+        for label in labels {
+            let n = breakdowns.lazy.compactMap { $0[label]?.expected }.first ?? 0
+            out += cell(label) + String(format: "%6d  ", n)
             out += breakdowns.map { rows in
-                let tally = rows[index].tally
+                guard let tally = rows[label] else { return cell("     —") }
                 return cell("\(percent(Double(tally.covered) / Double(tally.expected))) p\(tally.partial)")
             }.joined()
             out += "\n"

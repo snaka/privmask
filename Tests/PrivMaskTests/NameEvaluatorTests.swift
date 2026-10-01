@@ -267,4 +267,39 @@ struct NameBreakdownTests {
         #expect(rendered.contains("opus"))
         #expect(rendered.contains("50.0%"))
     }
+
+    @Test("Reports over different corpora line up by label and do not trap")
+    func differentRowSets() throws {
+        let romaji = try makeCorpus("""
+            {"id": "r", "note": "", "text": "Tanaka Kenichi", "genre": "log", "writer": "opus",
+             "expected": [{"kind": "personalName", "text": "Tanaka Kenichi", "tags": ["romaji"]}],
+             "mustNotDetect": []}
+            """)
+        let a = NameEvaluator.evaluate(corpus: romaji, detections: .init(system: "sysA", samples: ["r": .init(names: [])]))
+        let b = NameEvaluator.evaluate(corpus: try sampleCorpus(), detections: .init(system: "sysB", samples: ["a": .init(names: [])]))
+        let rendered = NameEvaluator.renderComparison([a, b])
+        #expect(rendered.contains("tag:romaji"))
+        #expect(rendered.contains("tag:kanji"))
+        #expect(rendered.contains("—"))
+    }
+
+    @Test("Problems with a system's detections are printed, not swallowed")
+    func problemLines() throws {
+        let corpus = try makeCorpus("""
+            {"id": "a", "note": "", "text": "田中健一", "genre": "log", "writer": "opus",
+             "expected": [{"kind": "personalName", "text": "田中健一", "tags": ["kanji", "full"]}],
+             "mustNotDetect": []},
+            {"id": "b", "note": "", "text": "山田花子", "genre": "log", "writer": "opus",
+             "expected": [{"kind": "personalName", "text": "山田花子", "tags": ["kanji", "full"]}],
+             "mustNotDetect": []}
+            """)
+        let file = DetectionsFile(system: "t", samples: [
+            "a": .init(names: [.init(text: "田中健一", location: 2, length: 4)]),
+            "typo": .init(names: []),
+        ])
+        let rendered = NameEvaluator.renderComparison([NameEvaluator.evaluate(corpus: corpus, detections: file)])
+        #expect(rendered.contains("UNEXAMINED"))
+        #expect(rendered.contains("UNKNOWN"))
+        #expect(rendered.contains("INVALID"))
+    }
 }
