@@ -277,17 +277,22 @@ public struct FoundationModelDetector {
     /// that the same words recur: the model returned `どこ` and `のでしょうか`
     /// from one sentence, and both are grammar no name could be confused with.
     ///
-    /// Latin text is still accepted as-is. `AppleNameTagger` covers English
-    /// names deterministically, and there is no equivalent list to apply here.
+    /// Latin text is checked by its shape: romaji, or a Western personal name.
+    /// It used to be accepted as-is, on the grounds that `AppleNameTagger`
+    /// covers English names, and the model's hostnames and job names came
+    /// through whole. See `LatinNameShape` and #32.
     static func isNameShaped(_ text: String) -> Bool {
         var hasKanji = false
         var hasKatakana = false
+        var hasHiragana = false
         for scalar in text.unicodeScalars {
             switch scalar.value {
             case 0x4E00...0x9FFF, 0x3400...0x4DBF, 0xF900...0xFAFF:
                 hasKanji = true
             case 0x30A0...0x30FF, 0xFF66...0xFF9D:
                 hasKatakana = true
+            case 0x3040...0x309F:
+                hasHiragana = true
             default:
                 break
             }
@@ -296,10 +301,9 @@ public struct FoundationModelDetector {
         // Japanese names are written in one script. `サポート窓口` mixes them.
         if hasKanji && hasKatakana { return false }
 
-        guard hasKanji || hasKatakana else {
-            return !JapaneseNonNameWords.isGrammar(text)
-        }
-        return JapaneseSurnames.beginsWithSurname(text)
+        if hasKanji || hasKatakana { return JapaneseSurnames.beginsWithSurname(text) }
+        if hasHiragana { return !JapaneseNonNameWords.isGrammar(text) }
+        return LatinNameShape.isNameShaped(text)
     }
 }
 #endif

@@ -45,6 +45,29 @@ struct NameCorpusCheckTests {
         #expect(found.count == 1 && found[0].contains("more than one script tag"))
     }
 
+    /// Four katakana labels were tagged romaji, and the romaji row counted them.
+    /// See #32.
+    @Test(
+        "The script tag must match how the name is written",
+        arguments: [
+            ("滝口 健太", "kanji", true), ("滝口 健太", "katakana", false),
+            ("田ヶ原 小一", "kanji", true),  // ヶ and 々 belong to kanji names
+            ("佐々木", "kanji", true),
+            ("コヤバ ナオキ", "romaji", false), ("コヤバ ナオキ", "katakana", true),
+            ("エマ・ブラウン", "katakana", true),
+            ("ｺﾔﾊﾞ", "katakana", true),  // half-width, with a voicing mark
+            ("コウタニ太郎", "mixed", true), ("コウタニ太郎", "katakana", false),
+            ("IiiTake_01", "romaji", true), ("Hiroki Kotani", "romaji", true),
+            ("井出 ゆう", "mixed", true), ("井出 ゆう", "kanji", false),
+            ("さくら", "hiragana", true), ("さくら", "mixed", false),
+        ]
+    )
+    func scriptTagMatches(_ name: String, _ script: String, _ ok: Bool) throws {
+        let sample = #"{"id": "a", "note": "", "text": "担当は\#(name)さん", "genre": "slack", "writer": "human", "expected": [{"kind": "personalName", "text": "\#(name)", "tags": ["\#(script)", "full"]}], "mustNotDetect": []}"#
+        let found = try problems(sample)
+        #expect(found.isEmpty == ok, Comment(rawValue: found.joined(separator: "; ")))
+    }
+
     @Test("More than one form tag is a problem")
     func twoForms() throws {
         let found = try problems(good.replacingOccurrences(of: #""kanji", "full""#, with: #""kanji", "full", "familyOnly""#))
