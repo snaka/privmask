@@ -250,6 +250,22 @@ struct ModelPlausibilityTests {
         #expect(FoundationModelDetector.isPlausibleName(name))
     }
 
+    /// Latin text used to pass unchecked, so identifiers the model returned as
+    /// names were masked. Names in Latin script must still pass, including the
+    /// one only the model finds. See #32.
+    @available(macOS 26.0, *)
+    @Test(
+        "Latin spans are names only when shaped like one",
+        arguments: [
+            ("orders-db", false), ("lb-orders-01", false), ("nightly-sync-12", false),
+            ("postgresql-15-main.log", false), ("ORD-OPS", false),
+            ("Michael O'Connor", true), ("funatsu.keigo", true), ("Mizuki_Sagasaki", true),
+        ]
+    )
+    func latinSpansAreChecked(_ span: String, _ accepted: Bool) {
+        #expect(FoundationModelDetector.isPlausibleName(span) == accepted)
+    }
+
     /// A single-token name may begin with a character that is also a particle.
     @available(macOS 26.0, *)
     @Test("A one-token name beginning with a particle character is kept")
