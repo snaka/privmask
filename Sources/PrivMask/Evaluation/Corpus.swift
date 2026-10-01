@@ -10,6 +10,8 @@ public struct Corpus: Decodable, Sendable {
     public struct Expectation: Decodable, Sendable {
         public let kind: SensitiveKind
         public let text: String
+        /// How a name is written and where it sits. Only the name corpus sets these.
+        public let tags: [NameTag]?
     }
 
     public struct Sample: Decodable, Sendable {
@@ -18,6 +20,8 @@ public struct Corpus: Decodable, Sendable {
         public let text: String
         public let expected: [Expectation]
         public let mustNotDetect: [String]
+        public let genre: Genre?
+        public let writer: Writer?
     }
 
     public let version: Int
@@ -27,8 +31,41 @@ public struct Corpus: Decodable, Sendable {
     public let samples: [Sample]
 
     public static func load(contentsOf url: URL) throws -> Corpus {
-        try JSONDecoder().decode(Corpus.self, from: Data(contentsOf: url))
+        try decode(Data(contentsOf: url))
     }
+
+    public static func decode(_ data: Data) throws -> Corpus {
+        try JSONDecoder().decode(Corpus.self, from: data)
+    }
+}
+
+/// How a name in the name corpus is written, and where it sits.
+///
+/// A closed set: an unknown value fails to decode, which is the whole of the
+/// vocabulary check. Recall is reported per value, so a misspelt tag would
+/// otherwise make a row silently empty.
+public enum NameTag: String, Decodable, Sendable, CaseIterable {
+    // Script.
+    case kanji, hiragana, katakana, romaji, mixed
+    // Form.
+    case full, familyOnly, givenOnly
+    // Markers.
+    case spaced, honorific
+    /// First occurrence starts after character 1,500 of the sample: past the
+    /// first model chunk, approximately. See #1.
+    case late
+}
+
+/// The kind of text a sample imitates. `messy` is text broken on purpose: names
+/// in log fields, dropped particles, mixed widths, a line break inside a name.
+public enum Genre: String, Decodable, Sendable, CaseIterable {
+    case incident, log, slack, markdown, email, messy
+}
+
+/// Who wrote a sample. Recorded so that a model's recall on text it wrote
+/// itself can be compared with its recall on text others wrote. See #28.
+public enum Writer: String, Decodable, Sendable, CaseIterable {
+    case opus, sonnet, haiku, human
 }
 
 // MARK: - Range helpers
