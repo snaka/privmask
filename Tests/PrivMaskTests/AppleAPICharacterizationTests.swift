@@ -266,6 +266,52 @@ struct ModelPlausibilityTests {
         #expect(FoundationModelDetector.isPlausibleName(span) == accepted)
     }
 
+    /// The surname list leaves out one-kanji family names and stops at three
+    /// kanji, both on purpose. A name the model found with such a family name is
+    /// kept when it ends in a known given name. See #34.
+    @available(macOS 26.0, *)
+    @Test(
+        "A name whose family name is not listed is kept when it ends in a given name",
+        arguments: ["潮 洋介", "藍 玄信", "宝直則", "五百旗頭堅至", "小比類巻 征治", "大炊御門征治"]
+    )
+    func keptByGivenName(_ name: String) {
+        #expect(FoundationModelDetector.isPlausibleName(name))
+    }
+
+    /// An honorific straight after the candidate in the text is evidence of a
+    /// person that needs no list. See #34.
+    @available(macOS 26.0, *)
+    @Test(
+        "A candidate followed by an honorific in the text is kept",
+        arguments: [
+            // Listed as a katakana reading, but the model returned it with the
+            // honorific attached, and イイタケ様 is not a reading.
+            ("イイタケ様", "イイタケ様にご連絡ください。"),
+            ("舩津", "舩津様\n\nいつもお世話になっております。"),
+            ("東", "東さん、明日のリリース判定に参加できますか？"),
+            ("エマ・ブラウン", "エマ・ブラウン さんがオンボーディング中です。"),
+        ]
+    )
+    func keptByHonorific(_ span: String, _ context: String) {
+        #expect(!FoundationModelDetector.isPlausibleName(span))
+        #expect(FoundationModelDetector.isPlausibleName(span, in: context))
+    }
+
+    /// Every one of these was returned by the model and correctly discarded.
+    /// Neither new route may let them through.
+    @available(macOS 26.0, *)
+    @Test(
+        "Words the filter exists to stop are still stopped",
+        arguments: [
+            ("未定", "## 担当者\n\n未定"), ("担当", "担当: サポート窓口"), ("受付", "高橋ビル 3F 受付までお願いいたします。"),
+            ("東京都渋谷区", "region=東京都渋谷区 dc=新宿第2"), ("サポート窓口", "担当: サポート窓口"),
+            ("高橋ビル", "納品先は高橋ビル 3F 受付まで"),
+        ]
+    )
+    func stillStopped(_ span: String, _ context: String) {
+        #expect(!FoundationModelDetector.isPlausibleName(span, in: context))
+    }
+
     /// A single-token name may begin with a character that is also a particle.
     @available(macOS 26.0, *)
     @Test("A one-token name beginning with a particle character is kept")

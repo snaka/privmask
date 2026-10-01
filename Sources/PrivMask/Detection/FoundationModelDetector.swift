@@ -175,14 +175,14 @@ public struct FoundationModelDetector {
             return response.content.entities.compactMap { entity in
                 if debug {
                     FileHandle.standardError.write(
-                        Data("    model: \(entity.kind) \(entity.text.debugDescription) plausible=\(Self.isPlausibleName(entity.text))\n".utf8)
+                        Data("    model: \(entity.kind) \(entity.text.debugDescription) plausible=\(Self.isPlausibleName(entity.text, in: batchText))\n".utf8)
                     )
                 }
                 // The model is instructed to copy substrings verbatim, but it is
                 // a language model: it has been observed normalising full-width
                 // digits to half-width. Anything that does not occur in what was
                 // sent is discarded downstream rather than trusted.
-                guard Self.isPlausibleName(entity.text) else {
+                guard Self.isPlausibleName(entity.text, in: batchText) else {
                     rejected.append(entity.text)
                     return nil
                 }
@@ -222,7 +222,9 @@ public struct FoundationModelDetector {
     /// The model also returns whole lines — `マイナンバー: 123456789018` was
     /// reported as a personal name — and a line is recognisable by its
     /// structural punctuation and its length.
-    static func isPlausibleName(_ text: String) -> Bool {
+    /// - Parameter context: the text the candidate was found in. An honorific
+    ///   straight after it there is evidence of a person that no list supplies.
+    static func isPlausibleName(_ text: String, in context: String = "") -> Bool {
         guard !text.isEmpty, text.count <= 24 else { return false }
 
         // The model has returned whole lines. Structural punctuation marks a
@@ -239,7 +241,7 @@ public struct FoundationModelDetector {
 
         guard !startsAContinuation(text) else { return false }
 
-        return isNameShaped(text)
+        return isNameShaped(text) || isFollowedByHonorific(text, in: context)
     }
 
     /// Particles that can begin a word but never begin part of a name.
@@ -301,9 +303,57 @@ public struct FoundationModelDetector {
         // Japanese names are written in one script. `サポート窓口` mixes them.
         if hasKanji && hasKatakana { return false }
 
-        if hasKanji || hasKatakana { return JapaneseSurnames.beginsWithSurname(text) }
+        if hasKanji || hasKatakana {
+            return JapaneseSurnames.beginsWithSurname(text) || endsWithGivenName(text)
+        }
         if hasHiragana { return !JapaneseNonNameWords.isGrammar(text) }
         return LatinNameShape.isNameShaped(text)
+    }
+    private static let honorifics = ["様", "さん", "氏", "くん", "ちゃん"]
+
+    /// The candidate without a trailing honorific or space. The model is told to
+    /// leave the honorific out, and does not always.
+    private static func withoutHonorific(_ text: String) -> String {
+        var core = text.trimmingCharacters(in: .whitespaces)
+        if let honorific = honorifics.first(where: { core.hasSuffix($0) }) {
+            core = String(core.dropLast(honorific.count)).trimmingCharacters(in: .whitespaces)
+        }
+        return core
+    }
+
+    /// True when the candidate, all kanji, is a family part of one to five kanji
+    /// followed by a given name of two or more.
+    ///
+    /// This is what keeps `潮 洋介` and `五百旗頭堅至`, whose family names the
+    /// surname list leaves out on purpose: one kanji admits too many common
+    /// nouns as a prefix, and the prefix match stops at three. Over SudachiDict's
+    /// common nouns this check admits 0.15%, against 1.67% for the surname
+    /// check. See #34.
+    static func endsWithGivenName(_ text: String) -> Bool {
+        let joined = withoutHonorific(text).filter { $0 != " " && $0 != "\u{3000}" }
+        let isKanji: (Character) -> Bool = { character in
+            character.unicodeScalars.allSatisfy { scalar in
+                switch scalar.value {
+                case 0x4E00...0x9FFF, 0x3400...0x4DBF, 0xF900...0xFAFF, 0x3005, 0x3006, 0x30F6: return true
+                default: return false
+                }
+            }
+        }
+        guard joined.count >= 3, joined.allSatisfy(isKanji) else { return false }
+        return (1...min(5, joined.count - 2)).contains { familyLength in
+            JapaneseGivenNames.kanji.contains(String(joined.dropFirst(familyLength)))
+        }
+    }
+
+    /// True when, in `context`, the candidate is followed directly or after one
+    /// space by an honorific. `イイタケ様` and `舩津様` begin with no listed
+    /// family name, and the honorific is what says they are people. See #34.
+    static func isFollowedByHonorific(_ text: String, in context: String) -> Bool {
+        let core = withoutHonorific(text)
+        guard !core.isEmpty, !context.isEmpty else { return false }
+        let pattern = NSRegularExpression.escapedPattern(for: core) + "[ \u{3000}]?(?:" + honorifics.joined(separator: "|") + ")"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
+        return regex.firstMatch(in: context, range: NSRange(context.startIndex..., in: context)) != nil
     }
 }
 #endif
