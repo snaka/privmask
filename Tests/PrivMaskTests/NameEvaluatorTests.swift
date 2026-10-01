@@ -46,3 +46,30 @@ struct NameCorpusSchemaTests {
         #expect(decoded.samples[0].expected[0].tags == nil)
     }
 }
+
+@Suite("Detections file")
+struct DetectionsFileTests {
+    @Test("Offsets and rejected are optional")
+    func optionalFields() throws {
+        let file = try DetectionsFile.decode(Data("""
+            {"system": "opus", "samples": {"a": {"names": [{"text": "滝口 健太"}]}}}
+            """.utf8))
+        #expect(file.samples["a"]?.names == [DetectionsFile.Name(text: "滝口 健太")])
+        #expect(file.samples["a"]?.rejected == nil)
+    }
+
+    @Test("What is written reads back the same")
+    func roundTrip() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("detections-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let original = DetectionsFile(system: "privmask", samples: [
+            "a": .init(names: [.init(text: "滝口", location: 3, length: 2)], rejected: ["内線"]),
+        ])
+        try original.write(to: url)
+        let read = try DetectionsFile.load(contentsOf: url)
+        #expect(read.system == "privmask")
+        #expect(read.samples["a"]?.names == original.samples["a"]?.names)
+        #expect(read.samples["a"]?.rejected == ["内線"])
+    }
+}
