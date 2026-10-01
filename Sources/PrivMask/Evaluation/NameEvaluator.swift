@@ -162,3 +162,89 @@ public enum NameEvaluator {
         return covered.intersects(integersIn: name.location..<NSMaxRange(name)) ? .partial : .missed
     }
 }
+
+extension NameEvaluator {
+    public struct Tally: Sendable, Equatable {
+        public var expected = 0
+        public var covered = 0
+        public var partial = 0
+
+        public init(expected: Int = 0, covered: Int = 0, partial: Int = 0) {
+            self.expected = expected
+            self.covered = covered
+            self.partial = partial
+        }
+    }
+}
+
+extension NameEvaluator.Report {
+    /// Recall split every way the corpus records. The order is fixed, so that
+    /// reports for different systems over one corpus line up row for row.
+    public var breakdown: [(label: String, tally: NameEvaluator.Tally)] {
+        var rows: [(String, (NameEvaluator.ExpectedName) -> Bool)] = [("all", { _ in true })]
+        rows += NameTag.allCases.map { tag in ("tag:\(tag.rawValue)", { $0.tags.contains(tag) }) }
+        rows += Genre.allCases.map { genre in ("genre:\(genre.rawValue)", { $0.genre == genre }) }
+        rows += Writer.allCases.map { writer in ("writer:\(writer.rawValue)", { $0.writer == writer }) }
+        rows += [("surname:listed", { $0.beginsWithListedSurname }),
+                 ("surname:unlisted", { !$0.beginsWithListedSurname })]
+
+        return rows.compactMap { label, matches in
+            var tally = NameEvaluator.Tally()
+            for name in expected where matches(name) {
+                tally.expected += 1
+                if name.outcome == .covered { tally.covered += 1 }
+                if name.outcome == .partial { tally.partial += 1 }
+            }
+            return tally.expected == 0 ? nil : (label, tally)
+        }
+    }
+}
+
+extension NameEvaluator {
+    /// One table with a column per system, then each system's misses and false
+    /// positives. Every report must come from the same corpus.
+    public static func renderComparison(_ reports: [Report]) -> String {
+        func percent(_ value: Double?) -> String {
+            value.map { String(format: "%5.1f%%", $0 * 100) } ?? "     —"
+        }
+        func cell(_ text: String) -> String { text.padding(toLength: 16, withPad: " ", startingAt: 0) }
+
+        var out = "## Recall (covered / expected)\n\n"
+        out += cell("row") + "     n  " + reports.map { cell($0.system) }.joined() + "\n"
+        let breakdowns = reports.map(\.breakdown)
+        for (index, row) in (breakdowns.first ?? []).enumerated() {
+            out += cell(row.label) + String(format: "%6d  ", row.tally.expected)
+            out += breakdowns.map { rows in
+                let tally = rows[index].tally
+                return cell("\(percent(Double(tally.covered) / Double(tally.expected))) p\(tally.partial)")
+            }.joined()
+            out += "\n"
+        }
+
+        out += "\n## Precision\n\n"
+        for report in reports {
+            out += "\(cell(report.system)) \(percent(report.precision))  "
+            out += "\(report.falsePositives.count) false positives of \(report.detectionCount) detections\n"
+        }
+
+        for report in reports {
+            out += "\n## \(report.system)\n\n"
+            let misses = report.expected.filter { $0.outcome != .covered }
+            out += "missed or partial (\(misses.count)):\n"
+            for name in misses {
+                let why = name.outcome == .partial ? "partial" : name.cause?.rawValue ?? ""
+                out += "  [\(name.sampleID)] \(name.text)  \(why)\n"
+            }
+            out += "false positives (\(report.falsePositives.count)):\n"
+            for fp in report.falsePositives { out += "  [\(fp.sampleID)] \(fp.text.debugDescription)\n" }
+            if !report.unexaminedSampleIDs.isEmpty {
+                out += "UNEXAMINED samples, scored as missed: \(report.unexaminedSampleIDs.joined(separator: ", "))\n"
+            }
+            if !report.unknownSampleIDs.isEmpty {
+                out += "UNKNOWN sample ids, ignored: \(report.unknownSampleIDs.joined(separator: ", "))\n"
+            }
+            for problem in report.invalidDetections { out += "INVALID detection: \(problem)\n" }
+        }
+        return out
+    }
+}

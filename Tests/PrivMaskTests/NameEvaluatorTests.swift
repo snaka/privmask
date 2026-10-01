@@ -234,3 +234,37 @@ struct NameEvaluatorTests {
         #expect(report.detectionCount == 1)
     }
 }
+
+@Suite("Recall breakdown and comparison")
+struct NameBreakdownTests {
+    private func sampleCorpus() throws -> Corpus {
+        try makeCorpus("""
+            {"id": "a", "note": "", "text": "田中健一と勅使河原誠", "genre": "log", "writer": "opus",
+             "expected": [{"kind": "personalName", "text": "田中健一", "tags": ["kanji", "full"]},
+                          {"kind": "personalName", "text": "勅使河原誠", "tags": ["kanji", "full"]}],
+             "mustNotDetect": []}
+            """)
+    }
+
+    @Test("Rows split recall by tag, genre, writer and surname list")
+    func rows() throws {
+        let file = DetectionsFile(system: "t", samples: ["a": .init(names: [.init(text: "田中健一")])])
+        let report = NameEvaluator.evaluate(corpus: try sampleCorpus(), detections: file)
+        let rows = Dictionary(uniqueKeysWithValues: report.breakdown.map { ($0.label, $0.tally) })
+        #expect(rows["all"] == NameEvaluator.Tally(expected: 2, covered: 1, partial: 0))
+        #expect(rows["writer:opus"] == NameEvaluator.Tally(expected: 2, covered: 1, partial: 0))
+        #expect(rows["surname:unlisted"] == NameEvaluator.Tally(expected: 1, covered: 0, partial: 0))
+        #expect(rows["genre:slack"] == nil)
+    }
+
+    @Test("The comparison has a column per system")
+    func comparison() throws {
+        let corpus = try sampleCorpus()
+        let a = NameEvaluator.evaluate(corpus: corpus, detections: .init(system: "privmask", samples: ["a": .init(names: [])]))
+        let b = NameEvaluator.evaluate(corpus: corpus, detections: .init(system: "opus", samples: ["a": .init(names: [.init(text: "田中健一")])]))
+        let rendered = NameEvaluator.renderComparison([a, b])
+        #expect(rendered.contains("privmask"))
+        #expect(rendered.contains("opus"))
+        #expect(rendered.contains("50.0%"))
+    }
+}
