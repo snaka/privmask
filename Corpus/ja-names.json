@@ -97,6 +97,14 @@
             "kanji",
             "full"
           ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐藤太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
         }
       ],
       "mustNotDetect": []
@@ -120,6 +128,14 @@
         {
           "kind": "personalName",
           "text": "桜沢基仁",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "木村花子",
           "tags": [
             "kanji",
             "full"
@@ -151,6 +167,14 @@
             "kanji",
             "full",
             "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "tsutsumitani",
+          "tags": [
+            "romaji",
+            "familyOnly"
           ]
         }
       ],
@@ -184,6 +208,30 @@
           "text": "タマハシ花子",
           "tags": [
             "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "山田次郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "松本美紀",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "wakatanabe-kansuke",
+          "tags": [
+            "romaji",
             "full"
           ]
         }
@@ -227,6 +275,22 @@
           "text": "藤堂真守",
           "tags": [
             "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "高橋次郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "fujido_masamoto",
+          "tags": [
+            "romaji",
             "full"
           ]
         }
@@ -945,6 +1009,30 @@
             "katakana",
             "familyOnly"
           ]
+        },
+        {
+          "kind": "personalName",
+          "text": "katsumine",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "tokonami",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "けんじ",
+          "tags": [
+            "hiragana",
+            "givenOnly"
+          ]
         }
       ],
       "mustNotDetect": []
@@ -1225,6 +1313,14 @@
           "text": "海鈴",
           "tags": [
             "kanji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "sadayo",
+          "tags": [
+            "romaji",
             "givenOnly"
           ]
         }
@@ -1973,6 +2069,14 @@
             "romaji",
             "givenOnly"
           ]
+        },
+        {
+          "kind": "personalName",
+          "text": "atsuji.nakamura",
+          "tags": [
+            "romaji",
+            "full"
+          ]
         }
       ],
       "mustNotDetect": []
@@ -2045,6 +2149,14 @@
             "familyOnly",
             "honorific"
           ]
+        },
+        {
+          "kind": "personalName",
+          "text": "rentiaro.ide",
+          "tags": [
+            "romaji",
+            "full"
+          ]
         }
       ],
       "mustNotDetect": []
@@ -2058,10 +2170,10 @@
       "expected": [
         {
           "kind": "personalName",
-          "text": "Akashio_user_7834",
+          "text": "Akashio",
           "tags": [
             "romaji",
-            "givenOnly"
+            "familyOnly"
           ]
         },
         {
@@ -2085,7 +2197,7 @@
           "text": "Akashio",
           "tags": [
             "romaji",
-            "givenOnly"
+            "familyOnly"
           ]
         }
       ],
@@ -3007,6 +3119,30 @@
             "katakana",
             "full"
           ]
+        },
+        {
+          "kind": "personalName",
+          "text": "miyazaki",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "namiyama",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "reha",
+          "tags": [
+            "romaji",
+            "givenOnly"
+          ]
         }
       ],
       "mustNotDetect": []
@@ -3052,7 +3188,7 @@
         },
         {
           "kind": "personalName",
-          "text": "koyaba_j",
+          "text": "koyaba",
           "tags": [
             "romaji",
             "familyOnly"
@@ -3242,6 +3378,46 @@
           "tags": [
             "romaji",
             "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "koyaba",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "kyogo",
+          "tags": [
+            "romaji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "nagatsuta",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "oobari",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "shijuuin",
+          "tags": [
+            "romaji",
+            "familyOnly"
           ]
         }
       ],
@@ -4075,6 +4251,14 @@
           "text": "豊重成能",
           "tags": [
             "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "habutani.kenji",
+          "tags": [
+            "romaji",
             "full"
           ]
         }
