@@ -149,7 +149,7 @@
       "note": "Delivery confirmation with family-name-only reference and formal suffix",
       "genre": "email",
       "writer": "haiku",
-      "text": "【配送完了のご報告】\n\nいつもお利用いただきありがとうございます。\nご発注いただきました商品が本日配達完了いたしました。\n\n配送記録：2024-10-02 15:30\nお客様：中込景茂様\n佐川急便 追跡番号：123456789\n\n本件に関するご質問やご不明な点は、担当の毬谷敦仁氏までお問い合わせください。\nメール：tsutsumitani@logistics.co.jp\n電話：03-XXXX-XXXX\n\n今後ともよろしくお願いいたします。\n\n物流部\nA物流サービス",
+      "text": "【配送完了のご報告】\n\nいつもお利用いただきありがとうございます。\nご発注いただきました商品が本日配達完了いたしました。\n\n配送記録：2024-10-02 15:30\nお客様：中込景茂様\n佐川急便 追跡番号：123456789\n\n本件に関するご質問やご不明な点は、担当の毬谷敦仁氏までお問い合わせください。\nメール：tsutsumitani@logistics.example.co.jp\n電話：03-XXXX-XXXX\n\n今後ともよろしくお願いいたします。\n\n物流部\nA物流サービス",
       "expected": [
         {
           "kind": "personalName",
@@ -185,7 +185,7 @@
       "note": "Meeting confirmation with romaji representation in email and katakana-kanji mixed names",
       "genre": "email",
       "writer": "haiku",
-      "text": "【会議予定確認】\n\nお疲れ様です。\n以下の通り、製品企画会議を開催いたします。\n\n■日時：2024年10月8日（月）14:00-15:30\n■場所：B会議室\n■出席予定者：\n  - wakatanabe-kansuke@company.jp（若田部閑之助）\n  - コウタニ太郎\n  - タマハシ花子\n  - 山田次郎\n\n資料は会議の1時間前に共有フォルダ（/projects/2024/planning/）にアップロード予定です。\nご確認のほど、よろしくお願いいたします。\n\n企画部\n松本美紀",
+      "text": "【会議予定確認】\n\nお疲れ様です。\n以下の通り、製品企画会議を開催いたします。\n\n■日時：2024年10月8日（月）14:00-15:30\n■場所：B会議室\n■出席予定者：\n  - wakatanabe-kansuke@example.jp（若田部閑之助）\n  - コウタニ太郎\n  - タマハシ花子\n  - 山田次郎\n\n資料は会議の1時間前に共有フォルダ（/projects/2024/planning/）にアップロード予定です。\nご確認のほど、よろしくお願いいたします。\n\n企画部\n松本美紀",
       "expected": [
         {
           "kind": "personalName",
@@ -302,7 +302,7 @@
       "note": "Order confirmation from support: full name with half-width space and 様, family-only with 様, family-only self-introduction, unspaced full name in signature.",
       "genre": "email",
       "writer": "opus",
-      "text": "件名: 【ご注文確認】注文番号 ORD-2026-08817\n\n矢木 成能 様\n\nいつもお世話になっております。株式会社ノースブリッジ カスタマーサポートの佐古です。\n2026/09/28 14:32 にご注文いただいた「スマートハブ X200」2点の出荷予定をご案内いたします。\n- 出荷予定日: 2026年10月3日\n- 配送業者: グリーンリーフ物流（追跡番号 7731-0042-5568）\n矢木様のご都合が合わない場合は、本メールにご返信ください。\n--\n佐古宗直\n株式会社ノースブリッジ カスタマーサポート部\nTEL 03-5555-0182",
+      "text": "件名: 【ご注文確認】注文番号 ORD-2026-08817\n\n矢木 成能 様\n\nいつもお世話になっております。株式会社サンプルブリッジ カスタマーサポートの佐古です。\n2026/09/28 14:32 にご注文いただいた「スマートハブ X200」2点の出荷予定をご案内いたします。\n- 出荷予定日: 2026年10月3日\n- 配送業者: グリーンリーフ物流（追跡番号 7731-0042-5568）\n矢木様のご都合が合わない場合は、本メールにご返信ください。\n--\n佐古宗直\n株式会社サンプルブリッジ カスタマーサポート部\nTEL 03-0000-0182",
       "expected": [
         {
           "kind": "personalName",
@@ -346,7 +346,7 @@
       "note": "Customer reply with quoted original: family-only with 様, unspaced and spaced full names, third-party colleague named without honorific, quoted header line.",
       "genre": "email",
       "writer": "opus",
-      "text": "件名: Re: 請求書 INV-55120 の金額について\n\n田ヶ原様\n\nお世話になっております。有限会社みなと工房の居村洋介です。\n10月分の請求書（INV-55120）を確認しましたが、ライセンス数は 12 ではなく 10 のはずです。\n経理担当の四十宮博朗からも同じ指摘がありました。\nお手数ですが再発行をお願いできますでしょうか。\n\n居村\n\n> 2026-09-30 10:05 田ヶ原 津南雄 <billing@example.co.jp> wrote:\n> 居村 洋介 様\n> 請求書を添付いたします。ファイル: invoice_INV-55120.pdf",
+      "text": "件名: Re: 請求書 INV-55120 の金額について\n\n田ヶ原様\n\nお世話になっております。有限会社サンプル工房の居村洋介です。\n10月分の請求書（INV-55120）を確認しましたが、ライセンス数は 12 ではなく 10 のはずです。\n経理担当の四十宮博朗からも同じ指摘がありました。\nお手数ですが再発行をお願いできますでしょうか。\n\n居村\n\n> 2026-09-30 10:05 田ヶ原 津南雄 <billing@example.co.jp> wrote:\n> 居村 洋介 様\n> 請求書を添付いたします。ファイル: invoice_INV-55120.pdf",
       "expected": [
         {
           "kind": "personalName",
@@ -458,7 +458,7 @@
       "note": "Meeting scheduling: two addressees with 様 then さん, single-kanji given name and single-kanji family name, given-only with さん, file path.",
       "genre": "email",
       "writer": "opus",
-      "text": "件名: 打ち合わせ日程のご相談（案件ID: PRJ-0714）\n\n株式会社ノースブリッジ\n成岡 成雅 様\n羽根　登美恵 様\n\nご連絡ありがとうございます。井澤です。\n成岡さん、羽根さん、次回の定例を下記候補でご検討ください。\n1) 10/7(火) 15:00-16:00\n2) 10/9(木) 10:30-11:30\n会場は弊社 3F 会議室B、オンライン参加の方には Teams のリンクをお送りします。\n当日は弊社の由起 郁彦、台 嘉樹も同席いたします。\n資料: shared/PRJ-0714/agenda_v2.xlsx\n登美恵さんには前回の議事録を別途お送りしました。\n\n井澤 利",
+      "text": "件名: 打ち合わせ日程のご相談（案件ID: PRJ-0714）\n\n株式会社サンプルブリッジ\n成岡 成雅 様\n羽根　登美恵 様\n\nご連絡ありがとうございます。井澤です。\n成岡さん、羽根さん、次回の定例を下記候補でご検討ください。\n1) 10/7(火) 15:00-16:00\n2) 10/9(木) 10:30-11:30\n会場は弊社 3F 会議室B、オンライン参加の方には Teams のリンクをお送りします。\n当日は弊社の由起 郁彦、台 嘉樹も同席いたします。\n資料: shared/PRJ-0714/agenda_v2.xlsx\n登美恵さんには前回の議事録を別途お送りしました。\n\n井澤 利",
       "expected": [
         {
           "kind": "personalName",
@@ -545,7 +545,7 @@
       "note": "Event office notice: katakana family names (one full, two family-only with 様), rare long kanji family name spaced/unspaced, single-kanji family name, romaji name in signature.",
       "genre": "email",
       "writer": "opus",
-      "text": "件名: 展示会出展申込の受領について（EXPO-2026-T15）\n\nヒロマ ケンジ 様\nイイタケ様\nタニシゲ様\n\nいつもお世話になっております。展示会事務局の五百旗頭堅至です。\nブース番号 T-15 の申込書を受領いたしました。電源容量は 1.5kVA で手配いたします。\n搬入は 11/12 08:00 開始で、現地責任者は藍 玄信が担当いたします。\nご不明な点は五百旗頭までお問い合わせください。\n--\nEXPO 2026 事務局 / Event Office\nAssistant: Mitsui\nTEL 06-5555-0315",
+      "text": "件名: 展示会出展申込の受領について（EXPO-2026-T15）\n\nヒロマ ケンジ 様\nイイタケ様\nタニシゲ様\n\nいつもお世話になっております。展示会事務局の五百旗頭堅至です。\nブース番号 T-15 の申込書を受領いたしました。電源容量は 1.5kVA で手配いたします。\n搬入は 11/12 08:00 開始で、現地責任者は藍 玄信が担当いたします。\nご不明な点は五百旗頭までお問い合わせください。\n--\nEXPO 2026 事務局 / Event Office\nAssistant: Mitsui\nTEL 06-0000-0315",
       "expected": [
         {
           "kind": "personalName",
@@ -614,7 +614,7 @@
       "note": "Support reply to a customer; spaced full name with trailing 様 detached, family-only with 様, さん, katakana family name",
       "genre": "email",
       "writer": "sonnet",
-      "text": "株式会社ミナトシステムズ\n営業部 中込 亮 様\n\nいつもお世話になっております。サポート担当の矢木 奈保美です。\nチケット INC-20481 の件、2026年9月28日 14:30 に再現を確認しました。\n中込様の環境（Windows 11、ClearLedger 5.2）では、C:\\Logs\\clearledger\\app.log に出力されます。\n来週の打ち合わせには佐古 遊さんとナガネ様も同席予定です。\n何卒よろしくお願いいたします。",
+      "text": "株式会社サンプルシステムズ\n営業部 中込 亮 様\n\nいつもお世話になっております。サポート担当の矢木 奈保美です。\nチケット INC-20481 の件、2026年9月28日 14:30 に再現を確認しました。\n中込様の環境（Windows 11、ClearLedger 5.2）では、C:\\Logs\\clearledger\\app.log に出力されます。\n来週の打ち合わせには佐古 遊さんとナガネ様も同席予定です。\n何卒よろしくお願いいたします。",
       "expected": [
         {
           "kind": "personalName",
@@ -832,7 +832,7 @@
       "note": "Contract renewal notice; rare single-character family name with and without 様, given-name-only with さん, romaji signature and address",
       "genre": "email",
       "writer": "sonnet",
-      "text": "Subject: 保守契約更新のご案内\n\n與 津南雄 様\n\nいつも大変お世話になっております。宇治土公 博朗でございます。\n更新手続き（契約番号 MC-2026-0418、年額 1,280,000円）を、10月末までにお願いいたします。\n與様の部署の窓口は、引き続き潮 洋介が務めます。洋介さんの直通は 03-5550-0142 です。\n\nBest regards,\nUgaki / ugaki@example.com",
+      "text": "Subject: 保守契約更新のご案内\n\n與 津南雄 様\n\nいつも大変お世話になっております。宇治土公 博朗でございます。\n更新手続き（契約番号 MC-2026-0418、年額 1,280,000円）を、10月末までにお願いいたします。\n與様の部署の窓口は、引き続き潮 洋介が務めます。洋介さんの直通は 03-0000-0142 です。\n\nBest regards,\nUgaki / ugaki@example.com",
       "expected": [
         {
           "kind": "personalName",
@@ -4188,7 +4188,7 @@
       "note": "Log format with mixed full/half-width characters, key=value fields, and dropped particles",
       "genre": "messy",
       "writer": "haiku",
-      "text": "2024-10-02 09:15:32 LOG [ERROR]\nFrom: 矢木　遊＜habutani.kenji@company.jp＞\nTo: 佐古房太郎, admin=Douki.Yuki, backup=AOSAKI_Taro\nSubject: Handoff - 田ヶ原小一→居村直義へ引き継ぎ\nStatus: COMPLETED | Request ID: REQ-20241002-00142\nNotes: Contact 四十宮征治 for approval. User 豊重成能 confirmed.\nTimestamp: 2024-10-02T09:15:32.123Z | Log Level: WARN",
+      "text": "2024-10-02 09:15:32 LOG [ERROR]\nFrom: 矢木　遊＜habutani.kenji@example.jp＞\nTo: 佐古房太郎, admin=Douki.Yuki, backup=AOSAKI_Taro\nSubject: Handoff - 田ヶ原小一→居村直義へ引き継ぎ\nStatus: COMPLETED | Request ID: REQ-20241002-00142\nNotes: Contact 四十宮征治 for approval. User 豊重成能 confirmed.\nTimestamp: 2024-10-02T09:15:32.123Z | Log Level: WARN",
       "expected": [
         {
           "kind": "personalName",
@@ -4338,7 +4338,7 @@
       "note": "Email draft with character-width mixing, typos, and abbreviated name forms",
       "genre": "messy",
       "writer": "haiku",
-      "text": "件名: 確認事項\n宛先: 井澤 茂晴 様\nCC: いざわ・しげはる@company.co.jp\n本文:\n拝啓、井澤様へお疲れ様です。\nこの度は由起綺子さんの件でお問い合わせいただきありがとうございます。\nご依頼の件について、千 江実氏より以下の通りご報告申し上げます。\n\n対応内容:\n1. 梁 成雅より確認済み\n2. カトウダ花子が確認中\n3. 遠里小野 登美恵さんにお知らせ完了\n4. ニシノミヤ太郎へ一次確認中\n\n上記の通りです。ご査収ください。\n敬具\nuser=Habutani contact=NISHINOMIYA_Taro",
+      "text": "件名: 確認事項\n宛先: 井澤 茂晴 様\nCC: いざわ・しげはる@example.co.jp\n本文:\n拝啓、井澤様へお疲れ様です。\nこの度は由起綺子さんの件でお問い合わせいただきありがとうございます。\nご依頼の件について、千 江実氏より以下の通りご報告申し上げます。\n\n対応内容:\n1. 梁 成雅より確認済み\n2. カトウダ花子が確認中\n3. 遠里小野 登美恵さんにお知らせ完了\n4. ニシノミヤ太郎へ一次確認中\n\n上記の通りです。ご査収ください。\n敬具\nuser=Habutani contact=NISHINOMIYA_Taro",
       "expected": [
         {
           "kind": "personalName",
@@ -5120,7 +5120,7 @@
       "note": "katakana family names and romaji user= fields and signatures in a broken audit log",
       "genre": "messy",
       "writer": "sonnet",
-      "text": "[audit] user=kanikawa action=login ip=10.2.0.17 result=OK\n[audit] user=Kanikawa Ken action=export file=/data/out_0412.csv rows=1２０４\n[audit] sig=\"Jun Mannou / Infra Team\" ticket=ＳＲ-5560 by=MANNOU\nレビュー：スグリさん　承認：ナガラ→タベへ差戻し（理由=誤記）\n連絡先:スグリ ミチル/ tel=03-5550-0123",
+      "text": "[audit] user=kanikawa action=login ip=10.2.0.17 result=OK\n[audit] user=Kanikawa Ken action=export file=/data/out_0412.csv rows=1２０４\n[audit] sig=\"Jun Mannou / Infra Team\" ticket=ＳＲ-5560 by=MANNOU\nレビュー：スグリさん　承認：ナガラ→タベへ差戻し（理由=誤記）\n連絡先:スグリ ミチル/ tel=03-0000-0123",
       "expected": [
         {
           "kind": "personalName",
