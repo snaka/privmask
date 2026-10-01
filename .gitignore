@@ -3,3 +3,6 @@
 .swiftpm/
 *.xcodeproj
 .worktrees/
+
+# Real failures met in use. Never committed, never sent anywhere. See #28.
+Corpus/local/

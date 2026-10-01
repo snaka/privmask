@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "note": "Ground truth for Japanese personal names (#28). Every name is fictional. Every personal name in a text is listed in 'expected'; anything not listed that a detector reports as a name is a false positive. Hard negatives carry no expectations and list what must stay unmasked.",
+  "dictionary": [],
+  "samples": [
+    {
+      "id": "human-negative-eponym",
+      "note": "A family name inside a method name is not a person.",
+      "genre": "incident",
+      "writer": "human",
+      "text": "田中式の手順で再起動したところ、レイテンシは回復しました。",
+      "expected": [],
+      "mustNotDetect": ["田中式"]
+    },
+    {
+      "id": "human-negative-role-words",
+      "note": "Role and channel words where a name would normally sit.",
+      "genre": "slack",
+      "writer": "human",
+      "text": "担当: サポート窓口\n確認者: 当番エンジニア\nエスカレーション先: 内線 7788",
+      "expected": [],
+      "mustNotDetect": ["サポート窓口", "当番エンジニア", "内線"]
+    },
+    {
+      "id": "human-single-kanji-surnames",
+      "note": "Single-kanji family names with honorifics.",
+      "genre": "slack",
+      "writer": "human",
+      "text": "林さんと関さんには確認済みです。",
+      "expected": [
+        {"kind": "personalName", "text": "林", "tags": ["kanji", "familyOnly", "honorific"]},
+        {"kind": "personalName", "text": "関", "tags": ["kanji", "familyOnly", "honorific"]}
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "human-four-kanji-surname",
+      "note": "A four-kanji family name, longer than the surname list covers.",
+      "genre": "email",
+      "writer": "human",
+      "text": "勅使河原 誠 様より、請求書の再発行についてお問い合わせがありました。",
+      "expected": [
+        {"kind": "personalName", "text": "勅使河原 誠", "tags": ["kanji", "full", "spaced", "honorific"]}
+      ],
+      "mustNotDetect": []
+    }
+  ]
+}
