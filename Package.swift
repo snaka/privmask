@@ -20,6 +20,9 @@ let package = Package(
         // product: it is a development tool, not something consumers depend on.
         .executableTarget(name: "AppleAPIProbe", dependencies: ["PrivMask"]),
         .executableTarget(name: "FoundationModelProbe", dependencies: ["PrivMask"]),
+        // Scores detections files against a name corpus. A development tool,
+        // like the probes, so not a product. See #28.
+        .executableTarget(name: "NameScore", dependencies: ["PrivMask"]),
         .testTarget(name: "PrivMaskTests", dependencies: ["PrivMask", "PrivMaskCLI"]),
     ]
 )

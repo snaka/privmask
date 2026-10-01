@@ -39,6 +39,10 @@ public struct FoundationModelDetector {
         /// Spans the model returned that do not occur in the input. Dropped, but
         /// counted: a rising number means the prompt is inviting paraphrase.
         public let ungroundedTexts: [String]
+        /// Spans the model returned that `isPlausibleName` discarded. Never
+        /// masked; recorded so that a measurement can tell a name the model
+        /// never returned from one the filter threw away. See #28.
+        public let rejectedTexts: [String]
         public let duration: TimeInterval
         /// How many calls the input took.
         public let chunks: Int
@@ -51,7 +55,7 @@ public struct FoundationModelDetector {
 
         public static func empty(duration: TimeInterval = 0) -> Outcome {
             Outcome(
-                matches: [], ungroundedTexts: [], duration: duration,
+                matches: [], ungroundedTexts: [], rejectedTexts: [], duration: duration,
                 chunks: 0, failures: [], linesExamined: 0
             )
         }
@@ -153,6 +157,7 @@ public struct FoundationModelDetector {
         let started = Date()
         let debug = ProcessInfo.processInfo.environment["PRIVMASK_DEBUG"] == "1"
 
+        var rejected: [String] = []
         let result = await BatchedNameRun.run(
             text: text,
             batches: batches,
@@ -177,7 +182,10 @@ public struct FoundationModelDetector {
                 // a language model: it has been observed normalising full-width
                 // digits to half-width. Anything that does not occur in what was
                 // sent is discarded downstream rather than trusted.
-                guard Self.isPlausibleName(entity.text) else { return nil }
+                guard Self.isPlausibleName(entity.text) else {
+                    rejected.append(entity.text)
+                    return nil
+                }
                 return entity.text
             }
         }
@@ -185,6 +193,7 @@ public struct FoundationModelDetector {
         return Outcome(
             matches: result.matches,
             ungroundedTexts: result.ungroundedTexts,
+            rejectedTexts: rejected,
             duration: Date().timeIntervalSince(started),
             chunks: batches.count,
             failures: result.failures,

@@ -31,6 +31,7 @@ func runProbe() async throws {
     var detections: [String: [DetectedMatch]] = [:]
     var ungroundedBySample: [(sampleID: String, texts: [String])] = []
     var durations: [TimeInterval] = []
+    var rejectedBySample: [String: [String]] = [:]
 
     print(String(repeating: "=", count: 78))
     for sample in corpus.samples {
@@ -51,6 +52,7 @@ func runProbe() async throws {
                 pipeline.detect(in: sample.text, additional: outcome.matches)
             )
             durations.append(outcome.duration)
+            rejectedBySample[sample.id] = outcome.rejectedTexts
             if !outcome.ungroundedTexts.isEmpty {
                 ungroundedBySample.append((sample.id, outcome.ungroundedTexts))
             }
@@ -65,6 +67,21 @@ func runProbe() async throws {
     }
 
     let report = Evaluator.evaluate(corpus: corpus, detections: detections)
+
+    // A DetectionsFile for NameScore: the names privmask would mask, and what
+    // the filter threw away. A sample whose model call failed still has its
+    // deterministic names; it only lacks `rejected`. See #28.
+    if let path = ProcessInfo.processInfo.environment["PRIVMASK_DETECTIONS_OUT"] {
+        var samples: [String: DetectionsFile.SampleDetections] = [:]
+        for sample in corpus.samples {
+            let names = (detections[sample.id] ?? [])
+                .filter { $0.kind == .personalName }
+                .map { DetectionsFile.Name(text: $0.text, location: $0.range.location, length: $0.range.length) }
+            samples[sample.id] = .init(names: names, rejected: rejectedBySample[sample.id])
+        }
+        try DetectionsFile(system: "privmask", samples: samples).write(to: URL(fileURLWithPath: path))
+        print("wrote \(path)")
+    }
     print(
         report.rendered(
             coveredKinds: Set(SensitiveKind.allCases),
