@@ -10,7 +10,9 @@
       "writer": "human",
       "text": "田中式の手順で再起動したところ、レイテンシは回復しました。",
       "expected": [],
-      "mustNotDetect": ["田中式"]
+      "mustNotDetect": [
+        "田中式"
+      ]
     },
     {
       "id": "human-negative-role-words",
@@ -19,7 +21,11 @@
       "writer": "human",
       "text": "担当: サポート窓口\n確認者: 当番エンジニア\nエスカレーション先: 内線 7788",
       "expected": [],
-      "mustNotDetect": ["サポート窓口", "当番エンジニア", "内線"]
+      "mustNotDetect": [
+        "サポート窓口",
+        "当番エンジニア",
+        "内線"
+      ]
     },
     {
       "id": "human-single-kanji-surnames",
@@ -28,8 +34,24 @@
       "writer": "human",
       "text": "林さんと関さんには確認済みです。",
       "expected": [
-        {"kind": "personalName", "text": "林", "tags": ["kanji", "familyOnly", "honorific"]},
-        {"kind": "personalName", "text": "関", "tags": ["kanji", "familyOnly", "honorific"]}
+        {
+          "kind": "personalName",
+          "text": "林",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "関",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        }
       ],
       "mustNotDetect": []
     },
@@ -40,7 +62,6078 @@
       "writer": "human",
       "text": "勅使河原 誠 様より、請求書の再発行についてお問い合わせがありました。",
       "expected": [
-        {"kind": "personalName", "text": "勅使河原 誠", "tags": ["kanji", "full", "honorific"]}
+        {
+          "kind": "personalName",
+          "text": "勅使河原 誠",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-haiku-01",
+      "note": "Customer inquiry response with full name and honorific, family name in body",
+      "genre": "email",
+      "writer": "haiku",
+      "text": "Subject: 納期確認のお願い - Order-2024-001001\nTo: 八角善次様\n\n八角善次様\n\nいつもお世話になっております。先日のご発注「受託システム開発」の納期について、ご確認させていただきたく、ご連絡させていただきました。\n営業部の十合久尚が担当させていただきます。\n\n予定納期：2024年10月15日\nプロジェクトID：PRJ-2024-4521\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\nよろしくお願いいたします。\n\n佐藤太郎\n営業部\nA社",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "八角善次",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "十合久尚",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-haiku-02",
+      "note": "Internal status update with spaced family+given name and honorific",
+      "genre": "email",
+      "writer": "haiku",
+      "text": "朽木 直則さんへ\n\n先ほどのご確認ありがとうございます。\n件の新機能仕様について、以下の通りご報告させていただきます。\n\n【実装スケジュール】\n• デザイン確認：2024/10/02\n• 実装開始：2024/10/07\n• テスト実施：2024/10/20\n\n開発チームリード：桜沢基仁\n確認期限：2024年10月5日 17:00\n\nご質問・ご指摘がございましたら、該当ドキュメント（dev-spec-v2.3.pdf）をご参照の上、コメントいただけますようお願いいたします。\n\n木村花子\nエンジニアリング部",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "朽木 直則",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "桜沢基仁",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-haiku-03",
+      "note": "Delivery confirmation with family-name-only reference and formal suffix",
+      "genre": "email",
+      "writer": "haiku",
+      "text": "【配送完了のご報告】\n\nいつもお利用いただきありがとうございます。\nご発注いただきました商品が本日配達完了いたしました。\n\n配送記録：2024-10-02 15:30\nお客様：中込景茂様\n佐川急便 追跡番号：123456789\n\n本件に関するご質問やご不明な点は、担当の毬谷敦仁氏までお問い合わせください。\nメール：tsutsumitani@logistics.co.jp\n電話：03-XXXX-XXXX\n\n今後ともよろしくお願いいたします。\n\n物流部\nA物流サービス",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "中込景茂",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "毬谷敦仁",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-haiku-04",
+      "note": "Meeting confirmation with romaji representation in email and katakana-kanji mixed names",
+      "genre": "email",
+      "writer": "haiku",
+      "text": "【会議予定確認】\n\nお疲れ様です。\n以下の通り、製品企画会議を開催いたします。\n\n■日時：2024年10月8日（月）14:00-15:30\n■場所：B会議室\n■出席予定者：\n  - wakatanabe-kansuke@company.jp（若田部閑之助）\n  - コウタニ太郎\n  - タマハシ花子\n  - 山田次郎\n\n資料は会議の1時間前に共有フォルダ（/projects/2024/planning/）にアップロード予定です。\nご確認のほど、よろしくお願いいたします。\n\n企画部\n松本美紀",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "若田部閑之助",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "コウタニ太郎",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "タマハシ花子",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-haiku-05",
+      "note": "Complex mixed scenario with romaji in user IDs and various name formats",
+      "genre": "email",
+      "writer": "haiku",
+      "text": "Subject: RE: 品質レビューのご指摘対応状況について\n\n岡久 沙苗様\n\nお世話になっております。\n先週のリリース候補バージョン v3.2.1 についての品質レビューコメントをいただき、ありがとうございました。\n\n対応状況をまとめて報告いたします。\n\n■修正完了項目（user=kusuyama_taro により実装）：\n• UI コントラスト改善（WCAG AA 対応）\n• エラーメッセージの日本語化\n\n■調査中項目（iwahana-hanako@dev.internal）：\n• パフォーマンス最適化\n• 連携システムとの仕様調整\n\nコード署名者：藤堂真守（user=fujido_masamoto）\nレビュー予定日：2024年10月9日\n\nご不明な点等ございましたら、お気軽にお問い合わせください。\n\n開発部\n高橋次郎",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "岡久 沙苗",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "kusuyama",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "iwahana",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "藤堂真守",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-opus-01",
+      "note": "Order confirmation from support: full name with half-width space and 様, family-only with 様, family-only self-introduction, unspaced full name in signature.",
+      "genre": "email",
+      "writer": "opus",
+      "text": "件名: 【ご注文確認】注文番号 ORD-2026-08817\n\n矢木 成能 様\n\nいつもお世話になっております。株式会社ノースブリッジ カスタマーサポートの佐古です。\n2026/09/28 14:32 にご注文いただいた「スマートハブ X200」2点の出荷予定をご案内いたします。\n- 出荷予定日: 2026年10月3日\n- 配送業者: グリーンリーフ物流（追跡番号 7731-0042-5568）\n矢木様のご都合が合わない場合は、本メールにご返信ください。\n--\n佐古宗直\n株式会社ノースブリッジ カスタマーサポート部\nTEL 03-5555-0182",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "矢木 成能",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐古",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "矢木",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐古宗直",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-opus-02",
+      "note": "Customer reply with quoted original: family-only with 様, unspaced and spaced full names, third-party colleague named without honorific, quoted header line.",
+      "genre": "email",
+      "writer": "opus",
+      "text": "件名: Re: 請求書 INV-55120 の金額について\n\n田ヶ原様\n\nお世話になっております。有限会社みなと工房の居村洋介です。\n10月分の請求書（INV-55120）を確認しましたが、ライセンス数は 12 ではなく 10 のはずです。\n経理担当の四十宮博朗からも同じ指摘がありました。\nお手数ですが再発行をお願いできますでしょうか。\n\n居村\n\n> 2026-09-30 10:05 田ヶ原 津南雄 <billing@example.co.jp> wrote:\n> 居村 洋介 様\n> 請求書を添付いたします。ファイル: invoice_INV-55120.pdf",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "田ヶ原",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "居村洋介",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "四十宮博朗",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "居村",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "田ヶ原 津南雄",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "居村 洋介",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-opus-03",
+      "note": "Support ticket reply: romaji family name as a log user ID among paths and timestamps, mixed-script full name (kanji family, hiragana given) with さん.",
+      "genre": "email",
+      "writer": "opus",
+      "text": "件名: [Ticket #48213] ログインできない件\n\n豊重 茂晴 様\n\nサポート窓口の中道です。\nお問い合わせの件、サーバーログ（/var/log/auth/2026-10-01.log）を確認したところ、user=nagatsuta のアカウントで 09:12〜09:20 の間に5回のパスワード誤入力があり、ロックがかかっていました。\nロックは解除済みですので、改めてお試しください。\nなお、管理者アカウントの変更は、御社の富士本 えみさんからのご依頼でのみ承ります。\n\n中道 綺子\nサポート窓口（受付 9:00-18:00）",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "豊重 茂晴",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中道",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "nagatsuta",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "富士本 えみ",
+          "tags": [
+            "mixed",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中道 綺子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-opus-04",
+      "note": "Meeting scheduling: two addressees with 様 then さん, single-kanji given name and single-kanji family name, given-only with さん, file path.",
+      "genre": "email",
+      "writer": "opus",
+      "text": "件名: 打ち合わせ日程のご相談（案件ID: PRJ-0714）\n\n株式会社ノースブリッジ\n成岡 成雅 様\n羽根　登美恵 様\n\nご連絡ありがとうございます。井澤です。\n成岡さん、羽根さん、次回の定例を下記候補でご検討ください。\n1) 10/7(火) 15:00-16:00\n2) 10/9(木) 10:30-11:30\n会場は弊社 3F 会議室B、オンライン参加の方には Teams のリンクをお送りします。\n当日は弊社の由起 郁彦、台 嘉樹も同席いたします。\n資料: shared/PRJ-0714/agenda_v2.xlsx\n登美恵さんには前回の議事録を別途お送りしました。\n\n井澤 利",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "成岡 成雅",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "羽根　登美恵",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "井澤",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "成岡",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "羽根",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "由起 郁彦",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "台 嘉樹",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "登美恵",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "井澤 利",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-opus-05",
+      "note": "Event office notice: katakana family names (one full, two family-only with 様), rare long kanji family name spaced/unspaced, single-kanji family name, romaji name in signature.",
+      "genre": "email",
+      "writer": "opus",
+      "text": "件名: 展示会出展申込の受領について（EXPO-2026-T15）\n\nヒロマ ケンジ 様\nイイタケ様\nタニシゲ様\n\nいつもお世話になっております。展示会事務局の五百旗頭堅至です。\nブース番号 T-15 の申込書を受領いたしました。電源容量は 1.5kVA で手配いたします。\n搬入は 11/12 08:00 開始で、現地責任者は藍 玄信が担当いたします。\nご不明な点は五百旗頭までお問い合わせください。\n--\nEXPO 2026 事務局 / Event Office\nAssistant: Mitsui\nTEL 06-5555-0315",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "ヒロマ ケンジ",
+          "tags": [
+            "katakana",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "イイタケ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "タニシゲ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "五百旗頭堅至",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "藍 玄信",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "五百旗頭",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Mitsui",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-sonnet-01",
+      "note": "Support reply to a customer; spaced full name with trailing 様 detached, family-only with 様, さん, katakana family name",
+      "genre": "email",
+      "writer": "sonnet",
+      "text": "株式会社ミナトシステムズ\n営業部 中込 亮 様\n\nいつもお世話になっております。サポート担当の矢木 奈保美です。\nチケット INC-20481 の件、2026年9月28日 14:30 に再現を確認しました。\n中込様の環境（Windows 11、ClearLedger 5.2）では、C:\\Logs\\clearledger\\app.log に出力されます。\n来週の打ち合わせには佐古 遊さんとナガネ様も同席予定です。\n何卒よろしくお願いいたします。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "中込 亮",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "矢木 奈保美",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中込",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐古 遊",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ナガネ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-sonnet-02",
+      "note": "Customer email about a quotation; no-space and full-width-space full names with honorifics, self-introduction by full name",
+      "genre": "email",
+      "writer": "sonnet",
+      "text": "件名: Re: 見積書 Q-2026-0915 のご送付\n\n毬谷 定行です。先日は工場見学をありがとうございました。\n若田部高幸さんに確認したところ、発注番号 PO-77310 は10月3日 午前9:00 までに必要とのことです。\n請求書は藤堂　祥泰様宛にお送りください（部署: 購買2課）。\nサクラギ様のご都合のよい日時もあわせてご教示ください。\n以上、よろしくお願いします。\n毬谷 定行",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "毬谷 定行",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "若田部高幸",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "藤堂　祥泰",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "サクラギ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-sonnet-03",
+      "note": "Incident report with To/Cc headers; given name in hiragana (mixed script), given-name-only with さん, katakana family name with さん",
+      "genre": "email",
+      "writer": "sonnet",
+      "text": "To: 居村 小一 様\nCc: 田ヶ原房太郎 様\n\nお世話になっております。ご依頼の障害対応について報告します。\n対応は苅田 なおよしが担当し、10月1日 22:15 にパッチ v3.8.2 を適用しました。\n小一さんのチームのログ /var/log/portal/error-0930.log を確認し、再発はありません。\nコナカイさんにも共有済みです。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "居村 小一",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "田ヶ原房太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "苅田 なおよし",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小一",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "コナカイ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-sonnet-04",
+      "note": "Shipping notice with From header and romaji family name in both capitalized and user= forms; family-only without honorific",
+      "genre": "email",
+      "writer": "sonnet",
+      "text": "From: 重家 征治 <sales-desk@example.co.jp>\n件名: 納期のご連絡 (注文 ORD-5521)\n\n矢澤成能様\n\n重家です。ご注文の SKU AX-1200 を 48 台、10月10日に出荷します。\n倉庫側の担当は長谷美 宗直です。何かあれば長谷美様まで。\n追跡番号は JP-8830-2291 です。\nなお、Ezura 宛の問い合わせは user=ezura までお願いします。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "重家 征治",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "矢澤成能",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "重家",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "長谷美 宗直",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "長谷美",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Ezura",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ezura",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "email-sonnet-05",
+      "note": "Contract renewal notice; rare single-character family name with and without 様, given-name-only with さん, romaji signature and address",
+      "genre": "email",
+      "writer": "sonnet",
+      "text": "Subject: 保守契約更新のご案内\n\n與 津南雄 様\n\nいつも大変お世話になっております。宇治土公 博朗でございます。\n更新手続き（契約番号 MC-2026-0418、年額 1,280,000円）を、10月末までにお願いいたします。\n與様の部署の窓口は、引き続き潮 洋介が務めます。洋介さんの直通は 03-5550-0142 です。\n\nBest regards,\nUgaki / ugaki@example.com",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "與 津南雄",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "宇治土公 博朗",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "與",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "潮 洋介",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "洋介",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Ugaki",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ugaki",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-haiku-01",
+      "note": "Full name, family-only, and given-only forms with and without spaces",
+      "genre": "incident",
+      "writer": "haiku",
+      "text": "2026-10-02 15:34 緊急: データベース接続タイムアウト\n\n報告者: 久芳貞世\n対応者: 前田 純陽さん、左海さん\n\nシステムID: db-prod-001\n発生時刻: 2026-10-02T15:30:00Z\n\n概要:\napi-server-pool-03 でコネクションプール枯渇。\n貞世が最初に検知。純陽と海鈴が対応中。\n\nステータス: 解決\n対応完了時刻: 2026-10-02T15:45:00Z",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "久芳貞世",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "前田 純陽",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "左海",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "貞世",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "純陽",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "海鈴",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-haiku-02",
+      "note": "Katakana names with honorifics and romaji users",
+      "genre": "incident",
+      "writer": "haiku",
+      "text": "件名: 本番環境 API キー漏洩事故\n日時: 2026-09-28 11:22\n\n発見者: ハグロ恵樹\n初期対応: イヌイ けんじ、Tokonami\nセキュリティ確認: Katsumine\n\nuser_tokonami は 2026-09-27 20:15 に不正アクセス検知。\nサービスアカウント: svc_katsumine_deploy\n\nハグロさんの提案で全キー再発行。\nイヌイ(けんじ)が作業担当。\n\n対応完了: 2026-09-28 14:45\n影響範囲: なし",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "ハグロ恵樹",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "イヌイ けんじ",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Tokonami",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Katsumine",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ハグロ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "イヌイ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-haiku-03",
+      "note": "Mixed kanji forms with spaces, hiragana given names, various honorifics",
+      "genre": "incident",
+      "writer": "haiku",
+      "text": "【報告】本番環境メモリ増設完了\n\n申請者: 金海良政\n実施者: 杉山玲葉奈さん、田片可奈子氏\n承認者: 芝岡 芳良\n\nチケット: OPS-2847\n実施日時: 2026-09-15 02:00-04:30 JST\nサーバー: app-prod-20 ～ app-prod-25\n\n作業内容:\n- 杉山による現地作業開始\n- よう葉奈のチェック\n- 可奈子氏から最終承認\n- 芳良が進捗確認\n\n結果: メモリ 128GB -> 256GB\nテスト完了: 全て OK\n\n次: 金海による監視継続予定",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "金海良政",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "杉山玲葉奈",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "田片可奈子",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "芝岡 芳良",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "杉山",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "よう葉奈",
+          "tags": [
+            "mixed",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "可奈子",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "芳良",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "金海",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-haiku-04",
+      "note": "Long postmortem (>2000 chars) with multiple names appearing only in final third",
+      "genre": "incident",
+      "writer": "haiku",
+      "text": "# 2026年9月 本番DBクラスタ障害 事後分析報告書\n\n## 概要\n2026-09-10 14:30-16:45 JST に本番環境 PostgreSQL クラスタで接続プール枯渇と応答遅延が発生。\n顧客向けサービスの一部が最大 15 分間利用不可となり、投資プラットフォームの新規注文受付が停止。\n\n## 事前条件と環境構成\n\n本番環境構成:\n- DB クラスタ: postgres-prod-cluster-01\n- メインノード: db-prod-121 (32vCPU, 256GB RAM, EBS gp3 2TB)\n- レプリカ: db-prod-122, db-prod-123 (各同一スペック)\n- コネクションプール: pgbouncer 設定値 1000\n- キャッシュレイヤー: Redis cluster 6ノード構成\n- 監視: Datadog + CloudWatch\n\n## 初期検知と対応タイムライン\n\n14:30 - アラート発火\n監視システムが CPU 使用率 95%, メモリ 87% を検知。\n初期対応者: 嶋倉恭吾\nSlack 通知: #incident-response チャネルで alert-bot が自動投稿。\n嶋倉さんが 1 分以内に認識。\n\n14:32 - 初期対応チーム編成\n嶋倉さんと佐取善次が db-prod-121 の状態確認開始。\nログから大量の slow query 検知。平均応答時間 2.3 秒。\n問題の根本原因追跡開始: 午後 14:25 に investment-service の新バージョン v2.15.0 が自動デプロイされた。\n\n14:35 - 根本原因特定\nデプロイ内容: データ層の投資テーブルアクセスロジック変更。\n不具合: N+1 クエリアンチパターンが INSERT/SELECT を繰り返す状態。\nクエリ例: 投資銘柄取得時に銘柄数だけ追加の metadata query が実行される。\nテストデータ規模の問題: ステージング環境では 500 件程度の試験データ。\n本番環境: 投資テーブル 2,300 万件 + metadata 関連テーブル約 800 万件。\n\n14:45 - エスカレーション\n復旧オーナー任命: 延藤昇作\nデータベース専任者: 勝城久尚\n両名が緊急ブリーフィング会議を開始。\n会議室: war-room-tokyo-1 (Zoom + 物理会議室)\n参加者数: 23 名\n\n14:50 - 応急処置ステップ 1\n延藤によるコネクション制限ルール (rate limiting) の即時作成・デプロイ。\n制限内容: 単一クライアント IP から 10 秒間に 50 接続まで。\nデプロイ方法: canary deployment で 10% の API server に先行適用。\n効果測定: 接続プール使用率が 98% から 92% に低下。\n\n14:55 - 応急処置ステップ 2\ninvestment-service 側の N+1 クエリ最適化に着手。\n勝城による SQL クエリの再構築: JOIN に変更。\nEXPLAIN ANALYZE 実行: 実行計画コスト 9,850 から 2,100 に改善。\n\n15:10 - 本番適用前テスト\n最適化クエリのテスト実行 (ステージング環境での負荷テスト 10 万件 x 100 スレッド)。\n応答時間: 平均 180ms (改善前 2,300ms)。\n勝城が承認可能と判定。\n\n15:12 - 本番投入\n最適化クエリを本番環境に段階展開開始。\nカナリア: 5% のリクエスト (05:12-05:17)\n様子見: 追加情報なし\n展開レート: 50% のリクエスト (15:17-15:25)\n\n15:30 - 根本修正実行\n佐取が全キャッシュの再構築を実行開始。\nツール: postgres_plan_cache_invalidate による計画キャッシュクリア。\nコマンド: \n  DISCARD PLANS;\n  ANALYZE;\n実行時間: 約 3 分 40 秒。\n\n15:45 - 通常運用復帰確認\n勝城から全システムの正常化報告。\nメトリクス確認:\n  - CPU 使用率: 95% → 42%\n  - メモリ: 87% → 61%\n  - コネクションプール: 850/1000 → 320/1000\n  - 平均応答時間: 2.3秒 → 145ms\n影響を受けた顧客への自動通知メール送信開始。\nSlack に対応完了メッセージを投稿。\n\n## 根本原因分析 (RCA)\n\ninvestment-service v2.15.0 の変更点:\nコード レビュアー: 宝直則\n当初そのレビューでは performance issue は検知されず。\n理由詳細:\n  - テスト環境では 1,000 件未満のテストデータのみ利用。\n  - ステージング環境のデータ規模: 実運用の約 10%。\n  - 実運用では投資テーブルが 2,300 万件存在。\n  - N+1 の影響が 2,300 万倍のスケールで顕著化。\n  - テスト結果は 150ms で完了。本番では秒単位の遅延。\n\n変更内容の技術詳細:\n- 従来: 事前に JOIN で取得\n- v2.15.0: 各投資銘柄ごとに metadata を async fetch\n- async fetch の実装: Promise.all() で 2,300 万件全て並行実行\n- システムメモリ枯渇: 各 Promise が 約 4KB のメモリ消費\n- 2,300 万 x 4KB = 約 92GB メモリ必要 → 256GB マシンで即座に逼迫\n\n## 実施した改善\n\n### 改善 1: 自動テスト強化\n対応実施者: 凌基仁\n実施内容:\n  - 最小でも 100 万件のテストデータセットを自動生成。\n  - テスト実行時間増加: 約 45 秒。\n  - テスト CI/CD パイプライン内に組み込み。\n  - データセット生成スクリプト: scripts/gen_large_test_data.py\n\n### 改善 2: クエリプラン検証\n実装責任者: 万里小路景茂\n新規ポリシー:\n  - 全 DB 関連コードの PR に EXPLAIN ANALYZE の結果を必須添付。\n  - 平均応答時間が 100ms を超過する query は review で reject。\n  - チェック担当の自動化: query-validator bot\n\n### 改善 3: インシデント対応トレーニング\n\n次回トレーニング: 2026-10-15 14:00-15:30 JST\n講師: エンヤ一郎\n対象: 全エンジニア (必修)\n内容: \n  - 大規模データ環境でのパフォーマンステスト手法\n  - メモリプロファイリング基礎\n  - インシデント認識から復旧までの流れ\n\n## 後続アクション\n\n1. investment-service クエリ最適化完了予定: 2026-09-20\n   実施者: 宝直則、勝城久尚\n   確認項目: 全環境での負荷テスト再実施\n\n2. テスト環境スペック向上: 2026-10-01 完了予定\n   予算承認: 完了\n   調達: AWS インスタンスタイプ r7g.4xlarge x 2\n\n3. キャッシュ戦略見直し: 大規模テーブル向けに分散キャッシュ導入検討\n   検討会議日: 2026-09-25\n\n## 今後の予防策\n\n延藤が主導する DB パフォーマンス SLO 策定会議。\n参加メンバー: 佐取善次、凌基仁、万里小路景茂、エンヤ一郎\n初回会議日: 2026-09-22 10:00 JST\n議題:\n  1. メモリ使用量の SLO 策定 (threshold 70% まで)\n  2. クエリ応答時間の SLO (p99 < 200ms)\n  3. 自動アラート設定の見直し\n\n## ドキュメント更新\n\n以下の運用マニュアルを更新予定:\n- ops/db-incident-playbook.md\n- ops/performance-tuning-guide.md\n- ops/testing-strategy.md\n\n更新予定日: 2026-09-18\nレビュアー: 宝直則\n\n対応報告日時: 2026-09-10 17:15:30 JST\n報告責任者: 嶋倉 恭吾",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "嶋倉恭吾",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "嶋倉",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐取善次",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "延藤昇作",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "勝城久尚",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "延藤",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "勝城",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐取",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "宝直則",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "凌基仁",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "万里小路景茂",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "エンヤ一郎",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "恭吾",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-haiku-05",
+      "note": "Various name formats with spaces and multiple variation occurrences",
+      "genre": "incident",
+      "writer": "haiku",
+      "text": "インシデント ID: INC-10847\n発生日時: 2026-08-22 09:15:00 JST\nサービス: payment-gateway-v3\n\n【通知】\n支払い処理エラーが多発中。\n\nジョブ実行者: 久芳 貞世\n初期対応: 前田純陽\nレビュアー: 左海海鈴様\n\nエラーログ分析:\nUser: staff_sadayo (久芳)\nerror_code: PG-5041\nmessage: Connection refused to merchant-db-02\n\nユーザー通知メッセージ:\n「処理担当の前田さんが対応中」\n\n進捗:\n09:20 - 貞世がネットワーク診断開始\n09:25 - 純陽がマーチャント DB を再起動\n09:30 - 海鈴様の確認で復旧確認\n\n原因: merchant-db-02 のディスク満杯 (99.8%)\nコネクションプール: 850/1000\n\n対応完了: 2026-08-22 09:45:00 JST\n根本修正予定: 2026-08-25 (ディスク増設)\n\nフォローアップ:\n左海 海鈴による監視設定変更を 09:50 実施予定。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "久芳 貞世",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "前田純陽",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "左海海鈴",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "久芳",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "貞世",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "前田",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "純陽",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "左海 海鈴",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "海鈴",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-opus-01",
+      "note": "Long postmortem (>2000 chars) with full/family forms, full-width space, and two names (上西川原, 畢) plus a romaji user id appearing only in the final third.",
+      "genre": "incident",
+      "writer": "opus",
+      "text": "【ポストモーテム】INC-2026-0917 決済API 応答遅延（Sev2）\n\n作成: 仲村 亮（SRE チーム）\nレビュー: 中西　定行（決済基盤チーム リード）\n最終更新: 2026-09-18 14:20 JST\n\n## 概要\n2026-09-17 09:42 から 11:08 JST にかけて、payment-gateway の /v2/charges エンドポイントで p99 レイテンシが通常の 180ms から最大 4,200ms まで悪化した。タイムアウト（5,000ms）に達したリクエストは全体の 3.8% で、加盟店側の再試行により決済の二重計上が 27 件発生した。二重計上分は同日 16:30 までに全件取り消し済み。\n\n## 影響範囲\n- 対象サービス: payment-gateway（本番、ap-northeast-1）\n- 影響時間: 86 分\n- 失敗リクエスト数: 約 41,300 件\n- 二重計上: 27 件（合計 ¥812,400）\n- 問い合わせ: カスタマーサポート経由で 63 件\n\n## タイムライン（JST）\n- 09:42 Datadog モニター `payment-gw-p99-latency` がアラート。当番の仲村さんにページ。\n- 09:47 仲村さんが ack。ダッシュボードで DB 接続待ちの増加を確認。\n- 09:55 #inc-payment チャンネルを作成し、Sev2 として宣言。インシデントコマンダーは仲村さん。\n- 10:03 決済基盤チームの鴻池 高幸が参加。直前 09:30 のデプロイ（release-2026.09.17-1、commit 7f3c2a9）との関連を調査開始。\n- 10:11 鴻池さんが、新バージョンで接続プールの上限設定が 200 から 20 に変わっていることを発見。原因は config/pool.yaml の環境変数展開ミス。\n- 10:18 中西がロールバックを承認。\n- 10:24 ロールバック開始。ArgoCD で payment-gateway を release-2026.09.16-3 に戻す。\n- 10:41 ロールバック完了。ただしレイテンシは改善せず。\n- 10:52 飯盛祥泰（DBA）が参加。Aurora のリーダーインスタンスで、滞留したコネクションが 1,900 本残っていることを確認。\n- 11:02 飯盛がアイドル接続を強制切断。\n- 11:08 p99 が 210ms まで回復。監視継続。\n- 12:30 インシデントをクローズ。\n\n## 根本原因\nrelease-2026.09.17-1 で config/pool.yaml の書式を変えた際、`${DB_POOL_MAX:-200}` と書くべきところを `${DB_POOL_MAX:-20}0` と書いてしまっていた。ステージングでは DB_POOL_MAX が明示的に設定されていたため既定値が参照されず、問題が表に出なかった。本番では環境変数が未設定で既定値が使われ、さらに後ろの 0 が別キーとして解釈されて上限は 20 になった。\n\n上限 20 では、ピーク時の同時リクエスト（約 160）をさばききれず、接続待ちのキューが伸びた。さらに、待ちきれずにタイムアウトしたリクエストがコネクションを解放しないまま残るバグ（既知、PAY-1182）が重なり、ロールバック後もリーダー側に古い接続が溜まり続けた。\n\n## うまくいったこと\n- アラートから ack まで 5 分と、目標の 10 分以内に収まった。\n- 鴻池さんがデプロイ差分から原因の設定を短時間で特定した。\n- ロールバック手順が runbook（runbooks/payment/rollback.md）どおりに動いた。\n\n## うまくいかなかったこと\n- ロールバックで直ると判断し、DB 側の確認が 30 分ほど遅れた。\n- 二重計上の検知が加盟店からの問い合わせ頼みになった。照合ジョブ（reconcile-charges）は 1 日 1 回しか走っていない。\n- ステージングと本番で環境変数の設定が揃っていなかった。\n\n## 再発防止策\n| # | 内容 | 担当 | 期限 | チケット |\n| 1 | config/*.yaml の既定値を CI で静的検査する | 仲村 亮 | 10/04 | SRE-2231 |\n| 2 | ステージングの環境変数を本番と同じ構成にそろえる | 鴻池 高幸 | 10/11 | PAY-1240 |\n| 3 | PAY-1182（タイムアウト時の接続リーク）を修正 | 決済基盤チーム | 10/18 | PAY-1182 |\n| 4 | reconcile-charges を 15 分ごとに実行 | 飯盛祥泰 | 10/11 | PAY-1241 |\n| 5 | ロールバック後の DB 接続数確認を runbook に追記 | 仲村 亮 | 10/04 | SRE-2232 |\n\n## 補足: 二重計上の取り消し作業\n二重計上 27 件のうち 24 件は管理画面から通常どおり取り消した。残りの 3 件は加盟店側で既に返金処理が始まっていたため、経理チームと調整のうえ手動で相殺した。この調整は上西川原 博朗（経理チーム）が担当し、対象の取引 ID は ledger/2026-09/adjust-0917.csv にまとめている。\n\n上西川原さんからは、今後同様のケースが起きた場合に備えて、取り消しと返金が同時に走ったときの判定フローを文書化してほしいとの要望があった。これは再発防止策 #6 として追加する。\n\n| 6 | 取り消しと返金が競合したときの判定フローを文書化 | 上西川原 博朗 | 10/25 | FIN-0388 |\n\n## 補足: 外部ベンダーへの連絡\nAurora の挙動について AWS サポートにケース（Case ID 17263849201）を起票した。窓口とのやり取りは畢 津南雄（インフラ調達）が担当している。回答が届き次第、本ドキュメントに追記する。\n\nまた、監視ベンダー側のアラート遅延が疑われた件は、ベンダー担当との定例で畢さんから確認してもらう。\n\n## 承認\n- SRE: 仲村 亮\n- 決済基盤: 中西　定行\n- 記録: user=nagara（議事録のみ）\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "仲村 亮",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "仲村",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中西　定行",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中西",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "鴻池 高幸",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "鴻池",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "飯盛祥泰",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "飯盛",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "上西川原 博朗",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "上西川原",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "畢 津南雄",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "畢",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "nagara",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-opus-02",
+      "note": "Chat-log incident channel excerpt with speaker-prefixed full names, katakana family names, and a hiragana given name with honorific.",
+      "genre": "incident",
+      "writer": "opus",
+      "text": "#inc-search-502 より抜粋（2026-08-04）\n\n10:02 深見 遊: search-api で 502 が急増してます。Grafana の search-overview 見てください\n10:03 井出 奈保美: 見えてます。nginx の upstream が 3 台中 2 台 unhealthy\n10:04 深見 遊: 直前に何か入れました？\n10:05 コナカイ ミカ: 09:58 に search-indexer の v4.12.0 を出しました。ごめんなさい、関係あるかも\n10:06 井出 奈保美: コナカイさん、indexer のデプロイで search-api 側の再起動も走ってる？\n10:07 コナカイ ミカ: 走ってます。helm の hook で一緒に restart してました\n10:09 エヅラ ケン: 深見さん、/healthz が 30 秒でタイムアウトしてます。インデックス再構築中は応答しないっぽい\n10:11 深見 遊: ありがとうございます。じゃあ indexer は v4.11.3 に戻しましょう。なほみさん、ロールバックお願いできますか\n10:12 井出 奈保美: やります\n10:19 井出 奈保美: 戻しました。unhealthy 0 台\n10:21 エヅラ ケン: 502 収まりました。エラー率 0.02%\n10:25 深見 遊: 一旦クローズします。振り返りは明日 15:00、議事はエヅラさんお願いします",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "深見 遊",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "深見",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "井出 奈保美",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "なほみ",
+          "tags": [
+            "hiragana",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "コナカイ ミカ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "コナカイ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "エヅラ ケン",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "エヅラ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-opus-03",
+      "note": "Formal incident report with no-space full name, 氏 honorific on a family name, and a lowercase romaji reviewer id.",
+      "genre": "incident",
+      "writer": "opus",
+      "text": "障害報告書 INC-0731 社内 SSO ログイン不可\n報告者: 山名 房太郎（情報システム部）\n発生: 2026-07-31 08:15 〜 09:40 JST\n影響: Okta 経由の SSO で社内ツール 14 種にログインできない状態。対象 約 1,200 名。\n\n経緯:\n08:15 ヘルプデスクに問い合わせが集中。\n08:22 当番の秋山 小一が IdP 側の証明書期限切れ（SAML 署名証明書、2026-07-31 08:00 失効）を確認。\n08:40 渋澤直義が新しい証明書を発行し、主要 SP 9 種に登録。\n09:10 残り 5 種（社内 wiki、経費精算 など）は SP 側の手動更新が必要で、各担当に依頼。\n09:40 全 SP で復旧を確認。\n\n原因: 証明書の更新リマインダーが退職者のメールアドレス宛てに設定されたままだった。\n\n対策:\n- 期限 30 日前のアラートを #it-ops に流す（担当: 渋澤さん）\n- SP ごとの更新手順を Confluence にまとめる（担当: 山名 房太郎）\n- 監査ログは s3://corp-it-audit/2026/07/31/ に保存済み（確認: suguri）\n\n以上、山名氏の承認済み。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "山名 房太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "山名",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "秋山 小一",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "渋澤直義",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "渋澤",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "suguri",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-opus-04",
+      "note": "On-call handoff memo with full names, bare family name, given-name-only with honorific, and a katakana family name.",
+      "genre": "incident",
+      "writer": "opus",
+      "text": "オンコール引き継ぎメモ 2026-09-01（月）→ 09-08（月）\n前任: 西松 征治 / 後任: 赤崎 成能\n\n■ 期間中のインシデント\n1. INC-4410 batch-export の夜間ジョブ失敗（09/02 02:13）\n   - 原因: S3 バケット export-prod-ap1 のライフサイクル設定変更で、一時ファイルが即時削除されていた。\n   - 対応: 西松がルールを戻し、ジョブを再実行。03:05 完了。\n   - 残課題: ルール変更のレビュー経路を決める（宮窪 宗直さんに相談中）\n2. INC-4423 社内 Redis（cache-main）のメモリ逼迫（09/05 18:40）\n   - maxmemory 到達で eviction が多発。ウガキさんがキー TTL の付け忘れ（feature/recommend-v2）を特定。\n   - 一時対応で 8GB → 16GB に拡張。恒久対応は PR #2871 で TTL を付与（レビュー待ち）。\n\n■ 後任への申し送り\n- PR #2871 のマージ後、cache-main を 8GB に戻すかどうか判断してください。判断は赤崎さんに任せます。\n- 宗直さんから、来週の DB メンテ（09/10 01:00-03:00）の連絡が来ます。\n- 何かあれば西松まで Slack で。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "西松 征治",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "西松",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "赤崎 成能",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "赤崎",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "宮窪 宗直",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "宗直",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ウガキ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-opus-05",
+      "note": "Email-style incident report with a one-character family name used bare, a kanji+hiragana mixed full name, a katakana full name, and a romaji signature-style surname.",
+      "genre": "incident",
+      "writer": "opus",
+      "text": "件名: [障害報告] モバイルアプリ v8.3.0 起動時クラッシュ（Android）\n\n関係者各位\n\nモバイル開発チームの利 洋介です。昨日発生した障害について報告します。\n\n- 発生: 2026-09-24 19:05 JST（v8.3.0 の段階リリース 20% 到達時）\n- 検知: Firebase Crashlytics のクラッシュフリー率が 99.6% → 91.2% に低下\n- 影響: Android 12 以下の端末で起動直後にクラッシュ。推定 18,000 ユーザー\n- 対応: 19:40 Google Play Console で段階リリースを停止。21:30 v8.3.1 を配信開始\n\n原因は、新しく入れた画像ライブラリが Android 12 以下で未対応の API を呼んでいたことです。QA 端末一覧（qa/devices.csv）に Android 12 以下の実機がなかったため、事前に見つけられませんでした。\n\n調査では井出 なほみさんに端末ログの解析を、ウガキ タクミさんにリリース停止の判断をしてもらいました。Android 11 の検証機は S. Suguri が手配済みです。\n\n今後の対策は以下の 3 点です。\n1. QA 端末一覧に Android 10〜12 の実機を 3 台追加\n2. 段階リリースの初回を 5% にし、クラッシュフリー率 99% 割れで自動停止\n3. 新規ライブラリ導入時の minSdk 確認をレビューチェックリストに追加\n\n不明点は利までお願いします。\n\n--\n利 洋介 / Mobile Platform",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "利 洋介",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "利",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "井出 なほみ",
+          "tags": [
+            "mixed",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ウガキ タクミ",
+          "tags": [
+            "katakana",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Suguri",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-sonnet-01",
+      "note": "Short outage report; spaced, unspaced, full-width-space and honorific forms",
+      "genre": "incident",
+      "writer": "sonnet",
+      "text": "【障害報告】決済API 5xx 急増 (INC-20481)\n発生: 2026-09-14 02:17 JST / 復旧: 03:42 JST\n影響: payments-gateway v3.8.2、注文確定リクエストの約12%が失敗\n一次対応: 金海 善次 がアラートを受けてロールバックを開始。\n延藤さん、DBの接続数上限(max_connections=200)の確認をお願いします。\n/var/log/payments/gateway-20260914.log に pool exhausted が連続して出ています。\n原因は connection leak。修正PRは杉山直則がレビュー済みです。\n再発防止: 田片　基仁様が監視ルールを追加予定(期限 10/03)。\nチーム: SRE-Platform",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "金海 善次",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "延藤",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "杉山直則",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "田片　基仁",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-sonnet-02",
+      "note": "Postmortem with katakana family name and romaji in log line and signature",
+      "genre": "incident",
+      "writer": "sonnet",
+      "text": "## Postmortem: 検索インデックス遅延 (SEV2)\n- Incident ID: INC-20533\n- 検知: 2026-09-21 10:05 / 解消: 11:48\n- Incident Commander: 仲村 景茂\n- 記録: 中西 敦仁\n\n### タイムライン\n10:05 PagerDuty が search-indexer の lag > 300s を通知\n10:09 モチヅキ が一次対応を開始。kafka の consumer group search-idx-v2 を確認\n10:31 仲村さんの指示で、インデックス再構築ジョブを停止\n10:40 中西さんが ES クラスタの heap 使用率 92% を確認\n11:02 deploy log: deploy by user=katouda sha=9f3c2ab env=prod\n11:48 lag が 5s 未満に回復\n\n### 備考\n再発防止のチケットは SEARCH-1432。\nContact: -- Aosaki (Platform Team)",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "仲村 景茂",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "仲村",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中西 敦仁",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中西",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "モチヅキ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "katouda",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Aosaki",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-sonnet-03",
+      "note": "Memo with kanji/hiragana mixed given names, given-name-only with さん/くん",
+      "genre": "incident",
+      "writer": "sonnet",
+      "text": "障害対応メモ (INC-20502) 2026-09-18\n\nS3 バケット logs-archive-prod のライフサイクル設定ミスで、保管3年分のログの一部が削除された。\n- 発見: 鴻池 閑之助(監査ログの確認中に気づいた)\n- 復元窓口: 建入 亮\n- 設定レビュー担当: 飯盛 真守\n\n09:30 閑之助さんが versioning の履歴から 2,318 オブジェクトを特定。\n10:10 建入 りょう が AWS サポートに case #84120937 を起票。\n10:45 鴻池 かんのすけ から、復元対象は 2025-10 以前に絞ってよいとの連絡。\n11:20 真守くんが復元スクリプト tools/restore_versions.sh を実行、dry-run で 2,318 件を確認。\n12:00 飯盛 真守 が本実行を完了。\n※ 建入亮 は夕方の定例で経過を共有する。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "鴻池 閑之助",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "鴻池 かんのすけ",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "建入 亮",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "建入亮",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "建入 りょう",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "飯盛 真守",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "閑之助",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "真守",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-sonnet-04",
+      "note": "Chat thread with given-name-only, katakana family plus kanji given (mixed)",
+      "genre": "incident",
+      "writer": "sonnet",
+      "text": "@here 本番 web-frontend で 502 が断続的に発生中 (INC-20577)\n13:42 から ALB の 5xx 率が 4.8% まで上昇。リリース v12.4.0 (13:30 デプロイ) 直後です。\n佐府 沙苗さん、直前のデプロイ担当だったので状況を教えてください。\n→ 佐府です。config/nginx/upstream.conf の keepalive_timeout を 75s から 5s に誤って書き換えていました。申し訳ありません。\n沙苗さんが戻すPRを出してくれたので、クスヤマ 理恵 がマージして 14:05 に反映。\n14:11 5xx 率は 0.1% 未満に戻りました。\n振り返りは 9/30 15:00 から。クスヤマ が進行役、記録は佐府でお願いします。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "佐府 沙苗",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐府",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "沙苗",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "クスヤマ 理恵",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "クスヤマ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "incident-sonnet-05",
+      "note": "Long postmortem (>2000 chars); 勅使河原, イワハナ and 成 only in final third",
+      "genre": "incident",
+      "writer": "sonnet",
+      "text": "# ポストモーテム: 夜間バッチ遅延による請求書発行の停止 (INC-20610)\n\n## 概要\n2026-09-28(月)の夜間バッチ billing-nightly が通常30分で終わるところ、7時間以上かかり、翌朝9時までに請求書PDFを発行できなかった。影響を受けたのは法人顧客 1,284 社のうち 約 640 社。決済データそのものの欠損や二重請求は確認されていない。\n\n## 検知\n03:12 に Datadog のモニター billing-nightly-duration が warning、04:40 に critical へ遷移した。しかし当番のオンコール通知が夜間ミュート設定の対象になっており、実際に人が気づいたのは 06:55 に 柏瀬 定行がダッシュボードを見たときだった。検知までに約3時間40分を要している。\n\n## 経緯\n06:58 柏瀬が Slack の #incident-billing に起票し、インシデントコマンダーを引き受けた。\n07:05 峯岡 廉太郎 が batch-runner のジョブ一覧を確認し、invoice-render タスクが同一のロックを待ち続けていることを見つけた。\n07:20 DB の pg_stat_activity を調べると、前日 17:30 に開始した集計クエリが idle in transaction のまま残っており、テーブル invoices に対する排他ロックを保持していた。\n07:31 峯岡さんの判断でそのセッションを pg_terminate_backend で終了。ロックが解放され、バッチが再開した。\n07:50 バッチは再開したが、滞留していた 約 38,000 件のレンダリングが一気に走り、PDF変換ワーカー(pdf-worker-pool、通常 8 台)のメモリが逼迫した。\n08:15 インフラ担当の 邱 高幸 が worker を 8 台から 24 台に増やし、キューが捌けはじめた。\n09:40 全件の発行が完了。顧客向けのお詫び文面は CS チームが 11:00 までに送付した。\n\n## 影響の詳細\n請求書の発行が遅れた顧客のうち、支払期限が 9/30 に設定されていた約 90 社には、期限を 10/07 まで延長する対応を取った。経理チームが対象一覧(finance/exports/overdue-20260928.csv)を作り、営業チームが個別に連絡した。\nまた、バッチの遅延中は管理画面の「請求書ダウンロード」ボタンが無効のままになっており、問い合わせ窓口には 17 件のうち 9 件が「ボタンが押せない」という内容で届いた。これは本来、バッチの状態とは独立して表示されるべき項目であり、別チケット BILL-3318 で扱う。\n\n## 原因\n直接の原因は、集計用スクリプト scripts/report/monthly_rollup.py が、例外発生時に接続を閉じないまま終了していたこと。トランザクションが開いたまま残り、ロックを握り続けた。\nこのスクリプトは 2026-08 に追加されたもので、レビュー時にはロックの取り方が論点にならなかった。\nもう一つの原因は、夜間ミュートの設定が「警告」だけでなく「重大」まで含めて有効になっていたこと。設定は infra/alerts/mute.yaml にあり、変更履歴を追うと 2026-06 の変更で範囲が広がっていた。\n\n## 良かった点\n- ロールバックの手順書(runbook/billing-nightly.md)が最新で、迷わず操作できた。\n- 峯岡さんがロック保持セッションを素早く特定できた。\n- CS チームへの連絡が早く、顧客からの問い合わせは 17 件にとどまった。\n\n## 改善できる点\n- 重大アラートが夜間ミュートで握りつぶされる設計は誤りだった。\n- 集計スクリプトに statement_timeout と idle_in_transaction_session_timeout が設定されていなかった。\n- 初動の連絡先が最新化されていなかった。\n\n## アクションアイテム\n1. mute.yaml から重大アラートを除外する(担当: 柏瀬、期限 10/02)\n2. monthly_rollup.py の例外処理を with 文に書き換え、タイムアウトを設定する(担当: 峯岡さん、期限 10/05)\n3. pdf-worker-pool のオートスケール上限を 24 台に引き上げ、メモリ上限を見直す(担当: 邱、期限 10/09)\n4. オンコール連絡先の棚卸し。勅使河原 奈保美さんが取りまとめ、全チームの当番表を 10/12 までに更新する。\n5. 顧客向けの経緯説明を、イワハナ が CS チームの名義で公開用に整える(期限 10/07)。\n\n## 補足\n本件の対応にあたり、夜間にもかかわらず連絡に応じてくれた関係者に感謝します。レビューは 勅使河原さん、法務確認は 成 祥泰氏にお願いしました。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "柏瀬 定行",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "柏瀬",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "峯岡 廉太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "峯岡",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "邱 高幸",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "邱",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "勅使河原 奈保美",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "勅使河原",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "イワハナ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "成 祥泰",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-haiku-01",
+      "note": "API request log with authentication failure and names in user fields",
+      "genre": "log",
+      "writer": "haiku",
+      "text": "2026-10-02T14:32:15Z [ERROR] auth/login User authentication failed\nrequest_id: req_8f92c4d1\nuser_field: 仲村敦仁\nremote_ip: 203.0.113.45\nemail: atsuji.nakamura@example.jp\ntimestamp: 2026-10-02 14:32:15\nerror_code: 401_INVALID_PASSWORD\nrequest_user: 中西 閑之助\nreason: Password mismatch after 3 attempts\nallowed_characters: A-Za-z0-9\nfinal_attempt_by: nakashiro_kansuke",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "仲村敦仁",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中西 閑之助",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "nakashiro_kansuke",
+          "tags": [
+            "romaji",
+            "givenOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-haiku-02",
+      "note": "Audit log with honorifics and mixed name forms",
+      "genre": "log",
+      "writer": "haiku",
+      "text": "[2026-10-02 09:15:42] AUDIT LOG - File Access Report\nFile: /data/contracts/2026Q4_agreement.pdf\nAccessed_by: 鴻池真守様\nAccess_level: READ\nSession_ID: sess_4a7e2b9c\nDuration: 12 minutes\nReviewed_by: 飯盛さん\nApproved_by: 深見亮氏\nTimestamp: 2026-10-02T09:15:42Z\nAction: grant_access\nReason: Contract review for Project Shiraumi\nTeam: 東京オフィス営業チーム\nFile_type: application/pdf\nSize_bytes: 2457890",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "鴻池真守",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "飯盛",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "深見亮",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-haiku-03",
+      "note": "Support ticket with multiple name references and katakana names",
+      "genre": "log",
+      "writer": "haiku",
+      "text": "Ticket ID: TKT-2026-089234\nCreated: 2026-10-02 16:45:20 JST\nStatus: OPEN\nCategory: Technical Support\nDescription:\n申請者: 井出廉太郎\nメールアドレス: rentiaro.ide@company.example\n\n問題内容: ソフトウェアインストール時にエラーが発生\nエラーメッセージ: \"Connection refused\"\n\n対応者: シロサワ ツトム\nアサイン日時: 2026-10-02 17:00:00\nステータス変更: NEW -> IN_PROGRESS\nコメント: シロサワさんが確認予定\n\n関連チケット: TKT-2026-087654\n優先度: MEDIUM\nTarget_resolution: 2026-10-05",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "井出廉太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "シロサワ ツトム",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "シロサワ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-haiku-04",
+      "note": "Database transaction log with romaji and mixed scripts",
+      "genre": "log",
+      "writer": "haiku",
+      "text": "Transaction Log - Database: production_db\nDate: 2026-10-02\nTime: 11:23:45 UTC\nOperation: INSERT INTO user_profiles\nUser: Akashio_user_7834\nIP: 192.0.2.108\nStatus: SUCCESS\nRecords affected: 1\n\nUpdate Log:\nModified_by: yamana_sadayuki\nChange_timestamp: 2026-10-02T11:24:12Z\nField: phone_number\nOld_value: ***-****-****\nNew_value: ***-****-****\n\nReview: 秋山高幸 reviewed\nApproval_date: 2026-10-02\nApprover_name: Akashio\nNotes: Phone update verified\nBackup_status: COMPLETED",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "Akashio_user_7834",
+          "tags": [
+            "romaji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "yamana_sadayuki",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "秋山高幸",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Akashio",
+          "tags": [
+            "romaji",
+            "givenOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-haiku-05",
+      "note": "Long status report (>2000 chars) with names appearing primarily in final third",
+      "genre": "log",
+      "writer": "haiku",
+      "text": "=== MONTHLY PROJECT STATUS REPORT ===\nReport Date: 2026-10-02\nProject Code: PROJ-2026-0847\nFiscal Period: Q4 2026\n\nPROJECT OVERVIEW\nProject Name: Enterprise Data Consolidation Platform v3.2\nBudget: ¥45,000,000\nTeam Size: 24 members\nDuration: 18 months (Started 2026-04-01)\nTarget Completion: 2027-09-30\n\nMILESTONES COMPLETED\n- M1: Requirements analysis (2026-04-30) ✓\n- M2: System architecture design (2026-06-15) ✓\n- M3: Development phase kickoff (2026-08-01) ✓\n- M4: Core module testing (2026-09-15) ✓\n\nCURRENT PHASE: Development and Integration (40% complete)\n\nKEY DELIVERABLES IN PROGRESS\n1. Data Pipeline Module - Status: 75% complete\n   - Schema design and validation\n   - ETL process implementation\n   - Performance optimization\n   - Expected completion: 2026-10-31\n\n2. User Interface Framework - Status: 45% complete\n   - Component library development\n   - Responsive design implementation\n   - Accessibility audit scheduled\n   - Expected completion: 2026-11-15\n\n3. API Gateway Integration - Status: 60% complete\n   - Authentication mechanism implementation\n   - Rate limiting configuration\n   - Documentation generation\n   - Expected completion: 2026-10-25\n\nTECHNICAL INFRASTRUCTURE\nCloud Platform: AWS Tokyo Region (ap-northeast-1)\nDatabase: PostgreSQL 15.0\nApplication Server: Node.js 20.x\nCache Layer: Redis 7.0\nMonitoring: Prometheus + Grafana\nCI/CD Pipeline: GitHub Actions\nLog Aggregation: CloudWatch Logs\n\nRISK ASSESSMENT\nIdentified Risks:\n- Dependency on third-party API (Medium impact, Low likelihood)\n- Resource capacity during peak development (Medium impact, Medium likelihood)\n- Data privacy compliance requirements (High impact, Low likelihood)\n\nMitigation Strategies Implemented:\n- Backup API provider identified\n- Flexible resource allocation plan\n- Legal review scheduled with compliance team\n\nBUDGET TRACKING\nPlanned spending: ¥28,000,000 (62%)\nActual spending: ¥26,500,000 (59%)\nVariance: +1,500,000 (Favorable)\nCash flow projection: On track\n\nPERSONNEL UPDATES\n\n重要: 以下の人事異動が発生しました。\nプロジェクトマネージャー: 渋澤祥泰が2026年10月1日より着任しました。前任者の西松奈保美は別プロジェクトへの異動が決定しました。\n\n開発チーム リーダー: 赤崎遊が品質保証部門へ異動となり、後任は宮窪房太郎が10月5日付で就任予定です。\n\nコンプライアンス担当: 大炊御門征治が新規配置となります。初日: 2026年10月8日。\n\nシステム統合チーム: ヒラカワユキが責任者として配置され、モリチタロウがサブリーダーを務めます。\n\nテクニカルライター: 具小一が参加し、技術文書の整備にあたります。また、謝直義は翻訳・多言語対応を担当します。\n\nベンダー連携窓口: Morichi Hikari が対外調整を行います。\n\nSTAKEHOLDER FEEDBACK\nClient Satisfaction Score: 8.5/10\nInternal Team Morale: Good\nQuality Metrics: 98.2% test coverage\n\nNEXT STEPS AND ACTION ITEMS\n1. Complete API documentation review (Due: 2026-10-08)\n2. Conduct security penetration testing (Due: 2026-10-20)\n3. Prepare client demo materials (Due: 2026-10-15)\n4. Schedule quarterly business review (Due: 2026-10-10)\n\nCONCLUSION\nProject remains on schedule and within budget. Team productivity remains high. All major milestones tracked for on-time delivery.\n\nReport Compiled By: システム管理部\nApproval Date: 2026-10-02\nNext Review: 2026-11-02",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "渋澤祥泰",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "西松奈保美",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "赤崎遊",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "宮窪房太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "大炊御門征治",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ヒラカワユキ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "モリチタロウ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "具小一",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "謝直義",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Morichi Hikari",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-opus-01",
+      "note": "Auth gateway log: names in quoted display_name fields with half- and full-width spaces, a lowercase romaji operator id, and a family name with さん inside a note field.",
+      "genre": "log",
+      "writer": "opus",
+      "text": "2026-09-14T08:02:11.384+09:00 INFO  [auth-gw] login success user_id=U-204581 display_name=\"竹原 茂晴\" ip=10.12.4.88 client=PortalWeb/5.2.1\n2026-09-14T08:02:11.512+09:00 INFO  [auth-gw] mfa verified user_id=U-204581 method=totp\n2026-09-14T08:05:47.006+09:00 WARN  [auth-gw] login failed user_id=U-310077 display_name=\"千間　綺子\" reason=password_mismatch attempt=3/5\n2026-09-14T08:06:02.441+09:00 WARN  [auth-gw] account locked user_id=U-310077 lock_until=2026-09-14T08:36:02+09:00\n2026-09-14T08:11:19.730+09:00 INFO  [admin-console] unlock requested target=U-310077 operator=inui ticket=SEC-8812\n2026-09-14T08:11:20.015+09:00 INFO  [admin-console] 管理者 inui がアカウントロックを解除しました（対象: 千間　綺子）\n2026-09-14T08:14:55.902+09:00 INFO  [auth-gw] session refresh user_id=U-204581 note=\"竹原さんの端末から再認証\"",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "竹原 茂晴",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "千間　綺子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "inui",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "竹原",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-opus-02",
+      "note": "Helpdesk ticket log: requester/assignee fields without spaces, katakana family name with given name, and family names with 様/さん in Japanese comment fields.",
+      "genre": "log",
+      "writer": "opus",
+      "text": "[2026-08-03 10:21:44] ticket=HD-55120 status=open requester=\"下成 江実\" channel=mail\n[2026-08-03 10:21:44] ticket=HD-55120 subject=\"経費精算システムにログインできない\"\n[2026-08-03 10:35:02] ticket=HD-55120 assignee=三木田登美恵 team=情報システム部/ヘルプデスク\n[2026-08-03 10:36:18] ticket=HD-55120 comment=\"下成様、ご連絡ありがとうございます。担当の三木田です。\"\n[2026-08-03 11:02:50] ticket=HD-55121 status=open requester=\"タベ ユウジ\" channel=phone\n[2026-08-03 11:03:07] ticket=HD-55121 comment=\"タベ様より、VPN クライアント v4.8.2 で接続が切断されるとの申告\"\n[2026-08-03 11:40:13] ticket=HD-55121 escalated to=NW運用 approver=\"芳川 利\"\n[2026-08-03 11:41:00] ticket=HD-55121 comment=\"芳川さん承認済み。湯川さんへ引き継ぎ\"\n[2026-08-03 13:15:29] ticket=HD-55120 status=resolved resolution=\"パスワード再発行\" closed_by=三木田登美恵",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "下成 江実",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "三木田登美恵",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "下成",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "三木田",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "タベ ユウジ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "タベ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "芳川 利",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "芳川",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "湯川",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-opus-03",
+      "note": "Long Japanese incident timeline (>2000 chars): chat-handle family names and full names in fields early, with three names appearing only in the final third.",
+      "genre": "log",
+      "writer": "opus",
+      "text": "=== 夜間バッチ障害対応ログ INC-2026-0917 ===\n2026-09-17 01:00:00 [batch-scheduler] ジョブ開始 job=billing_close_daily host=batch-prd-03 担当=中尾 郁彦\n2026-09-17 01:00:03 [batch-scheduler] 入力ファイル確認 path=/data/billing/in/20260916/usage_*.csv count=48\n2026-09-17 01:04:27 [billing-close] 集計処理 step=1/6 対象レコード数=1,284,330\n2026-09-17 01:19:52 [billing-close] 集計処理 step=2/6 割引適用 完了 所要=15m25s\n2026-09-17 01:33:08 [billing-close] ERROR 一時領域の空き容量不足 path=/var/tmp/billing free=212MB required=1.8GB\n2026-09-17 01:33:09 [billing-close] ジョブ異常終了 exit_code=74\n2026-09-17 01:33:15 [alert-router] PagerNotify 送信 severity=high 当番=中尾郁彦 escalation_policy=billing-oncall\n2026-09-17 01:41:02 [ops-chat] 中尾: アラート確認しました。batch-prd-03 にログインして状況を見ます。\n2026-09-17 01:47:39 [ops-chat] 中尾: /var/tmp/billing に前日分の中間ファイルが 1.6GB 残っています。削除してよいか確認したいです。\n2026-09-17 01:52:10 [ops-chat] 中里: 前日分は 09-16 の再実行で使ったものなので削除して問題ありません。念のため一覧だけ残してください。\n2026-09-17 01:55:44 [ops-chat] 中尾: 了解です。ls -l の結果を /home/ops/inc-0917/tmp_list.txt に保存してから削除します。\n2026-09-17 02:03:21 [ops-audit] rm 実行 user=ops01 path=/var/tmp/billing/20260915_* files=36 size=1.6GB\n2026-09-17 02:05:00 [batch-scheduler] ジョブ再実行 job=billing_close_daily rerun=1 承認=中里 嘉樹\n2026-09-17 02:05:04 [billing-close] 集計処理 step=1/6 前回チェックポイントから再開\n2026-09-17 02:31:47 [billing-close] 集計処理 step=3/6 税額計算 完了\n2026-09-17 02:58:12 [billing-close] 集計処理 step=4/6 請求明細生成 件数=402,118\n2026-09-17 03:12:30 [billing-close] WARN 明細の端数差異を検出 diff_total=3円 account_count=7\n2026-09-17 03:14:05 [ops-chat] 中尾: 端数差異が 7 件出ています。既知の丸め仕様の範囲か確認お願いします。\n2026-09-17 03:20:41 [ops-chat] 眞利: 経理側の確認ルールでは 1 件あたり 1 円以内なら許容です。今回はすべて範囲内なので続行で大丈夫です。\n2026-09-17 03:21:10 [ops-audit] 判断記録 decision=continue decided_by=\"眞利 玄信\" ref=FIN-RULE-12\n2026-09-17 03:44:56 [billing-close] 集計処理 step=5/6 帳票出力 path=/data/billing/out/20260916/\n2026-09-17 04:02:18 [billing-close] 集計処理 step=6/6 連携ファイル送信 dest=sftp://fin-gw.internal/inbox\n2026-09-17 04:02:40 [billing-close] ジョブ正常終了 elapsed=1h57m36s\n2026-09-17 04:05:00 [ops-chat] 中尾: 再実行は正常終了しました。朝の確認は日勤帯に引き継ぎます。\n2026-09-17 04:06:12 [ops-chat] 中里: お疲れさまでした。経緯は INC-2026-0917 のチケットに転記しておきます。\n2026-09-17 06:00:00 [batch-scheduler] 定期ジョブ開始 job=usage_snapshot host=batch-prd-03\n2026-09-17 06:12:44 [batch-scheduler] 定期ジョブ正常終了 job=usage_snapshot elapsed=12m44s\n2026-09-17 07:30:00 [monitor] ディスク使用率 host=batch-prd-03 mount=/var/tmp usage=41%\n2026-09-17 09:02:33 [ops-chat] 勅使川原: 日勤の勅使川原です。夜間の経緯を読みました。連携ファイルの受領確認を経理システム側に依頼します。\n2026-09-17 09:30:12 [fin-gw] 受領確認 file=billing_20260916.zip size=84.2MB checksum=ok\n2026-09-17 09:48:05 [ops-chat] 勅使川原: 経理システム側で取り込み完了との連絡がありました。石濱さん、確認ありがとうございます。\n2026-09-17 10:15:00 [ops-audit] 一時領域の監視閾値を 80% から 70% に変更 change_id=CHG-30551 申請者=勅使川原浪平 reviewed_by=haguro\n2026-09-17 10:16:22 [ops-audit] INC-2026-0917 status=closed 最終確認者=\"石濱 順子\"\n=== 振り返りメモ ===\n- 原因: 前日の再実行で生じた中間ファイルが自動削除されず残っていた\n- 対策: /var/tmp/billing の世代管理を cron で実施（CHG-30552 として起票予定）\n- 影響: 請求締め処理が約 2 時間遅延。顧客影響なし",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "中尾 郁彦",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中尾郁彦",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中尾",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中里",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中里 嘉樹",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "眞利",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "眞利 玄信",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "勅使川原",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "石濱",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "勅使川原浪平",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "haguro",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "石濱 順子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-opus-04",
+      "note": "CRM application log: katakana names with half- and full-width spaces, a kanji family name with hiragana given name (mixed), one-character family names, and honorifics inside a memo body.",
+      "genre": "log",
+      "writer": "opus",
+      "text": "2026-07-22 14:03:11.201 INFO  crm-api POST /v2/customers/C-778120/contacts status=201 contact_name=\"カニカワ ミドリ\" created_by=svc-import\n2026-07-22 14:03:11.455 INFO  crm-api 担当営業を割り当て customer=C-778120 sales_rep=\"谷尾 りえこ\" region=関西\n2026-07-22 14:07:39.018 DEBUG crm-web 画面表示 /customers/C-778120 viewer=柯 教通 role=manager\n2026-07-22 14:12:02.663 INFO  crm-api 商談メモ更新 deal=D-30914 body=\"カニカワ様より見積書の再送依頼。マンノウさん経由で先方購買部へ送付予定\"\n2026-07-22 14:12:02.664 INFO  crm-api 通知送信 to=マンノウ　サトル channel=mail template=quote_resend\n2026-07-22 14:30:47.900 WARN  crm-api 重複候補を検出 candidate_a=C-778120 candidate_b=C-778121 similarity=0.93 reviewer=\"梓 彩愛\"\n2026-07-22 14:31:05.112 INFO  crm-web 重複判定 result=not_duplicate decided_by=梓 彩愛 comment=\"部署違いの別担当\"",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "カニカワ ミドリ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "谷尾 りえこ",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "柯 教通",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "カニカワ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "マンノウ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "マンノウ　サトル",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "梓 彩愛",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-opus-05",
+      "note": "Access-control audit log: actor/target fields with and without spaces, romaji actor id, a hiragana given name with さん, and a family name with さん in a message.",
+      "genre": "log",
+      "writer": "opus",
+      "text": "2026-09-30 17:45:02 AUDIT role.grant actor=由里岡堅至 target=谷尾利絵子 role=report-viewer project=sales-dashboard\n2026-09-30 17:45:30 AUDIT role.grant actor=由里岡堅至 target=\"湯川 成雅\" role=report-editor project=sales-dashboard\n2026-09-30 17:52:14 AUDIT role.revoke actor=inui target=\"中尾 郁彦\" role=billing-admin reason=異動に伴う権限整理\n2026-09-30 18:01:09 AUDIT comment actor=由里岡 message=\"しげはるさんの申請分（REQ-6620）は明日対応します。谷尾さんにも共有済み\"\n2026-09-30 18:03:44 AUDIT export.request actor=湯川成雅 file=/exports/sales/2026Q3_summary.xlsx rows=12,480",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "由里岡堅至",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "谷尾利絵子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "湯川 成雅",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "inui",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中尾 郁彦",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "由里岡",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "しげはる",
+          "tags": [
+            "hiragana",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "谷尾",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "湯川成雅",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-sonnet-01",
+      "note": "Application log with kanji full names, honorifics, and a family-name-only form",
+      "genre": "log",
+      "writer": "sonnet",
+      "text": "2026-09-14T09:12:03+09:00 INFO  [order-svc] req=7f3a21 user=井出 遊 action=refund amount=12800\n2026-09-14T09:12:04+09:00 WARN  [order-svc] req=7f3a22 承認待ち: 担当は深見 房太郎さん、代理は山名さん\n2026-09-14T09:12:09+09:00 INFO  [notify] 通知先 秋山直義 様 宛にメール送信 id=msg-00481\n2026-09-14T09:12:10+09:00 ERROR [notify] 送信失敗 to=竹原 征治 code=550 retry=3",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "井出 遊",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "深見 房太郎",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "山名",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "秋山直義",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "竹原 征治",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-sonnet-02",
+      "note": "Audit log with full-width space, no space, given-name-only and family-name-only forms, 氏 honorific",
+      "genre": "log",
+      "writer": "sonnet",
+      "text": "[AUDIT] 2026/09/15 10:03:41 actor=千間 成能 role=admin target=/srv/share/finance/budget_2027.xlsx op=READ\n[AUDIT] 2026/09/15 10:05:12 actor=下成　宗直 role=editor target=/srv/share/finance/budget_2027.xlsx op=WRITE\n[AUDIT] 2026/09/15 10:07:30 担当者に確認: 湯川さんが承認、津南雄さんは不在\n[AUDIT] 2026/09/15 10:08:02 actor=理岡洋介 op=LOGIN ip=10.20.4.17 result=OK\n[AUDIT] 2026/09/15 10:09:45 approver=良原 博朗氏 ticket=CHG-20931",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "千間 成能",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "下成　宗直",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "湯川",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "津南雄",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "理岡洋介",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "良原 博朗",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-sonnet-03",
+      "note": "Ticket log mixing katakana family names, romaji user ids and signatures, and kanji names",
+      "genre": "log",
+      "writer": "sonnet",
+      "text": "2026-09-16 14:20:11 [INFO] ticket#4412 assignee=目時 茂晴 team=platform-infra\n2026-09-16 14:20:15 [INFO] コメント追加: 押井 綺子様より仕様確認の依頼\n2026-09-16 14:21:02 [DEBUG] user=fujikawa session=a91c3e5f\n2026-09-16 14:22:40 [INFO] 署名: Shimobori Hiro / Platform Team\n2026-09-16 14:23:05 [INFO] ニシノミヤ ケンさんをレビュー担当に追加\n2026-09-16 14:23:30 [INFO] ハブタニさんがマージ\n2026-09-16 14:24:00 [INFO] ドウキ ミキ 承認済み build=2.8.1",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "目時 茂晴",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "押井 綺子",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "fujikawa",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Shimobori Hiro",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ニシノミヤ ケン",
+          "tags": [
+            "katakana",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ハブタニ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ドウキ ミキ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-sonnet-04",
+      "note": "Key=value job log with single-character family names, hiragana given name, and mixed-script name",
+      "genre": "log",
+      "writer": "sonnet",
+      "text": "ts=2026-09-17T08:00:00Z level=info job=nightly-sync-12 msg=started\nts=2026-09-17T08:00:02Z level=info owner=黛 江実 msg=ジョブ所有者を確認\nts=2026-09-17T08:00:05Z level=warn msg=久多良木 登美恵さんの権限が失効 uid=u-30417\nts=2026-09-17T08:00:07Z level=info msg=内 成雅さんに引き継ぎ ticket=OPS-771\nts=2026-09-17T08:00:09Z level=info msg=とみえさん宛てに再通知 queue=notify-low\nts=2026-09-17T08:00:12Z level=info msg=黛氏が承認 approver=井出 ゆう\nts=2026-09-17T08:00:15Z level=info msg=finished rows=10432",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "黛 江実",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "久多良木 登美恵",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "内 成雅",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "とみえ",
+          "tags": [
+            "hiragana",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "黛",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "井出 ゆう",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "log-sonnet-05",
+      "note": "Long Japanese batch log over 2000 chars; names appear only in the final third",
+      "genre": "log",
+      "writer": "sonnet",
+      "text": "2026-09-18 03:00:01 INFO 夜間バッチ nightly-sync-12 を開始しました。対象テーブル数は 48 件です。\n2026-09-18 03:00:02 INFO 設定ファイル /etc/sync/config.yaml を読み込みました。バージョンは 5.2.0 です。\n2026-09-18 03:00:03 INFO データベース接続を確立しました。接続先は db-primary-01 、ポートは 5432 です。\n2026-09-18 03:00:05 INFO テーブル orders の同期を開始します。推定行数は 1,204,331 行です。\n2026-09-18 03:01:12 INFO テーブル orders の同期が完了しました。処理時間は 67 秒です。\n2026-09-18 03:01:13 INFO テーブル customers の同期を開始します。推定行数は 388,920 行です。\n2026-09-18 03:01:48 WARN テーブル customers で重複キーを 14 件検出しました。後勝ちで上書きします。\n2026-09-18 03:02:20 INFO テーブル customers の同期が完了しました。処理時間は 67 秒です。\n2026-09-18 03:02:21 INFO テーブル invoices の同期を開始します。推定行数は 802,115 行です。\n2026-09-18 03:03:40 INFO テーブル invoices の同期が完了しました。処理時間は 79 秒です。\n2026-09-18 03:03:41 INFO 添付ファイルの退避を開始します。保存先は /mnt/archive/2026/09/18/ です。\n2026-09-18 03:05:02 INFO 添付ファイル 2,310 件を退避しました。合計サイズは 4.7 GB です。\n2026-09-18 03:05:03 INFO インデックスの再構築を開始します。対象は idx_orders_created と idx_invoices_status です。\n2026-09-18 03:06:30 INFO インデックスの再構築が完了しました。待ち時間はありませんでした。\n2026-09-18 03:06:31 INFO 検索サービス search-api への反映を開始します。バッチサイズは 500 です。\n2026-09-18 03:07:55 WARN search-api の応答が遅延しています。平均応答時間は 1,820 ミリ秒です。\n2026-09-18 03:08:10 INFO 再試行 1 回目を実行します。待機時間は 30 秒です。\n2026-09-18 03:08:50 INFO 再試行 1 回目が成功しました。反映件数は 2,000 件です。\n2026-09-18 03:09:00 INFO 売上集計ジョブ sales-rollup を開始します。集計期間は 2026-09-01 から 2026-09-17 です。\n2026-09-18 03:10:44 INFO 売上集計ジョブ sales-rollup が完了しました。出力は /var/reports/sales_202609.csv です。\n2026-09-18 03:10:45 INFO 監査ログの圧縮を開始します。対象は 31 ファイルです。\n2026-09-18 03:11:30 INFO 監査ログの圧縮が完了しました。圧縮率は 82 パーセントです。\n2026-09-18 03:11:31 INFO バックアップ backup-20260918-0300 を作成しました。保持期間は 14 日です。\n2026-09-18 03:12:00 INFO ディスク使用率を確認しました。/dev/sda1 は 71 パーセントです。\n2026-09-18 03:12:01 INFO メモリ使用量を確認しました。ピークは 6.3 GB でした。\n2026-09-18 03:12:30 INFO 結果レポートを作成しました。出力先は /var/reports/nightly_20260918.html です。\n2026-09-18 03:12:31 INFO レポートの宛先を解決します。運用チームの当番に送付します。\n2026-09-18 03:12:35 INFO 送付先は 久多良木 登美恵さん、共有先は目時さんです。\n2026-09-18 03:12:40 WARN 通知の確認が取れません。代替の連絡先として湯川 津南雄氏を設定しました。\n2026-09-18 03:12:41 INFO 夜間バッチ nightly-sync-12 を終了しました。終了コードは 0 です。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "久多良木 登美恵",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "目時",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "湯川 津南雄",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-haiku-01",
+      "note": "Meeting notes with names in full, family-only, and with honorifics",
+      "genre": "markdown",
+      "writer": "haiku",
+      "text": "# チームミーティング 2026-09-28\n\n**参加者:**\n- 下鳥 利絵子\n- 神高 順子さん\n- 万場彩愛\n- 林屋 教通氏\n\n**アジェンダ:**\n\n1. プロジェクト進行状況の確認\n   - 小淵さんから進捗報告\n   - 中迎貞世がベースライン仕様書をレビュー中\n\n2. 次のマイルストーン\n   - 11月15日までに初版リリース\n   - 五十崎修一郎が品質保証を担当\n   - 津崎純陽がデプロイ準備を進める\n\n3. リスク管理\n   - 笹井 海鈴に確認したところ、外部依存の遅延報告あり\n   - 住原よしまさ氏は代替案を検討予定\n\n**次回:** 10月5日 14:00-15:00\n\n**記録:** 深海昇作",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "下鳥 利絵子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "神高 順子",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "万場彩愛",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "林屋 教通",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小淵",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中迎貞世",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "五十崎修一郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "津崎純陽",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "笹井 海鈴",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "住原よしまさ",
+          "tags": [
+            "mixed",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "深海昇作",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-haiku-02",
+      "note": "README with names in various scripts and forms",
+      "genre": "markdown",
+      "writer": "haiku",
+      "text": "# プロジェクト管理ツール v2.1\n\n**メンテナ:** 波山玲葉奈 (reha.namiyama@company.local)\n\n## 概要\n\nこのツールは、複数プロジェクト間のリソース配分を最適化します。\n\n## インストール\n\n```bash\npip install project-tools==2.1.0\n```\n\n## 使用例\n\n河可奈子がシステム設計を担当した初期版以来、大幅な改善を重ねました。\n\n```python\nfrom tools import allocate\nallocate.optimize(projects=[\"api\", \"web\", \"mobile\"])\n```\n\n## コントリビューター\n\n- **宗 芳良** - 初版開発 (v1.0-1.3)\n- **四十九院恭吾** - パフォーマンス最適化 (v1.4-2.0)\n- ナガツタ ハルヨシ - ドキュメント整備 (v2.0-2.1)\n\n## ライセンス\n\nMIT License. 質問は miyazaki@company.local または ミツイ ユウスケまで。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "波山玲葉奈",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "河可奈子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "宗 芳良",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "四十九院恭吾",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ナガツタ ハルヨシ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ミツイ ユウスケ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-haiku-03",
+      "note": "Runbook with mixed scripts and romaji usernames",
+      "genre": "markdown",
+      "writer": "haiku",
+      "text": "# 緊急対応ガイド\n\n## 問題: APIレイテンシー増加\n\n### ステップ 1: 状況確認\n\n1. ミナヨシ システムアラートをダッシュボードで確認\n2. logs.company.local にアクセス（user=user_oobari）\n3. エラーレートを確認\n\n### ステップ 2: 初動対応\n\n**実施者:** オオバリ マサユキ (user=oobari@internal)\n\n- キャッシュを無効化: `clear_cache.sh prod`\n- データベース接続プールを確認\n\n### ステップ 3: エスカレーション\n\nコヤバ ジュンイチ (user=koyaba_j) に連絡して詳細な分析を依頼。\n\n### ステップ 4: ポストモーテム\n\n対応完了後、以下を実施:\n- 根本原因をドキュメント化\n- 対応時間を記録\n- 改善提案を提出\n\n**最終確認:** koyadmin@company.local",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "ミナヨシ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "オオバリ マサユキ",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "oobari",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "コヤバ ジュンイチ",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "koyaba_j",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-haiku-04",
+      "note": "Team assignment sheet with names in various formats",
+      "genre": "markdown",
+      "writer": "haiku",
+      "text": "# Q4 プロジェクトアサイン表\n\n| タスク | 担当者 | 開始日 | 完了予定 |\n|--------|--------|--------|----------|\n| バックエンド最適化 | 下鳥利絵子 | 2026-10-01 | 2026-11-30 |\n| フロントエンド改善 | 神高 じゅんこ | 2026-10-05 | 2026-12-15 |\n| ドキュメント整備 | 万場 彩愛さん | 2026-10-01 | 2026-11-15 |\n| セキュリティレビュー | 林屋教通 | 2026-10-10 | 2026-11-20 |\n| テスト自動化 | 小淵 なみへい | 2026-10-08 | 2026-12-01 |\n| インフラ準備 | 中迎 さだよ | 2026-10-05 | 2026-11-30 |\n| QA責任者 | 五十崎 修一郎氏 | 2026-10-01 | 2026-12-31 |\n| リリース管理 | 津崎 純陽 | 2026-10-15 | 2026-12-20 |\n\n**コーディネーター:** 笹井海鈴\n**承認者:** 住原 良政\n\n**注:** 遅延が発生した場合は、深海 しょうさく までご連絡ください。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "下鳥利絵子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "神高 じゅんこ",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "万場 彩愛",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "林屋教通",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小淵 なみへい",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中迎 さだよ",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "五十崎 修一郎",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "津崎 純陽",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "笹井海鈴",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "住原 良政",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "深海 しょうさく",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-haiku-05",
+      "note": "Long technical specification document with names concentrated in final third",
+      "genre": "markdown",
+      "writer": "haiku",
+      "text": "# 分散キャッシュシステム設計書\n\n**版:** 3.2\n**最終更新:** 2026-09-25\n**ステータス:** 実装中\n\n## 1. 概要\n\n本ドキュメントは、マイクロサービスアーキテクチャにおける統一キャッシュ層の設計を規定します。このシステムは複数リージョンにデプロイされ、平均応答時間を50%削減することを目標としています。\n\n## 2. アーキテクチャ\n\n### 2.1 レイヤー構成\n\n- **L1 キャッシュ**: アプリケーションメモリ（エフェメラル）\n- **L2 キャッシュ**: Redis クラスタ（永続化あり）\n- **L3 キャッシュ**: CDN キャッシュ（静的資産用）\n\n### 2.2 ネットワークトポロジ\n\n各リージョンでは以下の構成を採用:\n\n```\n[App Servers] -> [Redis Cluster] -> [CDN] -> [Clients]\n```\n\n同期タイムアウト: 500ms\nデータ有効期限: 24h (静的), 1h (動的)\n\n### 2.3 モニタリング\n\n以下のメトリクスを継続的に監視:\n- キャッシュヒット率 (目標: 85%以上)\n- エビクション率\nスループット (ops/sec)\n- メモリ使用率\n\n実装期間中は、metrics.internal:8080/dashboards/cache で可視化します。\n\n## 3. 実装計画\n\n### フェーズ 1 (10月): 基盤構築\n\n- Redis クラスタ 3-node 構成のセットアップ\n- クライアント SDK の開発\n- 基本的なテストフレームワーク\n\n### フェーズ 2 (11月): 統合テスト\n\n- ステージング環境での負荷試験\n- キャッシュストラテジ最適化\n- セキュリティ監査\n\n### フェーズ 3 (12月): 本番デプロイ\n\n- Canary リリース (5% -> 25% -> 100%)\n- ホットスタンバイ構成の確認\n- 運用チームへの引き継ぎ\n\n## 4. 要件仕様\n\n### 機能要件\n\n- TTL (Time-To-Live) の動的調整\n- 条件付きキャッシング (Content-Type, URL パターン別)\n- キャッシュ無効化イベントの伝播 (pub/sub)\n\n### 非機能要件\n\n- 可用性: 99.95% (月間ダウンタイム < 22分)\n- レイテンシ: p99 < 50ms\n- スケーラビリティ: 1M ops/sec 対応\n\n## 5. セキュリティ考慮事項\n\n- 全キャッシュ通信は TLS 1.3 で暗号化\n- 認証: mTLS + API キー検証\n- キャッシュキー生成は HMAC-SHA256\n\nPCI DSS 3.2.1 に準拠。\n\n## 6. 本番対応ガイドライン\n\n### 6.1 インシデント対応フロー\n\n1. モニタリングアラート検出 (CloudWatch)\n2. on-call エンジニア起動\n3. root cause 分析と応急対応\n4. キャッシュクリア/再構築判断\n\n### 6.2 スケーリング戦略\n\nメモリ使用率が 80% を超えた場合:\n\n1. 有効期限の短縮 (24h -> 12h)\n2. エビクションポリシーを LRU から LFU に変更\n3. ノード追加 (既存 3-node -> 5-node 構成)\n\n予備リソース: AWS 上に常時 1 ノード待機中。\n\n### 6.3 トラブルシューティング\n\n**症状: キャッシュヒット率が 40% に低下**\n\nチェックリスト:\n- Redis メモリ圧迫状態を確認\n- クライアント SDK のバージョン確認\n- ネットワーク遅延測定 (mtr, traceroute)\n- ログファイル: /var/log/redis/redis-server.log\n\nコマンド例:\n```bash\nredis-cli INFO stats | grep hits\nredis-cli --latency\n```\n\n**症状: 定期的なタイムアウト**\n\n原因: 通常 Redis GC pause または TCP バッファ枯渇。\n\n対応:\n- Redis CONFIG SET timeout 0 (無制限待機)\n- TCP バッファ: `net.core.rmem_max=134217728`\n- クライアント接続プール設定: min=10, max=100\n\n## 7. ロールバック手順\n\n重大な問題が発生した場合:\n\n1. L2 キャッシュ無効化 (30 秒で完了)\n2. アプリケーション再起動 (L1 キャッシュリセット)\n3. 旧バージョンの SDK にダウングレード\n\n推定復旧時間: 5 分\n\n## 8. 今後の改善\n\n- GraphQL キャッシュボイドの自動検出\n- 機械学習による TTL 最適化\n- 地理的分散キャッシュネットワーク (エッジロケーション)\n\n---\n\n## 承認者と責任者\n\n本仕様書の実装と運用には、以下の体制を敷きます。\n\n**アーキテクチャレビュー担当:** 波山玲葉奈さん (playama@company.local) は、2026年10月初旬の詳細設計レビューを主導します。彼女は分散システムの経験が豊富で、パフォーマンステストフレームワークの構築をリードします。\n\n**実装PM:** 河 可奈子氏 (kawanomics@company.local) がプロジェクト進行管理を担当します。マイルストーン報告と依存関係管理が主な責務です。スケジュール確認は毎週木曜 9:00-10:00 です。\n\n**インフラストラクチャ準備:** 宗 芳良 (muneyo@company.local) は AWS リソース(EC2, RDS スナップショット, VPC ネットワーク) の事前準備を進めます。既存環境との接続テストは 10月末までに完了予定です。\n\n**セキュリティ監査:** 四十九院恭吾さん (shijuuin.kyogo@company.local) が TLS 設定と API キー管理ポリシーをレビューします。脆弱性スキャンは月次実施予定です。\n\n**品質保証責任者:** ナガツタ マサト (nagatsuta.m@company.local) がテスト計画を作成し、テストスイートの実行を統括します。負荷テストシナリオは 11月1日までに確定します。\n\n**本番運用チーム:** ミツイ ユウスケさん、ミナヨシ タロウ、オオバリ (user=oobari)、コヤバ ナオキ (user=koyaba_n) の4名が 24/7 監視体制を構成します。on-call スケジュールは月初に確定し、Slack #ops-oncall で共有されます。\n\n各担当者への質問や変更依頼は、GitHub Issue を作成するか、対象者に @メンション で直接連絡してください。\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "波山玲葉奈",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "河 可奈子",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "宗 芳良",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "四十九院恭吾",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ナガツタ マサト",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ミツイ ユウスケ",
+          "tags": [
+            "katakana",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ミナヨシ タロウ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "オオバリ",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "コヤバ ナオキ",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-opus-01",
+      "note": "Long weekly meeting notes; full-width and no-space full names, honorific family names, three names appear only in the final third.",
+      "genre": "markdown",
+      "writer": "opus",
+      "text": "# 週次定例 議事録（決済基盤チーム）\n\n- 日時: 2026-09-28 (月) 10:00〜11:30 JST\n- 場所: 本社 7F 会議室「ひばり」/ Zoom ID 845 2210 9931\n- 参加者: 八角 敦仁（進行）、十合　閑之助、朽木真守、桜沢 沙苗、中込 廉太郎\n- 記録: 今週の書記当番\n\n## 1. 前回アクションの確認\n\n- [x] PAY-1182: 返金 API のタイムアウト値を 30s から 12s に変更（中込さん）\n  - 9/24 に本番反映済み。p99 レイテンシは 4.1s から 3.6s に改善した。\n- [x] PAY-1190: `config/retry.yaml` の再試行回数の上限を 5 から 3 に統一（朽木さん）\n- [ ] PAY-1201: 夜間バッチ `settle-daily` のログ出力フォーマット統一（十合さん）\n  - 進捗は 60%。JSON Lines へ移行中で、残りは `jobs/settle/export.rb` の 2 箇所。\n  - 10/2 までに完了予定。レビューは決済基盤チームの誰かが拾う。\n\n## 2. 障害報告: INC-2026-0917\n\n八角さんから概要の説明があった。\n\n- 発生: 2026-09-17 02:14 JST、復旧: 02:51 JST（37 分）\n- 影響: 加盟店向けダッシュボード「Kasane Console」で売上集計が最大 18 分遅延した。決済そのものの失敗はなし。\n- 原因: Redis クラスタ `cache-pay-03` のフェイルオーバー時に、接続プールが古いプライマリを掴んだまま再接続しなかった。\n- 一次対応: 当番だった朽木さんが手動でワーカーを再起動して復旧させた。\n- 恒久対策案:\n  1. クライアントライブラリを v4.2 系に上げ、`reconnect_on_readonly` を有効にする\n  2. フェイルオーバーを検知したらワーカーへ SIGHUP を送る仕組みを入れる\n  3. 監視項目に「集計キューの滞留件数が 5,000 を超えた」を追加する\n\n議論:\n\n- 十合さん: 1 だけで十分ではないか。2 は運用手順が増えるので避けたい。\n- 桜沢さん: 1 の再現テストは済んでいる。ステージングで 3 回フェイルオーバーさせ、いずれも 2 秒以内に再接続した。\n- 中込さん: 3 は今週中に入れられる。閾値は過去 30 日の最大値 3,412 件を見て 5,000 にした。\n- 結論: 1 と 3 を採用し、2 は見送る。ポストモーテムは `docs/postmortems/2026-09-17-redis-failover.md` に置く。\n\n## 3. Q4 ロードマップ\n\n| 項目 | 優先度 | 見積 | 担当 |\n|---|---|---|---|\n| 分割払い API v2 | 高 | 6 週 | 八角 敦仁 |\n| 請求書 PDF 生成の非同期化 | 中 | 3 週 | 桜沢 沙苗 |\n| 監査ログの保存期間 7 年対応 | 高 | 4 週 | 朽木真守 |\n| 旧 Webhook 署名方式の廃止 | 低 | 2 週 | 未定 |\n\n- 分割払い API v2 は、加盟店 3 社（社内コード M-0042、M-0107、M-0311）からの要望が強い。\n- 監査ログは法務チームからの依頼。S3 Glacier Deep Archive に移す想定で、月額コストの試算は約 48,000 円。\n- 旧 Webhook 署名方式を使っている加盟店がまだ 14 社あるため、告知期間を 90 日とる。\n- 請求書 PDF の非同期化は、生成に 8 秒以上かかるケースが 1 日あたり約 220 件ある点を根拠にする。\n\n## 4. 運用まわり\n\n- 10 月分のオンコール表は `oncall/2026-10.csv` に反映済み。\n- 負荷試験ツールの比較検証は来週に持ち越し。候補は k6 と Locust の 2 つ。\n- ステージング環境の DB を PostgreSQL 15 から 16 へ上げる作業は 10/8 の夜に実施する。停止時間は 20 分を見込む。\n- Slack の #pay-alerts に流れる通知が多すぎるという意見が出た。重要度 P3 以下は #pay-alerts-low に分ける。\n\n## 5. 他チームからの共有（後半から参加）\n\n10:50 から基盤 SRE チームの小比類巻 征治さんが参加した。\n\n- 小比類巻さんから、社内共通の Redis 運用基盤「Tidepool」への移行スケジュールの共有があった。決済基盤チームの対象クラスタは `cache-pay-01` から `cache-pay-04` の 4 つで、移行枠は 11/10〜11/21。\n- 移行中のフェイルオーバー訓練は SRE 側の杣さんが取り仕切る。訓練手順書は `sre/runbooks/tidepool-migration.md` にある。\n- 質問: 移行後も `reconnect_on_readonly` の設定は必要か。\n  - 回答: 必要。Tidepool 側でもプライマリ切り替えは起きる。\n- データ基盤チームのアカシオさんからの伝言として、売上集計のスキーマ変更（`sales_daily` に `currency` 列を追加）を 10/15 にリリースしたいという依頼があった。影響範囲の確認は十合さんが引き受けた。\n\n## 6. 次回までのアクション\n\n- [ ] PAY-1215: Redis クライアントを v4.2 系へ更新（桜沢さん、10/9 まで）\n- [ ] PAY-1216: 集計キューの滞留監視を追加（中込さん、10/2 まで）\n- [ ] PAY-1217: Tidepool 移行の作業見積もりを杣 直義さんに送る（朽木さん、10/7 まで）\n- [ ] PAY-1218: `sales_daily` スキーマ変更の影響範囲調査をアカシオ ミドリさんへ回答（十合さん、10/6 まで）\n\n次回: 2026-10-05 (月) 10:00 JST\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "八角 敦仁",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "八角",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "十合　閑之助",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "十合",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "朽木真守",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "朽木",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "桜沢 沙苗",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "桜沢",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中込 廉太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中込",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小比類巻 征治",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小比類巻",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "杣",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "杣 直義",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "アカシオ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "アカシオ ミドリ",
+          "tags": [
+            "katakana",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-opus-02",
+      "note": "README with kanji maintainers and romaji family names in a git log author line, a Reviewed-by trailer and user=xxx.",
+      "genre": "markdown",
+      "writer": "opus",
+      "text": "# kasane-export\n\n加盟店向けの売上データを CSV / Parquet に書き出す CLI ツール。社内向け。\n\n## インストール\n\n```sh\nbrew tap pay-platform/tools\nbrew install kasane-export\nkasane-export --version   # => 1.8.3\n```\n\n## 使い方\n\n```sh\nkasane-export run --merchant M-0042 --from 2026-09-01 --to 2026-09-30 --format parquet\n```\n\n出力先は既定で `./out/<merchant>/<yyyymm>.parquet`。`--out-dir` で変更できる。\n\n## 設定\n\n`~/.config/kasane-export/config.toml` に API トークンと接続先を書く。\n\n```toml\nendpoint = \"https://api.kasane.internal/v3\"\ntimeout_sec = 45\nuser = \"svc-export\"\n```\n\n## 開発\n\n- Go 1.23 以上が必要。\n- `make test` で単体テスト、`make e2e` でステージングに対する E2E テストが走る。\n- リリースは `v*` タグを打つと GitHub Actions の `release.yml` が動く。\n\n## メンテナ\n\n- 毬谷 亮（設計・レビュー）\n- 若田部 定行（リリース担当）\n\n質問は Slack の #kasane-export へ。毬谷さんか若田部さんが拾います。\n\n## 変更履歴（抜粋）\n\n```\ncommit 9f3c2ab\nAuthor: shigetomo <svc-ci@pay.internal>\nDate:   2026-09-21 18:04:11 +0900\n\n    Add --format parquet\n\n    Reviewed-by: Karai\n```\n\n- 1.8.3: Parquet 出力時に `amount` 列が int32 で溢れる不具合を修正（報告: user=karai）\n- 1.8.0: `--format parquet` を追加\n- 1.7.2: タイムゾーンが UTC 固定になっていた問題を修正\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "毬谷 亮",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "毬谷",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "若田部 定行",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "若田部",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "shigetomo",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Karai",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "karai",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-opus-03",
+      "note": "Runbook with names in metadata, prose and an escalation table, including a kanji family name with a hiragana given name and a katakana full name.",
+      "genre": "markdown",
+      "writer": "opus",
+      "text": "# Runbook: 夜間バッチ `settle-daily` が失敗したとき\n\n- オーナー: 決済基盤チーム\n- 最終更新: 2026-09-30 / 更新者: 藤堂 高幸\n- 関連アラート: `SettleDailyFailed`（PagerDuty サービス ID: P7Q2K9X）\n\n## 0. まず確認すること\n\n1. Grafana のダッシュボード `settle / nightly` を開き、失敗したステップを特定する。\n2. `kubectl -n pay-batch get jobs --sort-by=.metadata.creationTimestamp | tail -5`\n3. 直近 24 時間にデプロイがあったかを #pay-deploy で確認する。\n\n## 1. よくある原因と対処\n\n### 1-1. DB 接続のタイムアウト\n\n```\nERROR 2026-09-29T01:12:44+09:00 settle-daily: pq: canceling statement due to statement timeout\n```\n\n- 読み取りレプリカ `pay-db-ro-2` の遅延が 300 秒を超えていないか確認する。\n- 超えている場合は `--replica pay-db-ro-1` を付けて再実行する。\n\n### 1-2. 為替レートの取得失敗\n\n- 外部 API「FXRelay」の障害情報ページを確認する。\n- 前日のレートで代替してよいかは、経理チームの岡久 祥泰さんに確認する。岡久さんが不在の場合は安口 奈保美さんに連絡する。\n\n## 2. 再実行\n\n```sh\nkubectl -n pay-batch create job settle-daily-manual-$(date +%Y%m%d%H%M) --from=cronjob/settle-daily\n```\n\n- 再実行は 1 晩に 2 回まで。3 回目が必要なら藤堂さんの判断を仰ぐ。\n- 06:00 JST までに完了しない場合、加盟店向けの朝の通知（約 1,200 通）を遅らせる。手順は `runbooks/merchant-notice-delay.md`。\n\n## 3. エスカレーション先\n\n| 時間帯 | 一次 | 二次 |\n|---|---|---|\n| 平日 9:00〜18:00 | 当番 | 藤堂 高幸 |\n| 夜間・休日 | 当番 | ヒラカワ ミナト |\n\n- 経理側の窓口: 安口 なおみ（内線 4417）\n- ヒラカワさんへは電話を優先する。Slack は夜間に通知を切っていることがある。\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "藤堂 高幸",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "藤堂",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "岡久 祥泰",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "岡久",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "安口 奈保美",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "安口 なおみ",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ヒラカワ ミナト",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ヒラカワ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-opus-04",
+      "note": "Release-decision memo with 氏 and さん honorifics, a full-width space name, a one-kanji family name, and a katakana family with kanji given name.",
+      "genre": "markdown",
+      "writer": "opus",
+      "text": "# 2026-09-25 リリース判定会 メモ\n\n**対象**: Kasane Console 3.14.0（リリース予定 2026-09-29 14:00 JST）\n**出席**: 奈良木 遊、徳重　房太郎、麿 小一、モリチ 健\n**欠席**: なし\n\n## チェックリスト\n\n- [x] E2E テスト 412 件すべて成功（CI run #88217）\n- [x] 脆弱性スキャン: High 0 / Medium 2（いずれも既知、チケット SEC-311 / SEC-318 で管理）\n- [x] 負荷試験: 1,500 rps で p95 は 280ms、エラー率 0.02%\n- [ ] リリースノートの英語版（モリチさんが 9/26 中に用意）\n\n## 議論\n\n- 徳重氏より、Medium 2 件のうち SEC-318 は管理画面のみに影響するので今回は見送ってよいとの意見。\n- 麿さんから、9/29 は月末処理と重なるため、リリースを 15:30 にずらす提案があった。\n- 奈良木さん: 15:30 でも問題ない。ロールバック手順 `release/rollback-3.14.md` は事前にステージングで確認済み。\n\n## 判定\n\n- **Go**。リリース時刻は 2026-09-29 15:30 JST に変更する。\n- リリース作業の指揮は奈良木 遊、監視は麿 小一が担当する。\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "奈良木 遊",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "奈良木",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "徳重　房太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "徳重",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "麿 小一",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "麿",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "モリチ 健",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "モリチ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-opus-05",
+      "note": "Onboarding checklist with no-space names, 様, and kanji family names paired with hiragana given names.",
+      "genre": "markdown",
+      "writer": "opus",
+      "text": "# Onboarding: 決済基盤チームへようこそ\n\n入社初週にやることの一覧です。わからないことは #pay-onboarding で聞いてください。\n\n## Day 1\n\n- [ ] 社内 SSO のアカウント発行（情シスのチケット IT-5523 を参照）\n- [ ] GitHub の `pay-platform` Org への招待を受ける\n- [ ] VPN クライアント 5.2.1 をインストールする\n\n## Day 2〜3\n\n- [ ] `pay-platform/kasane-api` をクローンし、`make dev` でローカル環境を立ち上げる\n- [ ] メンターとの 1on1（メンター: 若田部定行）\n- [ ] アーキテクチャ説明会（講師: 藤堂様、毎週水曜 16:00、会議室「かもめ」）\n\n## Day 4〜5\n\n- [ ] 当番の見学。今月の見学受け入れは中込 れんたろう、桜沢さなえ の 2 名\n- [ ] 最初の PR を出す。good-first-issue ラベルの付いたチケットから選ぶ\n- [ ] 経理チームとの顔合わせ（八角 あつひと が同席）\n\n## 参考リンク\n\n- `docs/architecture/overview.md`\n- `docs/glossary.md`（社内用語集、約 140 語）\n- Kasane Console ステージング: https://console.stg.kasane.internal/\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "若田部定行",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "藤堂",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中込 れんたろう",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "桜沢さなえ",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "八角 あつひと",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-sonnet-01",
+      "note": "Weekly meeting notes with honorifics, a full-width space, no-space full name, katakana and romaji family names",
+      "genre": "markdown",
+      "writer": "sonnet",
+      "text": "# 週次定例 2026-09-14\n\n- 日時: 2026-09-14 10:00-10:45\n- 場所: 会議室B / Zoom\n- チーム: 決済基盤チーム\n- 議事録: ハエミ\n\n## 参加者\n\n- 小淵 昇作さん（リード）\n- 中迎さん（QA）\n- 五十崎　可奈子（インフラ）\n- 津崎芳良氏（外部レビュー担当）\n\n## 議題\n\n1. リリース v3.8.2 の状況\n   - 中迎さんより、回帰テスト 412 件のうち 7 件が失敗中との報告。\n   - 原因は `payments/refund_test.go` のタイムゾーン依存。チケット PAY-1873。\n2. 障害 INC-20260911-04 の振り返り\n   - 五十崎　可奈子 が一次切り分けを担当。ログは `/var/log/gateway/error.log`。\n3. 次スプリントの優先度\n\n## 決定事項\n\n- v3.8.2 は 2026-09-16 15:00 にリリース。判断は 小淵 昇作さんに一任する。\n\n## アクション\n\n- [ ] 津崎芳良氏へレビュー依頼 (期限 09-15)\n- [ ] hirasaka: ステージング証明書の更新 (cert-staging-2026)\n- [ ] テスト 7 件の修正 (担当者未定)\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "小淵 昇作",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中迎",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "五十崎　可奈子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "津崎芳良",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ハエミ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "hirasaka",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-sonnet-02",
+      "note": "README with maintainer list: full name, given name with honorific, mixed-script name, romaji in config and signature",
+      "genre": "markdown",
+      "writer": "sonnet",
+      "text": "# invoice-sync\n\n請求データを会計システムへ同期する小さな CLI です。\n\n## インストール\n\n```sh\nbrew install example/tap/invoice-sync\ninvoice-sync --version   # 1.12.0\n```\n\n## 設定\n\n`~/.config/invoice-sync/config.toml` を作成します。\n\n```toml\n[sync]\ninterval = \"15m\"\nowner = \"user=ogasawara\"\nretries = 3\n```\n\n## メンテナ\n\n- 八角 恭吾（主担当）\n- 十合さん（レビュー）\n- チガ ひろし（リリース作業）\n\n質問は Issue へどうぞ。急ぎの場合は恭吾さんに直接連絡してください。\n\n## ライセンス\n\nMIT\n\n-- Ogasawara (invoice-sync team)\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "八角 恭吾",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "恭吾",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "十合",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "チガ ひろし",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ogasawara",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Ogasawara",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-sonnet-03",
+      "note": "Long runbook (>2000 chars); four names appear only in the final third, with honorific variants",
+      "genre": "markdown",
+      "writer": "sonnet",
+      "text": "# Runbook: 注文DB プライマリ障害時のフェイルオーバー\n\n最終更新: 2026-08-30 / 対象: orders-db (PostgreSQL 15.4) / 重要度: SEV-1\n\n## 概要\n\n本書は orders-db のプライマリが応答しなくなった場合に、\nスタンバイ (orders-db-b) を昇格させてサービスを復旧するための手順をまとめたものである。\n想定復旧時間 (RTO) は 20 分、許容データ損失 (RPO) は 30 秒以内とする。\n\n## 事前確認\n\n1. ダッシュボード https://grafana.internal.example/d/orders-db で接続数とレプリケーション遅延を確認する。\n2. レプリケーション遅延が 30 秒を超えている場合は、昇格前に必ず当番へ報告する。\n3. 書き込みアプリケーション (orders-api, orders-worker) の replicas 数を控えておく。\n\n## 手順\n\n### 1. 書き込みを止める\n\n```sh\nkubectl -n orders scale deploy/orders-api --replicas=0\nkubectl -n orders scale deploy/orders-worker --replicas=0\n```\n\nスケールダウンに失敗した場合は、ロードバランサ lb-orders-01 から該当ノードを外す。\n操作ログは `/var/log/runbook/orders-failover-20260830.log` に残す。\n\n### 2. スタンバイを昇格する\n\n```sh\nssh orders-db-b 'sudo -u postgres pg_ctl promote -D /var/lib/postgresql/15/main'\npsql -h orders-db-b -c \"select pg_is_in_recovery();\"\n```\n\n結果が `f` になれば昇格は完了である。\n昇格後は接続文字列を secret `orders-db-url` で更新し、アプリケーションを再起動する。\n\n### 3. 切り戻しの判断\n\n旧プライマリが復旧しても、自動では切り戻さない。\nデータの差分確認が済むまでは、旧プライマリを読み取り専用のままにしておく。\n差分確認の結果によっては、旧プライマリを再構築 (pg_basebackup) する。\n\n## 復旧後の確認\n\n- 注文作成 API の成功率が 99.5% 以上に戻っていること。\n- 決済バッチ batch-settle の次回実行 (毎時 05 分) が成功すること。\n- アラート ORD-DB-PRIMARY-DOWN が解除されていること。\n- 手順中に実行したコマンドの出力を、インシデントチケットへ貼り付けていること。\n\n## 作業記録の書き方\n\n- 開始時刻と終了時刻を JST で記録する (例: 2026-08-30 02:14 開始、02:31 終了)。\n- 実行したコマンドと、その結果の要点を時系列で書く。\n- 昇格後の最初の書き込み成功時刻を、必ず別行で明記する。\n- 顧客影響のあった時間帯とリクエスト数は、メトリクス `orders_http_requests_total` から集計する。\n- 事後レビューは 5 営業日以内に開催し、改善項目を ORD-OPS プロジェクトに登録する。\n\n## 想定される失敗と対処\n\n- 昇格コマンドがタイムアウトする場合は、スタンバイ側の PostgreSQL ログ `/var/log/postgresql/postgresql-15-main.log` を確認し、WAL の適用が止まっていないかを調べる。\n- 接続文字列の更新後もアプリケーションが旧プライマリへ接続し続ける場合は、コネクションプールの設定 (max_conn=200, idle_timeout=30s) を見直し、Pod を順番に再起動する。\n- 注文の二重登録が疑われる場合は、冪等キー (idempotency_key) の重複を `orders` テーブルで検索し、該当の注文番号を一覧にしてサポートチームへ渡す。\n- レプリケーションスロットが残っている場合は、旧プライマリの容量逼迫を防ぐため、不要なスロットを早めに削除する。\n- 作業の途中で判断に迷ったときは、手を止めて当番へ連絡し、独断で次の手順へ進まないこと。\n\n## エスカレーション\n\n平日日中は一次連絡先、夜間休日は当番表 (PagerDuty schedule: orders-primary) に従う。\n一次連絡先は 朽木 久尚 とし、不在の場合は 桜沢さんへ引き継ぐ。\n桜沢さんが対応できない夜間は、データ確認を 直則さんに依頼する。\nアプリケーション側の再起動判断は 小田野 基仁 が行う。\n顧客向けの告知文は 白仁 景茂氏が確認してから公開する。\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "朽木 久尚",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "桜沢",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "直則",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小田野 基仁",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "白仁 景茂",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-sonnet-04",
+      "note": "Design review notes: many full names, family-only and given-only with honorifics, katakana and romaji in a table",
+      "genre": "markdown",
+      "writer": "sonnet",
+      "text": "# 設計レビュー議事録 (2026-09-22)\n\n## 出席\n\n- 志島 敦仁 (議長)\n- 小根沢 閑之助\n- 門 真守\n- 馬 沙苗\n- 長曾我部 廉太郎\n- キタズミ\n\n## 議事\n\n### 認証基盤の移行\n\n志島 敦仁 から、旧 SSO から OIDC への移行計画が示された。移行対象は 38 サービス。\n小根沢さんは、移行期間中の二重ログインを懸念。\n門さんは、セッション有効期限を 8 時間から 4 時間へ短縮する案を説明した。\n沙苗さんからは、モバイル向け SDK (auth-sdk 2.4.x) の互換性について質問があった。\n長曾我部 廉太郎 は、段階移行のためのフラグ `AUTH_OIDC_ROLLOUT` を提案した。\n\n### 監視\n\nキタズミが、ログイン失敗率のアラート閾値 (5 分間で 2%) を再検討する。\n\n## 決定事項\n\n| 項目 | 担当 | 期限 |\n| --- | --- | --- |\n| 移行計画 v2 の確定 | 志島 敦仁 | 2026-10-02 |\n| 認証ログ集約 | Hirasaka | 2026-10-06 |\n| SDK 互換性表の作成 | 馬 沙苗 | 2026-10-09 |\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "志島 敦仁",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小根沢 閑之助",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小根沢",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "門 真守",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "門",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "馬 沙苗",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "沙苗",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "長曾我部 廉太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "キタズミ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Hirasaka",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "markdown-sonnet-05",
+      "note": "README acknowledgements: no-space and full-width-space names, mixed-script names with hiragana and katakana, given name with honorific",
+      "genre": "markdown",
+      "writer": "sonnet",
+      "text": "# oncall-bot\n\n当番表を Slack に流し、引き継ぎメモを作る bot です。\n\n## 開発の経緯\n\n初期の実装は 中迎 玲葉奈さんが書き、小淵昇作 がレビューしました。\n通知の文面は 五十崎 かなこ が整え、設定ファイルの雛形は 津崎　芳良 が用意しました。\n\n## 設定\n\n```yaml\nschedule: oncall-primary\ntimezone: Asia/Tokyo\nhandover_at: \"09:30\"\n```\n\nテンプレートは `templates/handover.md.tmpl` にあります。\n\n## 謝辞\n\n運用面のフィードバックは 善次さん、朽木　久尚 、チガ 樹 から多くいただきました。\n",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "中迎 玲葉奈",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小淵昇作",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "五十崎 かなこ",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "津崎　芳良",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "善次",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "朽木　久尚",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "チガ 樹",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-haiku-01",
+      "note": "Log format with mixed full/half-width characters, key=value fields, and dropped particles",
+      "genre": "messy",
+      "writer": "haiku",
+      "text": "2024-10-02 09:15:32 LOG [ERROR]\nFrom: 矢木　遊＜habutani.kenji@company.jp＞\nTo: 佐古房太郎, admin=Douki.Yuki, backup=AOSAKI_Taro\nSubject: Handoff - 田ヶ原小一→居村直義へ引き継ぎ\nStatus: COMPLETED | Request ID: REQ-20241002-00142\nNotes: Contact 四十宮征治 for approval. User 豊重成能 confirmed.\nTimestamp: 2024-10-02T09:15:32.123Z | Log Level: WARN",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "矢木　遊",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐古房太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Douki.Yuki",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Taro",
+          "tags": [
+            "romaji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "田ヶ原小一",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "居村直義",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "四十宮征治",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "豊重成能",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-haiku-02",
+      "note": "Text with line breaks inside names, typos, mixed scripts, and particles",
+      "genre": "messy",
+      "writer": "haiku",
+      "text": "本日の引き継ぎ対象者: 中道　\n宗直さん\nリーダー代行：中道 宗直(テスト)\n副リーダー: 富士本津南雄氏\nファシリテータ: 成岡 よう介\n連絡先: 090-1234-5678\n対象案件: 成岡様 (成岡 よう介) への対応\nコピー: 羽根 博朗\n\nスケジュール: 14:00-15:30\nカテゴリ: システム保守",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "中道",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "宗直",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中道 宗直",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "富士本津南雄",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "成岡",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "成岡 よう介",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "羽根 博朗",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-haiku-03",
+      "note": "Email draft with character-width mixing, typos, and abbreviated name forms",
+      "genre": "messy",
+      "writer": "haiku",
+      "text": "件名: 確認事項\n宛先: 井澤 茂晴 様\nCC: いざわ・しげはる@company.co.jp\n本文:\n拝啓、井澤様へお疲れ様です。\nこの度は由起綺子さんの件でお問い合わせいただきありがとうございます。\nご依頼の件について、千 江実氏より以下の通りご報告申し上げます。\n\n対応内容:\n1. 梁 成雅より確認済み\n2. カトウダ花子が確認中\n3. 遠里小野 登美恵さんにお知らせ完了\n4. ニシノミヤ太郎へ一次確認中\n\n上記の通りです。ご査収ください。\n敬具\nuser=Habutani contact=NISHINOMIYA_Taro",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "井澤 茂晴",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "井澤",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "いざわ・しげはる",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "由起綺子",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "千 江実",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "梁 成雅",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "カトウダ花子",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "遠里小野 登美恵",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ニシノミヤ太郎",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Habutani",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "NISHINOMIYA_Taro",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-haiku-04",
+      "note": "Long document (2600+ chars) with important names in log fields; at least two names appear only in final third",
+      "genre": "messy",
+      "writer": "haiku",
+      "text": "システム管理日報 - 2024年10月2日\n==========================================\n\n報告対象期間: 2024年10月1日(月) 09:00 ～ 2024年10月2日(火) 17:00\n報告担当: 矢木 遊、佐古房太郎\n監督者: 田ヶ原小一\n\n1. 日次スケジュール実績\n==========================================\n\n【09:00-10:00】システム起動・初期確認\n- 全サーバ起動確認完了（所要時間: 23分）\n- DB接続テスト: 正常\n- ロードバランサ設定確認: 正常\n- ネットワークトラフィック監視: 正常範囲\n\n【10:00-11:00】セキュリティログレビュー\n- 過去24時間のセキュリティログを検査\n- 異常なアクセスパターンなし\n- ファイアウォール設定: 最新版に更新済み\n- VPN接続ログ: 全て許可リストに登録\n\n【11:00-12:00】バックアップ確認・テスト\n- 本日のバックアップ実行予定時刻: 23:00\n- 前日バックアップ検証: 成功\n- バックアップサイズ: 487GB\n- リストア確認テスト: 完了・正常\n\n2. インシデント対応状況\n==========================================\n\n【解決済み】ネットワーク遅延 (ID: INC-2024099-001)\n- 報告日時: 09月30日 14:20\n- 原因: ルータメモリ不足\n- 対応内容: 再起動実施\n- 完全復旧: 09月30日 15:45\n- 対応時間: 1時間25分\n\n【進行中】データベース接続タイムアウト (ID: INC-2024100-004)\n- 報告日時: 10月01日 03:15\n- 原因: コネクションプール枯渇\n- 対応中: パラメータ調整中\n- ETA: 本日17:00\n- 予想対応時間: 38時間\n\n【進行中】API呼び出し失敗 (ID: INC-2024100-008)\n- 報告日時: 10月01日 18:45\n- 原因: エラーログ分析中\n- 対応方法: トレース出力強化中\n- 優先度: MEDIUM\n\n3. パフォーマンス改善プロジェクト\n==========================================\n\n【キャッシュレイヤー実装】\n- 進捗率: 65%\n- 担当者: 成岡 洋介\n- スケジュール: 10月末完了予定\n- 効果見込み: クエリ時間 50% 削減\n\n【DBインデックス最適化】\n- 進捗率: 40%\n- 担当者: 羽根 博朗\n- スケジュール: 11月末完了予定\n- 効果見込み: テーブルスキャン 70% 削減\n\n【クエリ実行計画改善】\n- 進捗率: 25%\n- 担当者: 井澤 茂晴\n- スケジュール: 11月中旬完了予定\n- 効果見込み: 平均クエリ時間 30% 削減\n\n4. チーム会議・打ち合わせ\n==========================================\n\n【14:00-15:30】週次エンジニアミーティング\n出席者: 由起 綺子、千 江実、梁 成雅\n議題:\n- Q4ロードマップの確認\n- リソース配分の見直し\n- 技術債管理方針について\n- 来月のトレーニング計画\n\n【15:30-16:00】ベンダー連携確認\n四十宮征治さんとの定例会議で以下を確認:\n- クラウドマイグレーション進捗状況\n- コスト見積もり確認\n- スケジュール調整予定\n\n5. 設定変更・デプロイ\n==========================================\n\n本日実施した設定変更：\n- Log rotation設定更新 (12:30実施)\n- SSL証明書更新 (13:00実施)\n- DNS設定変更 (13:15実施)\n\n予定されているデプロイ：\n- バージョン 2.4.1 → 2.4.2 (明日実施予定)\n- 緊急パッチ適用 (承認待ち)\n\n6. リソース使用状況\n==========================================\n\nCPU使用率: 平均 28% (最大 45%)\nメモリ使用率: 平均 62% (最大 78%)\nディスク使用率: 82% (警告閾値 85%)\nネットワーク帯域幅: 平均 340Mbps (最大 650Mbps)\n\n7. トラブルシューティング\n==========================================\n\n【対応した問題】\n1. ユーザーAからのメール受信失敗報告\n   - 原因: メールクライアント設定誤り\n   - 対応: 設定ガイド提供\n   - ステータス: 解決済み\n\n2. ファイルサーバアクセス権限エラー\n   - 原因: グループポリシー同期遅延\n   - 対応: 手動同期実施\n   - ステータス: 解決済み\n\n3. VPN接続不安定\n   - 原因: クライアント側ファイアウォール設定\n   - 対応: 設定変更ガイド提供\n   - ステータス: 解決済み\n\n8. 明日の優先対応事項\n==========================================\n\n1. 【重要】遠里小野 登美恵さんからの緊急対応依頼確認\n   - 内容: 新規システム接続テスト\n   - 予定時刻: 09:00-11:00\n\n2. 【通常】カトウダ はなこさんが新規プロジェクト立ち上げの事前打ち合わせ実施予定\n   - 準備内容: インフラ要件確認\n   - 予定時刻: 14:00\n\n3. 【通常】ニシノミヤ たろうさんと来週計画のレビュー\n   - 対象: 次週のリリーススケジュール確認\n   - 予定時刻: 15:30\n\n4. 【重要】ドウキ さくらさんがシステム移行計画の最終チェック実施\n   - 対象: 本番環境移行シミュレーション\n   - 予定時刻: 10:00-12:00\n\n報告完了時刻: 2024-10-02 17:30:45\n報告者署名: Habutani Kenji\n確認者署名: Ishizawa Shigeto",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "矢木 遊",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐古房太郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "田ヶ原小一",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "成岡 洋介",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "羽根 博朗",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "井澤 茂晴",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "由起 綺子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "千 江実",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "梁 成雅",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "四十宮征治",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "遠里小野 登美恵",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "カトウダ はなこ",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ニシノミヤ たろう",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ドウキ さくら",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Habutani Kenji",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Ishizawa Shigeto",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-haiku-05",
+      "note": "Short sample with mixed-script names and character-width variations",
+      "genre": "messy",
+      "writer": "haiku",
+      "text": "【新規プロジェクト】\nプロジェクト名: データ分析基盤v2.0\n責任者: アオサキ太郎\nサポート: アオサキ たろう (アオサキ・タロウ)\nステータス: 計画段階\nメンバー:\n  - リード: 居村 直義\n  - 副リーダー: 中道 宗直氏\n  - テスト: ニシノミヤ　小太郎\n  - ドキュメント: Douki-Sakura\nスケジュール: 2024/10/2 - 2024/12/31\nバジェット: ¥5,000,000\n重要度: HIGH\nリスク評価: MEDIUM",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "アオサキ太郎",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "アオサキ たろう",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "アオサキ・タロウ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "居村 直義",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中道 宗直",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ニシノミヤ　小太郎",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Douki-Sakura",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-opus-01",
+      "note": "Structured log lines with names as key=value values, an arrow handover with no particles, half-width katakana, and romaji user ids and mail addresses.",
+      "genre": "messy",
+      "writer": "opus",
+      "text": "2026-09-14T08:12:03+09:00 level=INFO svc=billing-api req_id=7f3a9c21 user=kotani action=login ip=10.2.14.33\n2026-09-14T08:12:47+09:00 level=WARN svc=billing-api req_id=7f3a9c88 assignee=篠崎利絵子 ticket=INC-4412 msg=\"請求書PDF生成ﾀｲﾑｱｳﾄ\"\n2026-09-14T08:13:10+09:00 level=INFO svc=billing-api req_id=7f3a9d02 handover=篠崎→朝加 note=\"夜間当番交代\"\n2026-09-14T08:15:22+09:00 level=ERROR svc=batch-runner job=/opt/batch/export_daily.sh owner=\"朝加 順子\" exit=137\n2026-09-14T08:15:23+09:00 level=INFO svc=batch-runner retry=1 approved_by=ﾐﾅﾖｼ\n2026-09-14T08:20:00+09:00 level=INFO svc=notify to=tamahashi@example.co.jp subject=\"[INC-4412] 対応状況\"\n2026-09-14T08:21:9+09:00 level=INFO svc=notify cc=千堂様 msg=\"ご確認をお願いしまs\"",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "kotani",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "篠崎利絵子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "篠崎",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "朝加",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "朝加 順子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ﾐﾅﾖｼ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "tamahashi",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "千堂",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-opus-02",
+      "note": "Shift handover memo with dropped particles, a line break between family and given name, full/half-width mix, a Windows path, and typos.",
+      "genre": "messy",
+      "writer": "opus",
+      "text": "【引継ぎﾒﾓ】9/15 夜勤→日勤（ops-team）\n・久芳→佐々岡へ引き継ぎ済み。Ｓ-302号機のｱﾗｰﾄ件はまだ未ｸﾛｰｽﾞ\n・佐々岡 貞世さん確認後、前田\n修一郎さんにも共有おねがいしまｓ\n・ログ置き場: \\\\fileserv01\\ops\\2026\\0915\\alert_s302.log\n・浪平さんいわく、ＤＢ再起動は不要とのこと（要再確認!!）\n・左海純陽：明日休み。代わりは蔵渕\n・みすずちゃん→不明点あれば内線４１２７まで\n・次回定例 9/17(水) 10:OO〜",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "久芳",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐々岡",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "佐々岡 貞世",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "前田\n修一郎",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "浪平",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "左海純陽",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "蔵渕",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "みすず",
+          "tags": [
+            "hiragana",
+            "givenOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-opus-03",
+      "note": "Terse reply mail with a full-width space inside a name, half-width katakana subject, money and instance ids, and a romaji signature.",
+      "genre": "messy",
+      "writer": "opus",
+      "text": "件名：Re: 【至急】ｸﾗｳﾄﾞ請求額の件（ACC-2291）\n\n梅本　良政様\n\nお疲れ様です。ご指摘の件、浦本さんと確認しました。\n9月分の請求額 ¥1,284,300 のうち、EC2分が想定より３１％多い状態でした。\n昇作さんの見立てでは staging環境の削除漏れが原因です（ap-northeast-1 / i-0a7c3e91f2）。\n対応は方波見 玲葉奈が担当、レビューは嵐さんにお願いしてあります。\n添付：cost_report_202609.xlsx\n\n--\nHiroki Kotani\nPlatform Team / 内線 3310",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "梅本　良政",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "浦本",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "昇作",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "方波見 玲葉奈",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "嵐",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Hiroki Kotani",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-opus-04",
+      "note": "Broken CSV export with names in cells, a katakana family name with kanji given name, half-width katakana, O-for-0 typos, and an arrow handover.",
+      "genre": "messy",
+      "writer": "opus",
+      "text": "==== export_members_20260911.csv（一部文字化けあり） ====\nemp_no,氏名,所属,最終更新\nA-1042,祈 芳良,SRE,2026/09/1O 10:22\nA-1043,一番ヶ瀬恭吾,ﾃﾞｰﾀ基盤,2026-09-11 09:05\nA-1044,コヤバ　悠希,情シス,2026-O9-11\nA-1045,,営業企画,2026-09-11   ← 氏名空欄\n# 備考: 恭吾さん分の権限申請は JIRA-8812 で処理中。ｺﾔﾊﾞ→祈へ確認依頼済",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "祈 芳良",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "一番ヶ瀬恭吾",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "コヤバ　悠希",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "恭吾",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ｺﾔﾊﾞ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "祈",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-opus-05",
+      "note": "Long incident chat log where two names appear only in the final third, with speaker prefixes, commands, paths, and counts.",
+      "genre": "messy",
+      "writer": "opus",
+      "text": "[2026-09-20 22:04] #inc-payment-0920 を作成。決済APIの5xx率が閾値2%を超過、現在4.7%です。\n[22:05] 本日の当番は仲居彩愛。一次切り分けを始めます。\n[22:06] grafana の payment-overview ダッシュボードを貼ります。p99レイテンシ3.2秒、平常時のおよそ6倍。\n[22:08] 直近のデプロイは21:40の payment-gw v2.18.3。差分は接続プール設定だけのはず。\n[22:09] 仲居：念のためロールバックの準備をしておきます。承認者はどなたでしょう？\n[22:10] 朝加 順子：承認します。戻し先は v2.18.2 で問題ありません。\n[22:11] ロールバック実行。job_id=rb-55102\n[22:14] ロールバック完了。ただし5xx率は4.7%→3.9%でほぼ変わらず。原因は別にありそう。\n[22:15] あやめさん、DB側のコネクション数を見られますか？\n[22:17] 見ました。payment-db-primary の接続数が 498/500。上限に張り付いています。\n[22:18] 接続元の内訳を出します。SELECT client_addr, count(*) FROM pg_stat_activity GROUP BY 1;\n[22:20] 10.4.8.0/24 からが312本。これは settlement-batch のサブネットです。\n[22:21] え、精算バッチって深夜2時起動じゃなかった？\n[22:22] /etc/cron.d/settlement を確認したら 0 22 * * * になってる。先週の変更で時刻がずれたっぽい。\n[22:23] 変更履歴: infra-config リポジトリの PR #1187「精算バッチのTZ修正」。UTC→JSTの換算ミスの可能性が高いです。\n[22:24] 朝加：バッチ止めて大丈夫？途中で止めると二重計上が怖い。\n[22:26] 梅本さんに確認中。精算ロジックの持ち主なので。\n[22:29] 梅本さんから返信。チェックポイント方式なので途中停止しても再実行で整合が取れるとのこと。\n[22:30] では settlement-batch を停止します。kubectl -n batch scale deploy/settlement --replicas=0\n[22:31] 停止を確認。DB接続数は 498 → 171 に低下。\n[22:33] 5xx率 3.9% → 0.4%。p99 も 480ms まで戻りました。\n[22:35] しばらく様子見します。決済の成功件数は 22:00〜22:30 で通常比 -18%。\n[22:40] 影響範囲の洗い出し。失敗した決済は約2,140件、うちリトライで救済済みが1,906件。\n[22:42] 残り234件はユーザー側で再操作が必要な可能性あり。CSに共有します。\n[22:45] CS向け文面のドラフトを docs/incident/2026-0920/cs_notice.md に置きました。\n[22:47] 仲居：文面を確認しました。「一時的に決済しづらい状態」より「決済が失敗する場合があった」の方が正確かと。\n[22:48] 修正しました。差分は cs_notice.md の3行目だけです。\n[22:52] 状況は安定。ステータスページを「監視中」に変更しました。\n[22:55] 次に精算バッチの再実行タイミングを決めたい。今夜中に流さないと翌朝の入金データに間に合わない。\n[22:57] 梅本さん：02:00 に手動で流すのがよいと思います。接続プールの上限も一時的に120へ絞りましょう。\n[22:59] 了解。values-prod.yaml の settlement.db.maxPool を 400 → 120 に変更する PR を出します（#1192）。\n[23:01] レビュー完了、マージしました。ArgoCD の同期は手動で、再実行の直前に行います。\n[23:05] 報告ラインを確認。千堂 教通さん（事業部長）へ第一報を送りました。\n[23:10] 千堂さんから「再発防止策は明日中に」とのことです。\n[23:12] 再発防止の候補: (1) cron 定義のレビュー必須化 (2) DB接続数のアラートを 80% で発報 (3) バッチ用の接続上限を別枠に。\n[23:20] 02:00 の再実行担当はオオバリ。手順書は runbooks/settlement/rerun.md にあります。\n[23:22] オオバリ ミサキ：了解です。01:50 にこのチャンネルで声をかけます。\n[02:03] オオバリ：settlement の再実行を開始。replicas=1、接続上限120。\n[02:41] 完了しました。処理件数48,213件、エラー0件。入金データの生成も 02:44 に終わっています。\n[02:45] 仲居彩愛→オオバリへ当番引き継ぎ。インシデントはクローズ、ポストモーテムは 9/22 10:00 から会議室B-4で。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "仲居彩愛",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "仲居",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "朝加 順子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "朝加",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "あやめ",
+          "tags": [
+            "hiragana",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "梅本",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "千堂 教通",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "千堂",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "オオバリ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "オオバリ ミサキ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-sonnet-01",
+      "note": "key=value audit-style log lines with dropped particles, full-width digits and a mix of half/full-width punctuation",
+      "genre": "messy",
+      "writer": "sonnet",
+      "text": "2026-09-30 14:02:11 INFO ticket=INC-20481 assignee=四十宮茂晴 reviewer=豊重 綺子 team=基盤運用 prio=P2\n2026-09-30 14:02:15 WARN ticket=INC-20481 note=四十宮→中道へ引き継ぎ（至急） path=/var/log/batch/job_0930.log\n2026-09-30 14:03:02 INFO ticket=INC-20481 cc=豊重さん，中道江実様 host=app-03.tokyo rows=１２０４",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "四十宮茂晴",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "豊重 綺子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "四十宮",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中道",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "豊重",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中道江実",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-sonnet-02",
+      "note": "sloppy email with a line break inside a full name, typos and a signature",
+      "genre": "messy",
+      "writer": "sonnet",
+      "text": "件名：Re: Re: 障害対応の件（ＩＤ：ＢＫ-7731）\n富士本 成雅様\nおつかれさまです。昨夜のバッチ失敗の件、篠崎\n登美恵さんから聞きました。 原因はcron設定(/etc/cron.d/nightly)の\nミスらしいです。。。 朝加さんにも共有済みです。\nご確認おねがいしまうす。\n送信者: 富士本",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "富士本 成雅",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "篠崎\n登美恵",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "朝加",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "富士本",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-sonnet-03",
+      "note": "katakana family names and romaji user= fields and signatures in a broken audit log",
+      "genre": "messy",
+      "writer": "sonnet",
+      "text": "[audit] user=kanikawa action=login ip=10.2.0.17 result=OK\n[audit] user=Kanikawa Ken action=export file=/data/out_0412.csv rows=1２０４\n[audit] sig=\"Jun Mannou / Infra Team\" ticket=ＳＲ-5560 by=MANNOU\nレビュー：スグリさん　承認：ナガラ→タベへ差戻し（理由=誤記）\n連絡先:スグリ ミチル/ tel=03-5550-0123",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "kanikawa",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Kanikawa Ken",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Jun Mannou",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "MANNOU",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "スグリ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ナガラ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "タベ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "スグリ ミチル",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-sonnet-04",
+      "note": "long meeting minutes with log excerpts; some names appear only in the final third",
+      "genre": "messy",
+      "writer": "sonnet",
+      "text": "■ 週次運用レビュー議事録（基盤チーム）  2026/09/28 10:00-11:30 会議室B\n参加：仲居 郁彦氏、千堂嘉樹さん、権守 玄信、漢部　堅至様\n議題１　先週のインシデント振り返り\n・INC-20311 決済APIタイムアウト　ｓｅｖ=2 影響=約４２分\n　担当=千堂 初動遅れの原因は通知設定のミス（再発防止策は別紙）\n・INC-20318 夜間バッチ失敗 job=nightly_settle host=batch-02\n　権守→漢部へ引き継ぎ済み。再実行は10/01 02:00の予定\n議題２　監視ルールの見直し\n・閾値 cpu>85% mem>90% を /etc/monitor/rules.yaml に反映する\n・アラート重複が多い。dedup=true にして様子見（仲居さん確認）\n・ダッシュボード DASH-0092 のパネル名がバラバラ。命名規則を統一する\n議題３　オンコール当番\n・今週当番＝稲泉 利絵子 副当番＝神部 順子\n・来週は未定。希望があれば金曜までにチケット ONC-2210 へ\n--- 添付ログ抜粋（nightly_settle） ---\n2026-09-27 03:12:44 ERROR job=nightly_settle host=batch-02 code=E4107 msg=connection reset by peer retry=1/5\n2026-09-27 03:12:59 ERROR job=nightly_settle host=batch-02 code=E4107 msg=connection reset by peer retry=2/5\n2026-09-27 03:13:21 ERROR job=nightly_settle host=batch-02 code=E4107 msg=connection reset by peer retry=3/5\n2026-09-27 03:13:40 WARN  job=nightly_settle host=batch-02 queue=settle-q depth=1８３ lag=412s\n2026-09-27 03:14:02 ERROR job=nightly_settle host=batch-02 code=E5001 msg=giving up retry=5/5\n2026-09-27 03:20:15 INFO  pager=ONC-2210 ack=稲泉 team=基盤運用 sla=15min\n2026-09-27 03:41:08 INFO  job=nightly_settle host=batch-03 status=RERUN rows=1,204,332 elapsed=00:18:42\n2026-09-27 04:02:51 INFO  job=nightly_settle host=batch-03 status=DONE out=/var/data/settle/20260927.csv.gz\n2026-09-27 04:05:00 INFO  report=RPT-8841 sent_to=finance-ops@example.local size=48MB checksum=9f3a1c\n2026-09-27 08:30:12 INFO  deploy=release-2026.10.0 stage=canary pods=3/12 region=ap-northeast-1\n2026-09-27 08:44:37 WARN  deploy=release-2026.10.0 stage=canary p95=830ms budget=600ms\n2026-09-27 08:50:10 INFO  deploy=release-2026.10.0 stage=canary pods=4/12 region=ap-northeast-1 err=0.00%\n2026-09-27 08:51:11 INFO  deploy=release-2026.10.0 stage=canary pods=5/12 region=ap-northeast-1 err=0.01%\n2026-09-27 08:52:12 INFO  deploy=release-2026.10.0 stage=canary pods=6/12 region=ap-northeast-1 err=0.02%\n議題４　10月リリース計画\n・release-2026.10.0 の本番投入は 10/07（火）21:00 を予定\n・canary の p95 が予算超過。原因調査が終わるまでGo判断は保留\n・最終承認は昇 彩愛さん、不在時は梅 教通様。報告先は伊福吉部 浪平氏\n・ロールバック手順は /docs/runbook/rollback.md を更新済み。確認者＝梅→昇の順\n・質問は彩愛さんか教通さんまで。エスカレは昇へ\n以上。次回は 10/05 10:00〜 会議室B（議事録＝当番）",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "仲居 郁彦",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "千堂嘉樹",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "権守 玄信",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "漢部　堅至",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "千堂",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "権守",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "漢部",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "仲居",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "稲泉 利絵子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "神部 順子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "稲泉",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "昇 彩愛",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "梅 教通",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "伊福吉部 浪平",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "梅",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "昇",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "彩愛",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "教通",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "messy-sonnet-05",
+      "note": "chat transcript with arrows, given-name-only mentions and a kanji+hiragana name",
+      "genre": "messy",
+      "writer": "sonnet",
+      "text": "[chat] 15:07 朝加 利さん>> 資料のURL(https://wiki.example.local/p/8812)おくりました\n[chat] 15:09 ｓｙｓ: 神部→朝加へ確認依頼 id=REQ-3071\n[chat] 15:12 順子さん、綺子さんにも転送おねがい\n[chat] 15:15 千堂 よしき様 ← 来週の振替休日について",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "朝加 利",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "神部",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "朝加",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "順子",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "綺子",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "千堂 よしき",
+          "tags": [
+            "mixed",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-haiku-01",
+      "note": "Full names with honorifics and family names only with さん",
+      "genre": "slack",
+      "writer": "haiku",
+      "text": "12:34 竹原成能さん、レビュー終わりました\n竹原様 ありがとうございます\n下成津南雄さんはいつ来られますか？\n下成さんは明日の午前に到着予定です",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "竹原成能",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "竹原",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "下成津南雄",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "下成",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-haiku-02",
+      "note": "Mix of family names, full width space, and hiragana given names",
+      "genre": "slack",
+      "writer": "haiku",
+      "text": "千間さん、PR #456 の件です\n千間　宗直が対応します（full-width space）\nおつかれさまです。眞利さん、ありがとう\n眞利　せいが のコメント参照",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "千間",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "千間　宗直",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "眞利",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "眞利　せいが",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-haiku-03",
+      "note": "Katakana names and given name only forms",
+      "genre": "slack",
+      "writer": "haiku",
+      "text": "シゲトモのひろ が v1.2.3 をビルドしました\nシゲトモ 太郎への通知を忘れずに\nカライの敦が確認中です\n敦、ここで質問が...",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "シゲトモ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ひろ",
+          "tags": [
+            "hiragana",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "カライ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "敦",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-haiku-04",
+      "note": "Romaji names (used in user IDs and signatures) with mixed forms",
+      "genre": "slack",
+      "writer": "haiku",
+      "text": "user=IiiTake_01 がマージしました\nCo-authored by TaniShige.Naoki\n由里岡 登美恵さんの確認まち\n登美恵さんへの通知は済みました",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "IiiTake",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "TaniShige",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "由里岡 登美恵",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "登美恵",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-haiku-05",
+      "note": "Spacing variations, mixed scripts in one name, and multiple occurrences",
+      "genre": "slack",
+      "writer": "haiku",
+      "text": "14:22 湯川洋介 の report.pdf が修正されました\n湯川 洋介 にメッセージ送ってください（half-width space）\n中尾 きこ さんから OK が出ました\n堺玄信さん、待ってます\n谷尾利さんはここに？\n利さん、返信お願いします",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "湯川洋介",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "湯川 洋介",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中尾 きこ",
+          "tags": [
+            "mixed",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "堺玄信",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "谷尾利",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "利",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-opus-01",
+      "note": "Incident thread: full names with and without space, family-only with さん, a hiragana given name used as self-reference.",
+      "genre": "slack",
+      "writer": "opus",
+      "text": "[10:02] 下鳥 貞世: #infra-alerts で api-gateway-prod の 5xx が 3.2% まで上がってます。INC-4471 を起票しました\n[10:04] 神高修一郎: 了解、直前のリリース v2.18.0 を確認します。万場さん、ロールバック手順の Runbook どこでしたっけ\n[10:05] 万場 純陽: docs/runbooks/rollback.md です。承認は小淵さんにお願いします\n[10:07] 小淵 良政: 承認しました。神高さん、実施お願いします\n[10:15] 神高修一郎: ロールバック完了。エラー率 0.1% に戻りました\n[10:16] 下鳥 貞世: ありがとうございます！ポストモーテムは明日 14:00 から、さだよが書記やります",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "下鳥 貞世",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "神高修一郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "万場",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "万場 純陽",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小淵",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小淵 良政",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "神高",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "さだよ",
+          "tags": [
+            "hiragana",
+            "givenOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-opus-02",
+      "note": "Mobile team standup: full-width space between family and given name, given-only names with さん.",
+      "genre": "slack",
+      "writer": "opus",
+      "text": "中迎 昇作  9:30\n今日の定例、会議室 B-12 から Zoom に変更です。リンクは #team-mobile のピン留め参照\n\n五十崎　玲葉奈  9:32\n承知です！ iOS 版 3.4.1 の審査状況も共有しますね\n\n津崎可奈子  9:33\n玲葉奈さん、TestFlight のビルド 1287 はもう配布済みですか？\n\n五十崎　玲葉奈  9:35\nはい、昨夜配布しました。中迎さん、QA チェックリストは sheets の \"mobile-qa-0930\" タブです\n\n中迎 昇作  9:36\nありがとう。可奈子さんは Android 側お願いします",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "中迎 昇作",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "五十崎　玲葉奈",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "津崎可奈子",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "玲葉奈",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中迎",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "可奈子",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-opus-03",
+      "note": "Sales-ops thread mixing amounts, quote IDs and paths with full and family-only names, plus a hiragana given name.",
+      "genre": "slack",
+      "writer": "opus",
+      "text": "#sales-ops スレッド\n笹井 芳良 [14:20]: 来期の見積テンプレ v5 を共有ドライブ /Sales/2027/templates に置きました\n住原恭吾 [14:22]: 確認します。深海さんの案件 Q-20931 もこのテンプレに移行でいいですか？\n深海 善次 [14:25]: はい、お願いします。金額欄は税抜 ¥1,280,000 のままで\n波山久尚 [14:27]: 笹井さん、承認フローのところ部長決裁の閾値が古いです（300→500 万円）\n笹井 芳良 [14:30]: 波山さん、指摘ありがとうございます。修正版あげます。きょうごさんもレビューお願いします",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "笹井 芳良",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "住原恭吾",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "深海",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "深海 善次",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "波山久尚",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "笹井",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "波山",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "きょうご",
+          "tags": [
+            "hiragana",
+            "givenOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-opus-04",
+      "note": "CI flake thread: one-character family names (温, 音) alone and in full, a four-character family name, given-only with さん.",
+      "genre": "slack",
+      "writer": "opus",
+      "text": "[2026-09-28 18:03] 温 直則: build #5512 が flaky です。test/e2e/checkout.spec.ts の 3 件\n[18:05] 林屋海鈴: 私の PR #842 のせいかも。確認します\n[18:07] 音 基仁: retry 設定の PR はまだ未マージです。武者小路さんのレビュー待ち\n[18:10] 武者小路 景茂: 今見ました、LGTM です。温さん、再実行お願いします\n[18:24] 温 直則: green になりました。海鈴さんの PR も通ってます\n[18:25] 林屋海鈴: よかった、ありがとうございます",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "温 直則",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "林屋海鈴",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "音 基仁",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "武者小路",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "武者小路 景茂",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "温",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "海鈴",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-opus-05",
+      "note": "Release channel: katakana names with and without space, a romaji user=handle and a romaji signature.",
+      "genre": "slack",
+      "writer": "opus",
+      "text": "#bot-notify\n[09:00] deploy-bot: release/2026.10.02 started by user=tsuruo\n[09:03] エンヤ ミオ: staging 反映確認しました。トコナミさん、負荷試験は何時からですか\n[09:05] トコナミ ケイ: 10:30 からです。k6 のシナリオは load/scenario-07.js\n[09:06] カツミネユウジ: 監視ダッシュボード grafana/d/app-latency は準備済みです。ミオさん、閾値は p95 800ms でいいですか\n[09:08] エンヤ ミオ: OK です。英語版の告知文も下書き済みです\n> Release notes will go out at 15:00 JST. -- Ren Shirosawa",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "tsuruo",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "エンヤ ミオ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "トコナミ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "トコナミ ケイ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "カツミネユウジ",
+          "tags": [
+            "katakana",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ミオ",
+          "tags": [
+            "katakana",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Ren Shirosawa",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-sonnet-01",
+      "note": "Rollback thread with full names, family-only with honorifics",
+      "genre": "slack",
+      "writer": "sonnet",
+      "text": "[2026-10-02 09:14] 三木田 利: 昨日のデプロイ(build #4821)、api-gateway のロールバックは芳川さんが対応済みです。\n[09:16] 芳川 郁彦: 了解です。ログは /var/log/gw/error-1001.log に残してあります。中尾様にも共有お願いします。\n[09:18] 三木田 利: 中尾 嘉樹様には私から連絡します。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "三木田 利",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "芳川",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "芳川 郁彦",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中尾",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "中尾 嘉樹",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-sonnet-02",
+      "note": "On-call rota with no-space, full-width-space, and given-name-only forms",
+      "genre": "slack",
+      "writer": "sonnet",
+      "text": "#infra-oncall 10/03 当番表\n・月: 中里玄信\n・火: 下鳥　堅至\n・水: 神高 利絵子さん\n玄信さんは火曜の夜に交代可能とのことです。万場 順子さんに確認済み。順子さん、PagerDuty の設定お願いします。\nINC-2207 は堅至くんが見ています。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "中里玄信",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "下鳥　堅至",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "神高 利絵子",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "玄信",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "万場 順子",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "順子",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "堅至",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-sonnet-03",
+      "note": "Weekly review thread with san/shi honorifics and bare family name",
+      "genre": "slack",
+      "writer": "sonnet",
+      "text": "@here 週次レビュー(会議室 B-12, 15:30〜)\n林屋 彩愛さん: Q3 の売上レポート v2.xlsx 共有しました\n筑田さん: 数字が合っていません。小保内 浪平さんの集計と突き合わせてください\n小保内: 了解、明日までに\n坪本 貞世氏にも承認をもらう予定です。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "林屋 彩愛",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "筑田",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小保内 浪平",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "小保内",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "坪本 貞世",
+          "tags": [
+            "kanji",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-sonnet-04",
+      "note": "Release review with short and uncommon family names plus given-only forms",
+      "genre": "slack",
+      "writer": "sonnet",
+      "text": "[10:02] 宮渕 修一郎: リリースノート v3.8.1 のレビューお願いします\n[10:05] 訪 純陽: 確認しました。修一郎さん、typo が 2 箇所\n[10:07] 羅 海鈴: 翻訳は私が見ます。訪さんは英語版をお願いします\n[10:09] 阿佐井野 良政: 良政です。羅さんの案で OK。\nPR: #1532",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "宮渕 修一郎",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "訪 純陽",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "修一郎",
+          "tags": [
+            "kanji",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "羅 海鈴",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "訪",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "阿佐井野 良政",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "良政",
+          "tags": [
+            "kanji",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "羅",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "slack-sonnet-05",
+      "note": "Katakana family names, mixed-script full name, romaji in user= and signature",
+      "genre": "slack",
+      "writer": "sonnet",
+      "text": "#support 2026-10-02\nヨシイズミさん、チケット ZD-90417 の件ですが、ツルハ 大輔さんが一次対応済みです。\nシラツ: 顧客への返信テンプレートを docs/reply.md に追加しました。\nログ解析は user=hidaka で実行、結果は Sugisaka 宛に送付。\n--\nHidaka / Support Team",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "ヨシイズミ",
+          "tags": [
+            "katakana",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ツルハ 大輔",
+          "tags": [
+            "mixed",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "シラツ",
+          "tags": [
+            "katakana",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "hidaka",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Sugisaka",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Hidaka",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        }
       ],
       "mustNotDetect": []
     }
