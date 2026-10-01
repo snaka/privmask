@@ -43,9 +43,13 @@ public enum NameCorpusCheck {
                     problems.append("[\(id)] \(name): also inside a mustNotDetect string")
                 }
 
-                if tags.contains(.late), let first = sample.text.range(of: name),
-                   sample.text.distance(from: sample.text.startIndex, to: first.lowerBound) <= lateAfter {
-                    problems.append("[\(id)] \(name): tagged late but starts within \(lateAfter) characters")
+                if let first = sample.text.range(of: name) {
+                    let before = sample.text.distance(from: sample.text.startIndex, to: first.lowerBound)
+                    if tags.contains(.late), before < lateAfter {
+                        problems.append("[\(id)] \(name): tagged late but has fewer than \(lateAfter) characters before it")
+                    } else if !tags.contains(.late), before >= lateAfter {
+                        problems.append("[\(id)] \(name): starts after \(lateAfter) characters but is not tagged late")
+                    }
                 }
             }
         }

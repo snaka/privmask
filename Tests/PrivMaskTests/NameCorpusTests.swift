@@ -24,7 +24,8 @@ struct NameCorpusCheckTests {
 
     @Test("An expected name absent from the text is a problem")
     func absentName() throws {
-        #expect(try !problems(good.replacingOccurrences(of: "担当は滝口 健太さん", with: "担当は尾形さん")).isEmpty)
+        let found = try problems(good.replacingOccurrences(of: "担当は滝口 健太さん", with: "担当は尾形さん"))
+        #expect(found.count == 1 && found[0].contains("not in the text"))
     }
 
     @Test("A name without a script and a form tag is a problem")
@@ -41,6 +42,28 @@ struct NameCorpusCheckTests {
     @Test("A late tag on a name in the first 1,500 characters is a problem")
     func earlyLate() throws {
         #expect(try problems(good.replacingOccurrences(of: #""spaced""#, with: #""spaced", "late""#)).count == 1)
+    }
+
+    private func sample(before count: Int, tags: String) -> String {
+        let text = String(repeating: "あ", count: count) + "滝口 健太"
+        return #"{"id": "a", "note": "", "text": "\#(text)", "genre": "slack", "writer": "human", "expected": [{"kind": "personalName", "text": "滝口 健太", "tags": [\#(tags)]}], "mustNotDetect": []}"#
+    }
+
+    @Test("A late name with exactly 1,500 characters before it is fine")
+    func lateBoundary() throws {
+        #expect(try problems(sample(before: 1500, tags: #""kanji", "full", "late""#)).isEmpty)
+    }
+
+    @Test("A late tag with 1,499 characters before the name is a problem")
+    func lateTooEarly() throws {
+        let found = try problems(sample(before: 1499, tags: #""kanji", "full", "late""#))
+        #expect(found.count == 1 && found[0].contains("tagged late but"))
+    }
+
+    @Test("A name with 1,500 characters before it and no late tag is a problem")
+    func lateMissing() throws {
+        let found = try problems(sample(before: 1500, tags: #""kanji", "full""#))
+        #expect(found.count == 1 && found[0].contains("not tagged late"))
     }
 
     @Test("A non-name kind in the name corpus is a problem")
