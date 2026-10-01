@@ -40,7 +40,7 @@
       "writer": "human",
       "text": "勅使河原 誠 様より、請求書の再発行についてお問い合わせがありました。",
       "expected": [
-        {"kind": "personalName", "text": "勅使河原 誠", "tags": ["kanji", "full", "spaced", "honorific"]}
+        {"kind": "personalName", "text": "勅使河原 誠", "tags": ["kanji", "full", "honorific"]}
       ],
       "mustNotDetect": []
     }

@@ -17,13 +17,13 @@ struct NameCorpusSchemaTests {
         let decoded = try makeCorpus("""
             {"id": "a", "note": "", "text": "担当は滝口 健太さん", "genre": "slack", "writer": "sonnet",
              "expected": [{"kind": "personalName", "text": "滝口 健太",
-                           "tags": ["kanji", "full", "spaced", "honorific"]}],
+                           "tags": ["kanji", "full", "honorific"]}],
              "mustNotDetect": []}
             """)
         let sample = decoded.samples[0]
         #expect(sample.genre == .slack)
         #expect(sample.writer == .sonnet)
-        #expect(sample.expected[0].tags == [.kanji, .full, .spaced, .honorific])
+        #expect(sample.expected[0].tags == [.kanji, .full, .honorific])
     }
 
     @Test("An unknown tag fails to decode")
@@ -79,10 +79,11 @@ private func score(
     _ text: String,
     expected: [String],
     names: [DetectionsFile.Name],
-    rejected: [String]? = nil
+    rejected: [String]? = nil,
+    tags: String = #""kanji", "full""#
 ) throws -> NameEvaluator.Report {
     let expectations = expected
-        .map { #"{"kind": "personalName", "text": "\#($0)", "tags": ["kanji", "full"]}"# }
+        .map { #"{"kind": "personalName", "text": "\#($0)", "tags": [\#(tags)]}"# }
         .joined(separator: ",")
     let json = #"{"id": "s", "note": "", "text": "\#(text)", "genre": "slack", "writer": "human", "expected": [\#(expectations)], "mustNotDetect": []}"#
     let file = DetectionsFile(system: "test", samples: ["s": .init(names: names, rejected: rejected)])
@@ -197,6 +198,47 @@ struct NameEvaluatorTests {
         #expect(report.expected.map(\.beginsWithListedSurname) == [false, true])
     }
 
+    @Test("A given-only or romaji name has no surname verdict and is in neither surname row")
+    func surnameOnlyForFamilyNames() throws {
+        let given = try score("健一さん", expected: ["健一"], names: [], tags: #""kanji", "givenOnly""#)
+        let romaji = try score("Tanaka Kenichi", expected: ["Tanaka Kenichi"], names: [], tags: #""romaji", "full""#)
+        for report in [given, romaji] {
+            #expect(report.expected.map(\.beginsWithListedSurname) == [nil])
+            let labels = report.breakdown.map(\.label)
+            #expect(!labels.contains("surname:listed") && !labels.contains("surname:unlisted"))
+        }
+    }
+
+    @Test("A name with whitespace is spaced; one without is not")
+    func spacedComputed() throws {
+        let report = try score("滝口 健太と田中健一と山田\u{3000}花子", expected: ["滝口 健太", "田中健一", "山田\u{3000}花子"], names: [])
+        #expect(report.expected.map(\.spaced) == [true, false, true])
+    }
+
+    @Test("Names in a later model chunk are late; the first chunk and Japanese-free lines are not")
+    func lateComputed() throws {
+        let filler = String(repeating: "あ", count: 400)
+        let lines = ["担当は田中健一です"] + Array(repeating: filler, count: 8) + ["最後は山田花子です"]
+        let text = lines.joined(separator: "\n") + "\nTanaka Kenichi"
+        let batches = JapaneseText.batches(JapaneseText.japaneseLines(of: text), characterLimit: 1500)
+        #expect(batches.count >= 2)
+        let report = try score(text.replacingOccurrences(of: "\n", with: "\\n"), expected: ["田中健一", "山田花子", "Tanaka Kenichi"], names: [])
+        let late = Dictionary(uniqueKeysWithValues: report.expected.map { ($0.text, $0.late) })
+        #expect(late["田中健一"] == false)
+        #expect(late["山田花子"] == true)
+        #expect(late["Tanaka Kenichi"] == false)
+    }
+
+    @Test("A detection with a location but no length, or the reverse, is invalid")
+    func halfSpecifiedOffsets() throws {
+        let report = try score("田中健一", expected: ["田中健一"],
+                               names: [.init(text: "田中", location: 0), .init(text: "健一", length: 2)])
+        #expect(report.invalidDetections.count == 2)
+        #expect(report.invalidDetections[0].contains("length"))
+        #expect(report.invalidDetections[1].contains("location"))
+        #expect(report.detectionCount == 0)
+    }
+
     @Test("An expected string nested inside another is not a second name")
     func nestedExpectations() throws {
         let a = try score("小林さんと林さん", expected: ["小林", "林"], names: [])
@@ -255,6 +297,33 @@ struct NameBreakdownTests {
         #expect(rows["writer:opus"] == NameEvaluator.Tally(expected: 2, covered: 1, partial: 0))
         #expect(rows["surname:unlisted"] == NameEvaluator.Tally(expected: 1, covered: 0, partial: 0))
         #expect(rows["genre:slack"] == nil)
+    }
+
+    @Test("Rows split recall by spaced and late")
+    func spacedLateRows() throws {
+        let corpus = try makeCorpus("""
+            {"id": "a", "note": "", "text": "滝口 健太と田中健一", "genre": "log", "writer": "opus",
+             "expected": [{"kind": "personalName", "text": "滝口 健太", "tags": ["kanji", "full"]},
+                          {"kind": "personalName", "text": "田中健一", "tags": ["kanji", "full"]}],
+             "mustNotDetect": []}
+            """)
+        let file = DetectionsFile(system: "t", samples: ["a": .init(names: [.init(text: "田中健一")])])
+        let rows = Dictionary(uniqueKeysWithValues: NameEvaluator.evaluate(corpus: corpus, detections: file).breakdown.map { ($0.label, $0.tally) })
+        #expect(rows["spaced"] == NameEvaluator.Tally(expected: 1, covered: 0, partial: 0))
+        #expect(rows["late"] == nil)
+    }
+
+    @Test("Long system names are not truncated")
+    func longSystemNames() throws {
+        let corpus = try sampleCorpus()
+        let reports = ["privmask-surname-filter-on", "privmask-surname-filter-off"].map {
+            NameEvaluator.evaluate(corpus: corpus, detections: .init(system: $0, samples: ["a": .init(names: [])]))
+        }
+        let rendered = NameEvaluator.renderComparison(reports)
+        let header = rendered.split(separator: "\n").first { $0.hasPrefix("row") } ?? ""
+        #expect(header.contains("privmask-surname-filter-on") && header.contains("privmask-surname-filter-off"))
+        let precision = rendered.split(separator: "\n").filter { $0.contains("false positives of") }
+        #expect(precision.contains { $0.hasPrefix("privmask-surname-filter-off") })
     }
 
     @Test("The comparison has a column per system")

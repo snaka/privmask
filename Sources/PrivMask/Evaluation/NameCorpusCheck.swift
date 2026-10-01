@@ -3,16 +3,13 @@ import Foundation
 /// The rules a name corpus must follow for `NameEvaluator`'s numbers to mean
 /// anything. See #28.
 ///
+/// Each name carries exactly one script tag and exactly one form tag.
+///
 /// Two rules cannot be checked here and are the reviewer's: that every name in
 /// a text is listed, and that every name is fictional.
 public enum NameCorpusCheck {
     private static let scripts: Set<NameTag> = [.kanji, .hiragana, .katakana, .romaji, .mixed]
     private static let forms: Set<NameTag> = [.full, .familyOnly, .givenOnly]
-    /// Characters before which a name does not count as `late`. Matches
-    /// `FoundationModelDetector.defaultCharacterLimit`, which this target cannot
-    /// reference below macOS 26.
-    private static let lateAfter = 1500
-
     public static func problems(in corpus: Corpus) -> [String] {
         var problems: [String] = []
         var seen: Set<String> = []
@@ -36,20 +33,15 @@ public enum NameCorpusCheck {
                 if ranges.isEmpty { problems.append("[\(id)] \(name): not in the text") }
 
                 let tags = Set(expectation.tags ?? [])
-                if tags.isDisjoint(with: scripts) { problems.append("[\(id)] \(name): no script tag") }
-                if tags.isDisjoint(with: forms) { problems.append("[\(id)] \(name): no form tag") }
+                let scriptCount = tags.intersection(scripts).count
+                if scriptCount == 0 { problems.append("[\(id)] \(name): no script tag") }
+                if scriptCount > 1 { problems.append("[\(id)] \(name): more than one script tag") }
+                let formCount = tags.intersection(forms).count
+                if formCount == 0 { problems.append("[\(id)] \(name): no form tag") }
+                if formCount > 1 { problems.append("[\(id)] \(name): more than one form tag") }
 
                 if ranges.contains(where: { range in forbidden.contains { rangesOverlap($0, range) } }) {
                     problems.append("[\(id)] \(name): also inside a mustNotDetect string")
-                }
-
-                if let first = sample.text.range(of: name) {
-                    let before = sample.text.distance(from: sample.text.startIndex, to: first.lowerBound)
-                    if tags.contains(.late), before < lateAfter {
-                        problems.append("[\(id)] \(name): tagged late but has fewer than \(lateAfter) characters before it")
-                    } else if !tags.contains(.late), before >= lateAfter {
-                        problems.append("[\(id)] \(name): starts after \(lateAfter) characters but is not tagged late")
-                    }
                 }
             }
         }

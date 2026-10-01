@@ -43,17 +43,17 @@ public struct Corpus: Decodable, Sendable {
 ///
 /// A closed set: an unknown value fails to decode, which is the whole of the
 /// vocabulary check. Recall is reported per value, so a misspelt tag would
-/// otherwise make a row silently empty.
+/// otherwise make a row silently empty. Whether a name contains whitespace
+/// (`spaced`) and whether it falls in a later model chunk (`late`) are computed
+/// by `NameEvaluator`, not tagged: a tag can drift from the text, a computation
+/// cannot.
 public enum NameTag: String, Decodable, Sendable, CaseIterable {
     // Script.
     case kanji, hiragana, katakana, romaji, mixed
     // Form.
     case full, familyOnly, givenOnly
-    // Markers.
-    case spaced, honorific
-    /// First occurrence starts after character 1,500 of the sample: past the
-    /// first model chunk, approximately. See #1.
-    case late
+    // Marker.
+    case honorific
 }
 
 /// The kind of text a sample imitates. `messy` is text broken on purpose: names

@@ -32,6 +32,8 @@ func runProbe() async throws {
     var ungroundedBySample: [(sampleID: String, texts: [String])] = []
     var durations: [TimeInterval] = []
     var rejectedBySample: [String: [String]] = [:]
+    var failedSamples = 0
+    var samplesWithFailedChunks = 0
 
     print(String(repeating: "=", count: 78))
     for sample in corpus.samples {
@@ -52,6 +54,7 @@ func runProbe() async throws {
                 pipeline.detect(in: sample.text, additional: outcome.matches)
             )
             durations.append(outcome.duration)
+            if !outcome.failures.isEmpty { samplesWithFailedChunks += 1 }
             rejectedBySample[sample.id] = outcome.rejectedTexts
             if !outcome.ungroundedTexts.isEmpty {
                 ungroundedBySample.append((sample.id, outcome.ungroundedTexts))
@@ -61,6 +64,7 @@ func runProbe() async throws {
             let failed = outcome.failures.isEmpty ? "" : "  \(outcome.failures.count)/\(outcome.chunks) CHUNKS FAILED"
             print("  \(id) \(sample.text.count) chars  \(outcome.linesExamined) ja-lines  \(outcome.chunks) chunks  \(timing)  \(outcome.matches.count) matches\(failed)")
         } catch {
+            failedSamples += 1
             let kept = detections[sample.id]?.count ?? 0
             print("  \(sample.id.padding(toLength: 26, withPad: " ", startingAt: 0)) model failed, keeping \(kept) deterministic matches — \(error)")
         }
@@ -81,6 +85,9 @@ func runProbe() async throws {
         }
         try DetectionsFile(system: "privmask", samples: samples).write(to: URL(fileURLWithPath: path))
         print("wrote \(path)")
+        if failedSamples > 0 || samplesWithFailedChunks > 0 {
+            print("model failures: \(failedSamples) samples failed, \(samplesWithFailedChunks) samples with failed chunks — the never-returned / filter-rejected split is not reliable for them")
+        }
     }
     print(
         report.rendered(

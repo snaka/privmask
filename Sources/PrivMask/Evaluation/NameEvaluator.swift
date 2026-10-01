@@ -11,6 +11,10 @@ public enum NameEvaluator {
     public enum Outcome: String, Sendable { case covered, partial, missed }
     public enum MissCause: String, Sendable { case filterRejected, neverReturned }
 
+    /// Mirrors `FoundationModelDetector.defaultCharacterLimit`, which this
+    /// target cannot reference below macOS 26.
+    private static let modelChunkCharacters = 1500
+
     public struct ExpectedName: Sendable {
         public let sampleID: String
         public let text: String
@@ -18,7 +22,16 @@ public enum NameEvaluator {
         public let tags: [NameTag]
         public let genre: Genre?
         public let writer: Writer?
-        public let beginsWithListedSurname: Bool
+        /// The name contains whitespace, U+3000 included. Computed, not tagged.
+        public let spaced: Bool
+        /// This occurrence falls inside a model chunk other than the first, as
+        /// the detector chunks the sample. A line with no Japanese is never sent
+        /// to the model, so a name there is not late. Computed, not tagged.
+        public let late: Bool
+        /// Whether the family name is on our list. Non-nil only for a kanji or
+        /// katakana name that begins with a family name (`full` or `familyOnly`);
+        /// nil for given-name-only, romaji, hiragana and mixed names.
+        public let beginsWithListedSurname: Bool?
         public let outcome: Outcome
         /// Set only when `outcome` is `.missed`.
         public let cause: MissCause?
@@ -65,11 +78,19 @@ public enum NameEvaluator {
 
         for sample in corpus.samples {
             let text = sample.text as NSString
+            // As the detector chunks: only the first chunk is "early".
+            let laterChunks = JapaneseText.batches(
+                JapaneseText.japaneseLines(of: sample.text), characterLimit: modelChunkCharacters
+            ).dropFirst()
             let entry = detections.samples[sample.id]
             if entry == nil { unexamined.append(sample.id) }
 
             var found: [NSRange] = []
             for name in entry?.names ?? [] {
+                if (name.location == nil) != (name.length == nil) {
+                    invalid.append("[\(sample.id)] \(name.text.debugDescription) has \(name.location == nil ? "length but no location" : "location but no length")")
+                    continue
+                }
                 if let location = name.location, let length = name.length {
                     guard location >= 0, location <= text.length, length > 0, length <= text.length - location else {
                         invalid.append("[\(sample.id)] \(name.text.debugDescription) at \(location)+\(length)")
@@ -115,14 +136,20 @@ public enum NameEvaluator {
             for (range, expectation) in kept {
                 nameRanges.append(range)
                 let outcome = outcome(of: range, in: text, covered: covered)
+                let tags = expectation.tags ?? []
+                let isFamilyName = !Set(tags).isDisjoint(with: [.kanji, .katakana]) && !Set(tags).isDisjoint(with: [.full, .familyOnly])
                 expected.append(ExpectedName(
                     sampleID: sample.id,
                     text: expectation.text,
                     range: range,
-                    tags: expectation.tags ?? [],
+                    tags: tags,
                     genre: sample.genre,
                     writer: sample.writer,
-                    beginsWithListedSurname: JapaneseSurnames.beginsWithSurname(expectation.text),
+                    spaced: expectation.text.unicodeScalars.contains { CharacterSet.whitespaces.contains($0) },
+                    late: laterChunks.contains { batch in
+                        batch.mapping.contains { range.location >= $0.originalOffset && NSMaxRange(range) <= $0.originalOffset + $0.length }
+                    },
+                    beginsWithListedSurname: isFamilyName ? JapaneseSurnames.beginsWithSurname(expectation.text) : nil,
                     outcome: outcome,
                     cause: outcome != .missed ? nil
                         : rejected.contains { $0.contains(expectation.text) } ? .filterRejected
@@ -183,10 +210,11 @@ extension NameEvaluator.Report {
     public var breakdown: [(label: String, tally: NameEvaluator.Tally)] {
         var rows: [(String, (NameEvaluator.ExpectedName) -> Bool)] = [("all", { _ in true })]
         rows += NameTag.allCases.map { tag in ("tag:\(tag.rawValue)", { $0.tags.contains(tag) }) }
+        rows += [("spaced", { $0.spaced }), ("late", { $0.late })]
         rows += Genre.allCases.map { genre in ("genre:\(genre.rawValue)", { $0.genre == genre }) }
         rows += Writer.allCases.map { writer in ("writer:\(writer.rawValue)", { $0.writer == writer }) }
-        rows += [("surname:listed", { $0.beginsWithListedSurname }),
-                 ("surname:unlisted", { !$0.beginsWithListedSurname })]
+        rows += [("surname:listed", { $0.beginsWithListedSurname == true }),
+                 ("surname:unlisted", { $0.beginsWithListedSurname == false })]
 
         return rows.compactMap { label, matches in
             var tally = NameEvaluator.Tally()
@@ -207,10 +235,12 @@ extension NameEvaluator {
         func percent(_ value: Double?) -> String {
             value.map { String(format: "%5.1f%%", $0 * 100) } ?? "     —"
         }
-        func cell(_ text: String) -> String { text.padding(toLength: 16, withPad: " ", startingAt: 0) }
+        let width = max(16, (reports.map { $0.system.count }.max() ?? 0) + 2)
+        func cell(_ text: String) -> String { text.padding(toLength: width, withPad: " ", startingAt: 0) }
+        func rowCell(_ text: String) -> String { text.padding(toLength: 16, withPad: " ", startingAt: 0) }
 
         var out = "## Recall (covered / expected)\n\n"
-        out += cell("row") + "     n  " + reports.map { cell($0.system) }.joined() + "\n"
+        out += rowCell("row") + "     n  " + reports.map { cell($0.system) }.joined() + "\n"
         // Rows with nothing expected are dropped per report, so line reports up
         // by label: the union in first-seen order, "—" where a report has none.
         let breakdowns = reports.map { Dictionary($0.breakdown.map { ($0.label, $0.tally) }, uniquingKeysWith: { first, _ in first }) }
@@ -218,7 +248,7 @@ extension NameEvaluator {
         for report in reports { for row in report.breakdown where !labels.contains(row.label) { labels.append(row.label) } }
         for label in labels {
             let n = breakdowns.lazy.compactMap { $0[label]?.expected }.first ?? 0
-            out += cell(label) + String(format: "%6d  ", n)
+            out += rowCell(label) + String(format: "%6d  ", n)
             out += breakdowns.map { rows in
                 guard let tally = rows[label] else { return cell("     —") }
                 return cell("\(percent(Double(tally.covered) / Double(tally.expected))) p\(tally.partial)")
