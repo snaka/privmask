@@ -199,7 +199,7 @@
           "kind": "personalName",
           "text": "コウタニ太郎",
           "tags": [
-            "katakana",
+            "mixed",
             "full"
           ]
         },
@@ -207,7 +207,7 @@
           "kind": "personalName",
           "text": "タマハシ花子",
           "tags": [
-            "katakana",
+            "mixed",
             "full"
           ]
         },
@@ -965,7 +965,7 @@
           "kind": "personalName",
           "text": "ハグロ恵樹",
           "tags": [
-            "katakana",
+            "mixed",
             "full"
           ]
         },
@@ -3166,7 +3166,7 @@
           "kind": "personalName",
           "text": "オオバリ マサユキ",
           "tags": [
-            "romaji",
+            "katakana",
             "full"
           ]
         },
@@ -3182,7 +3182,7 @@
           "kind": "personalName",
           "text": "コヤバ ジュンイチ",
           "tags": [
-            "romaji",
+            "katakana",
             "full"
           ]
         },
@@ -3368,7 +3368,7 @@
           "kind": "personalName",
           "text": "オオバリ",
           "tags": [
-            "romaji",
+            "katakana",
             "familyOnly"
           ]
         },
@@ -3376,7 +3376,7 @@
           "kind": "personalName",
           "text": "コヤバ ナオキ",
           "tags": [
-            "romaji",
+            "katakana",
             "full"
           ]
         },
@@ -4395,7 +4395,7 @@
           "kind": "personalName",
           "text": "カトウダ花子",
           "tags": [
-            "katakana",
+            "mixed",
             "full"
           ]
         },
@@ -4412,7 +4412,7 @@
           "kind": "personalName",
           "text": "ニシノミヤ太郎",
           "tags": [
-            "katakana",
+            "mixed",
             "full"
           ]
         },
@@ -4586,7 +4586,7 @@
           "kind": "personalName",
           "text": "アオサキ太郎",
           "tags": [
-            "katakana",
+            "mixed",
             "full"
           ]
         },
