@@ -6136,6 +6136,359 @@
         }
       ],
       "mustNotDetect": []
+    },
+    {
+      "id": "hard-shop-name",
+      "note": "A family name inside a shop name is not a person.",
+      "genre": "slack",
+      "writer": "opus",
+      "text": "今日の差し入れは中村屋のカレーパンです。会議室Bに置いてあります。",
+      "expected": [],
+      "mustNotDetect": [
+        "中村屋"
+      ]
+    },
+    {
+      "id": "hard-method-name",
+      "note": "A family name inside a method name is not a person.",
+      "genre": "markdown",
+      "writer": "opus",
+      "text": "## 採用した手法\n\n- 山田式スコアリングで優先度を決める\n- 閾値は 0.72 に固定",
+      "expected": [],
+      "mustNotDetect": [
+        "山田式スコアリング"
+      ]
+    },
+    {
+      "id": "hard-headings-only",
+      "note": "Headings where a name would sit, with no name.",
+      "genre": "markdown",
+      "writer": "opus",
+      "text": "## 担当者\n\n未定\n\n## レビュアー\n\n未定\n\n## 連絡先\n\n#ops-oncall",
+      "expected": [],
+      "mustNotDetect": [
+        "担当者",
+        "レビュアー"
+      ]
+    },
+    {
+      "id": "hard-direction-and-forest",
+      "note": "東 and 森 as a direction and a place, not people.",
+      "genre": "incident",
+      "writer": "opus",
+      "text": "東口改札付近の基地局で障害。森林公園側のアンテナは正常です。",
+      "expected": [],
+      "mustNotDetect": [
+        "東口改札",
+        "森林公園"
+      ]
+    },
+    {
+      "id": "hard-building-name",
+      "note": "A building named after a family is an address part, not a person.",
+      "genre": "email",
+      "writer": "opus",
+      "text": "納品先は高橋ビル 3F 受付までお願いいたします。",
+      "expected": [],
+      "mustNotDetect": [
+        "高橋ビル"
+      ]
+    },
+    {
+      "id": "hard-ward-names",
+      "note": "Place names that are also rare family names.",
+      "genre": "log",
+      "writer": "opus",
+      "text": "2026-10-01 10:02:11 INFO region=東京都渋谷区 dc=新宿第2 status=ok",
+      "expected": [],
+      "mustNotDetect": [
+        "渋谷区",
+        "新宿第2"
+      ]
+    },
+    {
+      "id": "hard-single-kanji-person",
+      "note": "A single-kanji family name that is also a common word, used for a person.",
+      "genre": "slack",
+      "writer": "opus",
+      "text": "東さん、明日のリリース判定に参加できますか？森さんは欠席です。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "東",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "森",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "hard-hiragana-given",
+      "note": "Given names written in hiragana, with and without honorifics.",
+      "genre": "slack",
+      "writer": "opus",
+      "text": "みのりさんがレビュー中、はるかちゃんは休み。ゆうきくんに引き継ぎます。\nあとで さくら に確認してもらう",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "みのり",
+          "tags": [
+            "hiragana",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "はるか",
+          "tags": [
+            "hiragana",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ゆうき",
+          "tags": [
+            "hiragana",
+            "givenOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "さくら",
+          "tags": [
+            "hiragana",
+            "givenOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "hard-hiragana-full",
+      "note": "A full name written entirely in hiragana, as on a form from a child or an elderly customer.",
+      "genre": "email",
+      "writer": "opus",
+      "text": "お名前（ふりがな）: いでがわ ちひろ\nご住所: 別紙のとおり\n\nいでがわ ちひろ 様からのお問い合わせです。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "いでがわ ちひろ",
+          "tags": [
+            "hiragana",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "hard-hiragana-mixed",
+      "note": "Kanji family names with hiragana given names.",
+      "genre": "incident",
+      "writer": "opus",
+      "text": "一次対応: 嵯峨崎 あおい / 二次対応: 槇之内ひなた\n嵯峨崎さんがロールバックを判断しました。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "嵯峨崎 あおい",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "槇之内ひなた",
+          "tags": [
+            "mixed",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "嵯峨崎",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "hard-hiragana-log",
+      "note": "Hiragana given names in log fields and run-on text.",
+      "genre": "messy",
+      "writer": "opus",
+      "text": "assignee=かなえ reviewer=しおり\nかなえ→しおりへ引継ぎ済 つばさ未確認",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "かなえ",
+          "tags": [
+            "hiragana",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "しおり",
+          "tags": [
+            "hiragana",
+            "givenOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "つばさ",
+          "tags": [
+            "hiragana",
+            "givenOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "hard-unlisted-surnames",
+      "note": "Plausible family names that SudachiDict does not hold.",
+      "genre": "incident",
+      "writer": "opus",
+      "text": "【障害報告】決済バッチの遅延。\n一次対応: 舩津 圭吾 / 二次対応: 鵜飼野 真帆\n承認: 鬼頭原部長",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "舩津 圭吾",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "鵜飼野 真帆",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "鬼頭原",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "hard-unlisted-email",
+      "note": "Unlisted family names in a business email, with honorifics.",
+      "genre": "email",
+      "writer": "opus",
+      "text": "舩津様\n\nいつもお世話になっております。先日の件、鵜飼野よりご連絡いたします。\n\n鵜飼野 真帆",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "舩津",
+          "tags": [
+            "kanji",
+            "familyOnly",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "鵜飼野",
+          "tags": [
+            "kanji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "鵜飼野 真帆",
+          "tags": [
+            "kanji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "hard-romaji-fields",
+      "note": "Romaji names in user and email fields.",
+      "genre": "log",
+      "writer": "opus",
+      "text": "2026-10-01T03:11:52Z WARN login failed user=funatsu.keigo ip=10.0.4.12\n2026-10-01T03:12:07Z INFO login ok user=Mizuki_Sagasaki",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "funatsu.keigo",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "Mizuki_Sagasaki",
+          "tags": [
+            "romaji",
+            "full"
+          ]
+        }
+      ],
+      "mustNotDetect": []
+    },
+    {
+      "id": "hard-katakana-foreign",
+      "note": "Foreign names in katakana with the middle dot.",
+      "genre": "slack",
+      "writer": "opus",
+      "text": "エマ・ブラウンさんとラウル・メンデスさんがオンボーディング中です。",
+      "expected": [
+        {
+          "kind": "personalName",
+          "text": "エマ・ブラウン",
+          "tags": [
+            "katakana",
+            "full",
+            "honorific"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "ラウル・メンデス",
+          "tags": [
+            "katakana",
+            "full",
+            "honorific"
+          ]
+        }
+      ],
+      "mustNotDetect": []
     }
   ]
 }
