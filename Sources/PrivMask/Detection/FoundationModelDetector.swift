@@ -227,6 +227,10 @@ public struct FoundationModelDetector {
     static func isPlausibleName(_ text: String, in context: String = "") -> Bool {
         guard !text.isEmpty, text.count <= 24 else { return false }
 
+        // An honorific alone is never a name. The model returned さん on its own
+        // from 林さんと関さんには, and the hiragana path accepted it.
+        guard !withoutHonorific(text).isEmpty else { return false }
+
         // The model has returned whole lines. Structural punctuation marks a
         // line or a clause, never a name.
         let structural: Set<Character> = [":", "：", "\n", "\t", "=", "、", "。", "/", "|"]

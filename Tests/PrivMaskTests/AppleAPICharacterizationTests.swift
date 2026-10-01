@@ -312,6 +312,14 @@ struct ModelPlausibilityTests {
         #expect(!FoundationModelDetector.isPlausibleName(span, in: context))
     }
 
+    /// The model returned さん on its own from 林さんと関さんには, and the
+    /// hiragana path accepted it. An honorific alone is never a name. See #34.
+    @available(macOS 26.0, *)
+    @Test("An honorific alone is not a name", arguments: ["さん", "様", "氏", "くん", "ちゃん", " さん"])
+    func honorificAloneRejected(_ span: String) {
+        #expect(!FoundationModelDetector.isPlausibleName(span, in: "林さんと関さんには確認済みです。"))
+    }
+
     /// A single-token name may begin with a character that is also a particle.
     @available(macOS 26.0, *)
     @Test("A one-token name beginning with a particle character is kept")
