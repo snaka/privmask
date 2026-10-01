@@ -170,9 +170,10 @@ struct NameEvaluatorTests {
             .init(text: "田中健一", location: utf16.location, length: utf16.length),
             .init(text: "𠮷田"),
             .init(text: "bogus", location: 40, length: 4),
+            .init(text: "田中健一", location: 5, length: 4),  // code-point offset: lands inside, wrong text
         ])
         #expect(report.expected.map(\.outcome) == [.covered, .covered])
-        #expect(report.invalidDetections.count == 1)
+        #expect(report.invalidDetections.count == 2)
     }
 
     @Test("A detections entry for a sample the corpus lacks is reported")
@@ -194,5 +195,42 @@ struct NameEvaluatorTests {
     func surnameListComputed() throws {
         let report = try score("勅使河原誠と田中健一", expected: ["勅使河原誠", "田中健一"], names: [])
         #expect(report.expected.map(\.beginsWithListedSurname) == [false, true])
+    }
+
+    @Test("An expected string nested inside another is not a second name")
+    func nestedExpectations() throws {
+        let a = try score("小林さんと林さん", expected: ["小林", "林"], names: [])
+        #expect(a.expected.count == 2)
+        let b = try score("田中健一です。田中が", expected: ["田中健一", "田中"], names: [])
+        #expect(b.expected.count == 2)
+    }
+
+    @Test("An absurd offset is invalid, not a crash")
+    func hugeOffset() throws {
+        let report = try score("田中健一", expected: ["田中健一"],
+                               names: [.init(text: "田中", location: Int.max, length: 1)])
+        #expect(report.invalidDetections.count == 1)
+    }
+
+    @Test("The katakana middle dot need not be covered")
+    func middleDot() throws {
+        let report = try score("ジョン・スミス", expected: ["ジョン・スミス"],
+                               names: [.init(text: "ジョン", location: 0, length: 3),
+                                       .init(text: "スミス", location: 4, length: 3)])
+        #expect(report.expected.map(\.outcome) == [.covered])
+    }
+
+    @Test("Covering only the BMP half of a name with a non-BMP kanji is partial")
+    func nonBMPPartial() throws {
+        let report = try score("𠮷田さん", expected: ["𠮷田"], names: [.init(text: "田")])
+        #expect(report.expected.map(\.outcome) == [.partial])
+    }
+
+    @Test("The same span reported twice is one detection")
+    func duplicateSpan() throws {
+        let report = try score("田中健一", expected: ["田中健一"],
+                               names: [.init(text: "田中健一", location: 0, length: 4),
+                                       .init(text: "田中健一", location: 0, length: 4)])
+        #expect(report.detectionCount == 1)
     }
 }

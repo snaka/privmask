@@ -5,8 +5,8 @@ import Foundation
 /// Unlike `Evaluator`, a hit is not any overlap. privmask replaces what it
 /// detects, so a detection that covers 田中 of 田中健一 leaves 健一 in the
 /// output: that is `partial`, and partial is not recall. Detections are pooled,
-/// so 田中 and 健一 found separately still cover 田中 健一. Whitespace inside
-/// the name need not be covered. See #28.
+/// so 田中 and 健一 found separately still cover 田中 健一. Whitespace and the
+/// katakana middle dot inside the name need not be covered. See #28.
 public enum NameEvaluator {
     public enum Outcome: String, Sendable { case covered, partial, missed }
     public enum MissCause: String, Sendable { case filterRejected, neverReturned }
@@ -71,11 +71,17 @@ public enum NameEvaluator {
             var found: [NSRange] = []
             for name in entry?.names ?? [] {
                 if let location = name.location, let length = name.length {
-                    guard location >= 0, length > 0, location + length <= text.length else {
+                    guard location >= 0, location <= text.length, length > 0, length <= text.length - location else {
                         invalid.append("[\(sample.id)] \(name.text.debugDescription) at \(location)+\(length)")
                         continue
                     }
-                    found.append(NSRange(location: location, length: length))
+                    let range = NSRange(location: location, length: length)
+                    let actual = text.substring(with: range)
+                    guard actual == name.text else {
+                        invalid.append("[\(sample.id)] \(name.text.debugDescription) at \(location)+\(length) does not match \(actual.debugDescription)")
+                        continue
+                    }
+                    found.append(range)
                 } else {
                     let hits = text.allRanges(of: name.text)
                     if hits.isEmpty {
@@ -90,26 +96,38 @@ public enum NameEvaluator {
             var covered = IndexSet()
             for range in found { covered.insert(integersIn: range.location..<NSMaxRange(range)) }
 
-            var nameRanges: [NSRange] = []
+            var candidates: [(range: NSRange, expectation: Corpus.Expectation)] = []
             for expectation in sample.expected where expectation.kind == .personalName {
-                for range in text.allRanges(of: expectation.text) {
-                    nameRanges.append(range)
-                    let outcome = outcome(of: range, in: text, covered: covered)
-                    let rejected = entry?.rejected ?? []
-                    expected.append(ExpectedName(
-                        sampleID: sample.id,
-                        text: expectation.text,
-                        range: range,
-                        tags: expectation.tags ?? [],
-                        genre: sample.genre,
-                        writer: sample.writer,
-                        beginsWithListedSurname: JapaneseSurnames.beginsWithSurname(expectation.text),
-                        outcome: outcome,
-                        cause: outcome != .missed ? nil
-                            : rejected.contains { $0.contains(expectation.text) } ? .filterRejected
-                            : .neverReturned
-                    ))
+                for range in text.allRanges(of: expectation.text) { candidates.append((range, expectation)) }
+            }
+            // A string nested inside another expected name (林 in 小林) is the
+            // same name, not a second one; identical spans count once.
+            var kept: [(range: NSRange, expectation: Corpus.Expectation)] = []
+            for c in candidates {
+                let nested = candidates.contains { o in
+                    o.range != c.range && NSIntersectionRange(o.range, c.range) == c.range
                 }
+                if !nested && !kept.contains(where: { $0.range == c.range }) { kept.append(c) }
+            }
+
+            let rejected = entry?.rejected ?? []
+            var nameRanges: [NSRange] = []
+            for (range, expectation) in kept {
+                nameRanges.append(range)
+                let outcome = outcome(of: range, in: text, covered: covered)
+                expected.append(ExpectedName(
+                    sampleID: sample.id,
+                    text: expectation.text,
+                    range: range,
+                    tags: expectation.tags ?? [],
+                    genre: sample.genre,
+                    writer: sample.writer,
+                    beginsWithListedSurname: JapaneseSurnames.beginsWithSurname(expectation.text),
+                    outcome: outcome,
+                    cause: outcome != .missed ? nil
+                        : rejected.contains { $0.contains(expectation.text) } ? .filterRejected
+                        : .neverReturned
+                ))
             }
 
             for range in found where !nameRanges.contains(where: { rangesOverlap($0, range) }) {
@@ -129,14 +147,15 @@ public enum NameEvaluator {
         )
     }
 
-    /// Covered when every non-whitespace UTF-16 unit of the name is covered.
+    /// Covered when every UTF-16 unit that is not whitespace or a katakana middle dot of the name is covered.
     /// A surrogate unit is never whitespace, so a non-BMP kanji must be covered
     /// in full.
     private static func outcome(of name: NSRange, in text: NSString, covered: IndexSet) -> Outcome {
         var required = IndexSet()
         for index in name.location..<NSMaxRange(name) {
             let unit = text.character(at: index)
-            if let scalar = Unicode.Scalar(unit), CharacterSet.whitespacesAndNewlines.contains(scalar) { continue }
+            if let scalar = Unicode.Scalar(unit),
+               CharacterSet.whitespacesAndNewlines.contains(scalar) || scalar == "\u{30FB}" || scalar == "\u{FF65}" { continue }
             required.insert(index)
         }
         if !required.isEmpty && covered.contains(integersIn: required) { return .covered }
