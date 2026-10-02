@@ -23,7 +23,11 @@ struct LatinNameShapeTests {
     /// romaji-only rule would stop masking it.
     @Test(
         "Western personal names are accepted",
-        arguments: ["John Smith", "Michael O'Connor", "Mary-Jane Lee", "Sarah Johnson", "Emma Brown", "Wei Zhang", "Priya Patel"]
+        arguments: [
+            "John Smith", "Michael O'Connor", "Mary-Jane Lee", "Sarah Johnson", "Emma Brown", "Wei Zhang", "Priya Patel",
+            // Tagged a person read alone but not in the probe sentence. See #40.
+            "Seungwoo Song", "Meera Mehta",
+        ]
     )
     func acceptsWesternNames(_ name: String) {
         #expect(LatinNameShape.isNameShaped(name))

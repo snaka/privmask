@@ -16,8 +16,8 @@ import NaturalLanguage
 /// Japanese sentence is found by the model and missed by NLTagger.
 ///
 /// A Western-shaped candidate must also be tagged a personal name by NLTagger,
-/// alone in a neutral English sentence: `Android` and `Google Play Console` have
-/// the shape and were masked until it was. See #40.
+/// read in English: `Android` and `Google Play Console` have the shape and were
+/// masked until it was. See #40.
 ///
 /// ponytail: romaji-shaped English words (`INFO`, `region`) still pass the romaji
 /// test, which NLTagger cannot judge for a single romaji token. A small stop-list
@@ -68,27 +68,33 @@ enum LatinNameShape {
         }
     }
 
-    /// Of six sentence shapes measured, this one kept all twelve test names
-    /// (`Emma Brown`, `Wei Zhang`, `Michael O'Connor`) and let the fewest product
-    /// names through: `Grafana` and `Jira Cloud` of twelve. See #40.
-    private static let probeSentence = (prefix: "Please ask ", suffix: " about it.")
+    /// Where the candidate is read: alone, and in a neutral English sentence.
+    /// Either one tagging it a person is enough.
+    ///
+    /// On independent lists of 240 names across twelve regions and 240 product,
+    /// team and place names, the pair kept 98.8% of the names and let 13.3% of
+    /// the others through. Shape alone let 92.9% through. The sentence alone
+    /// kept 97.9%, and every name it lost was Asian; reading alone as well gets
+    /// back `Seungwoo Song` and `Meera Mehta`. See #40.
+    private static let probes = [("", ""), ("Please ask ", " about it.")]
 
-    /// Whether NLTagger, reading the candidate alone in English, calls it a
-    /// personal name.
+    /// Whether NLTagger, reading the candidate in English, calls it a personal
+    /// name.
     static func taggedAsPerson(_ text: String) -> Bool {
-        let sentence = probeSentence.prefix + text + probeSentence.suffix
-        let tagger = NLTagger(tagSchemes: [.nameType])
-        tagger.string = sentence
-        tagger.setLanguage(.english, range: sentence.startIndex..<sentence.endIndex)
-        let candidate = sentence.range(of: text)!
-        var person = false
-        tagger.enumerateTags(
-            in: candidate, unit: .word, scheme: .nameType,
-            options: [.omitWhitespace, .omitPunctuation, .joinNames]
-        ) { tag, _ in
-            if tag == .personalName { person = true }
-            return !person
+        probes.contains { prefix, suffix in
+            let sentence = prefix + text + suffix
+            let tagger = NLTagger(tagSchemes: [.nameType])
+            tagger.string = sentence
+            tagger.setLanguage(.english, range: sentence.startIndex..<sentence.endIndex)
+            var person = false
+            tagger.enumerateTags(
+                in: sentence.range(of: text)!, unit: .word, scheme: .nameType,
+                options: [.omitWhitespace, .omitPunctuation, .joinNames]
+            ) { tag, _ in
+                if tag == .personalName { person = true }
+                return !person
+            }
+            return person
         }
-        return person
     }
 }
