@@ -190,8 +190,10 @@ public struct FoundationModelDetector {
             }
         }
 
+        // The model lists each person once; later short mentions of the same
+        // person (佐古 after 佐古宗直) are found here, over the whole input. See #36.
         return Outcome(
-            matches: result.matches,
+            matches: result.matches + NameMentions.otherMentions(of: result.matches, in: text),
             ungroundedTexts: result.ungroundedTexts,
             rejectedTexts: rejected,
             duration: Date().timeIntervalSince(started),
