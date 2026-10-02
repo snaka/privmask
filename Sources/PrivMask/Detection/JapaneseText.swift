@@ -199,7 +199,7 @@ public enum JapaneseText {
         group.reduce(0) { $0 + ($1.text as NSString).length + 1 } - 1
     }
 
-    private static func build(_ group: [Segment]) -> Batch {
+    fileprivate static func build(_ group: [Segment]) -> Batch {
         var joined = ""
         var mapping: [(Int, Int, Int)] = []
         // Tracked rather than re-measured: `joined` is mutated every iteration,
@@ -217,6 +217,36 @@ public enum JapaneseText {
             offset += length
         }
         return Batch(text: joined, mapping: mapping)
+    }
+}
+
+extension JapaneseText {
+    /// A Japanese character, or a space or Japanese punctuation between two of
+    /// them, so that `井出 遊` stays one run.
+    private static let japaneseRun = try! NSRegularExpression(
+        pattern: "[\\u3040-\\u30FF\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\uFF66-\\uFF9D々〆ヶ]"
+            + "(?:[ \\u3000、。・：「」（）]*[\\u3040-\\u30FF\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\uFF66-\\uFF9D々〆ヶ])*"
+    )
+
+    /// The batch with everything but its runs of Japanese dropped, each run kept
+    /// at the offset it came from. `nil` when no Japanese is left.
+    ///
+    /// A log line is mostly ASCII, and the model refuses it as an unsupported
+    /// language even though it holds Japanese. The narrowed batch is what is sent
+    /// on a retry: on the name corpus every refused chunk was accepted this way.
+    /// It is not sent first, because a narrowed chunk loses `user=` and the
+    /// romaji ids a full line carries. See #38.
+    public static func narrowed(_ batch: Batch, in original: String) -> Batch? {
+        let nsOriginal = original as NSString
+        var runs: [Segment] = []
+        for entry in batch.mapping {
+            let line = nsOriginal.substring(with: NSRange(location: entry.originalOffset, length: entry.length))
+            for match in japaneseRun.matches(in: line, range: NSRange(location: 0, length: (line as NSString).length)) {
+                runs.append(Segment(text: (line as NSString).substring(with: match.range),
+                                    offset: entry.originalOffset + match.range.location))
+            }
+        }
+        return runs.isEmpty ? nil : build(runs)
     }
 }
 

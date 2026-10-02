@@ -96,3 +96,69 @@ struct BatchedNameRunTests {
         #expect(seen == batches.count)
     }
 }
+
+/// A log line is mostly ASCII, and the model refuses it as an unsupported
+/// language even though it holds Japanese. The chunk is then sent again, once,
+/// narrowed to its runs of Japanese. See #38.
+@Suite("Retrying a chunk refused for its language")
+struct NarrowedRetryTests {
+    private struct Refused: Error, CustomStringConvertible {
+        var description: String { "unsupportedLanguageOrLocale" }
+    }
+
+    private let log = """
+        2026-09-14T09:12:03+09:00 INFO  [order-svc] req=7f3a21 user=井出 遊 action=refund
+        2026-09-14T09:12:04+09:00 WARN  [order-svc] 承認待ち: 担当は深見 房太郎さん
+        """
+
+    private func batches(_ text: String) -> [JapaneseText.Batch] {
+        JapaneseText.batches(JapaneseText.japaneseLines(of: text), characterLimit: 1500)
+    }
+
+    @Test("Narrowing keeps only the Japanese runs, each mapped to where it came from")
+    func narrowing() throws {
+        let narrowed = try #require(JapaneseText.narrowed(batches(log)[0], in: log))
+        #expect(!narrowed.text.contains("INFO"))
+        #expect(narrowed.text.contains("井出 遊"))
+        let found = (narrowed.text as NSString).range(of: "深見 房太郎")
+        let original = try #require(narrowed.originalRange(for: found))
+        #expect((log as NSString).substring(with: original) == "深見 房太郎")
+    }
+
+    @Test("A refused chunk is retried narrowed, and its names land in the original")
+    func retried() async {
+        var calls: [String] = []
+        let result = await BatchedNameRun.run(text: log, batches: batches(log), retryNarrowed: { $0 is Refused }) { sent in
+            calls.append(sent)
+            if sent.contains("INFO") { throw Refused() }
+            return ["井出 遊", "深見 房太郎"]
+        }
+        #expect(calls.count == 2)
+        #expect(result.failures.isEmpty)
+        #expect(result.matches.map { (log as NSString).substring(with: $0.range) } == ["井出 遊", "深見 房太郎"])
+    }
+
+    @Test("Other errors are not retried")
+    func notRetried() async {
+        var calls = 0
+        let result = await BatchedNameRun.run(text: log, batches: batches(log), retryNarrowed: { $0 is Refused }) { _ in
+            calls += 1
+            throw CancellationError()
+        }
+        #expect(calls == 1)
+        #expect(result.failures.count == 1)
+    }
+
+    @Test("A retry that fails too is reported once")
+    func retryFails() async {
+        var calls = 0
+        let result = await BatchedNameRun.run(text: log, batches: batches(log), retryNarrowed: { $0 is Refused }) { _ in
+            calls += 1
+            throw Refused()
+        }
+        #expect(calls == 2)
+        #expect(result.failures.count == 1)
+        // Named by the chunk the caller sent, not by its narrowed retry.
+        #expect(result.failures.first?.characters == batches(log)[0].text.count)
+    }
+}
