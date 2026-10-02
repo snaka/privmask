@@ -161,6 +161,12 @@ public struct FoundationModelDetector {
         let result = await BatchedNameRun.run(
             text: text,
             batches: batches,
+            // A log line is refused as an unsupported language although it holds
+            // Japanese; narrowed to its Japanese, it is accepted. See #38.
+            retryNarrowed: { error in
+                guard case LanguageModelSession.GenerationError.unsupportedLanguageOrLocale = error else { return false }
+                return true
+            },
             onChunkStart: onChunkStart
         ) { batchText in
             // A fresh session per chunk. Carrying one session across chunks

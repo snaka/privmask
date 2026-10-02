@@ -43,6 +43,10 @@ public enum BatchedNameRun {
     /// `respond` returns spans the caller already considers name-shaped; this
     /// only decides whether they are really there and where. Every chunk is
     /// attempted: one failure costs that chunk, not the run.
+    /// - Parameter retryNarrowed: whether an error that failed a chunk is worth
+    ///   one more call with the chunk narrowed to its runs of Japanese. The model
+    ///   refuses a log line as an unsupported language although it holds
+    ///   Japanese; narrowed, it is accepted. See #38.
     /// - Parameter onChunkStart: called with the chunk about to be read,
     ///   counted from one, and how many there are. The calls run one after
     ///   another and each takes seconds, so a caller with a terminal has
@@ -50,6 +54,7 @@ public enum BatchedNameRun {
     public static func run(
         text: String,
         batches: [JapaneseText.Batch],
+        retryNarrowed: (any Error) -> Bool = { _ in false },
         onChunkStart: (Int, Int) async -> Void = { _, _ in },
         respond: (String) async throws -> [String]
     ) async -> Result {
@@ -60,9 +65,18 @@ public enum BatchedNameRun {
 
         for (offset, batch) in batches.enumerated() {
             await onChunkStart(offset + 1, batches.count)
+            // What was actually sent, which a retry narrows. Failures still name
+            // the chunk as the caller knows it, by `batch`.
+            var sent = batch
             let spans: [String]
             do {
-                spans = try await respond(batch.text)
+                do {
+                    spans = try await respond(batch.text)
+                } catch where retryNarrowed(error) {
+                    guard let narrowed = JapaneseText.narrowed(batch, in: text) else { throw error }
+                    sent = narrowed
+                    spans = try await respond(sent.text)
+                }
             } catch {
                 failures.append(
                     ChunkFailure(
@@ -75,7 +89,7 @@ public enum BatchedNameRun {
                 continue
             }
 
-            let batchText = batch.text as NSString
+            let batchText = sent.text as NSString
             for span in spans {
                 let hits = batchText.allRanges(of: span)
                 if hits.isEmpty {
@@ -83,7 +97,7 @@ public enum BatchedNameRun {
                     continue
                 }
                 for hit in hits {
-                    guard let range = batch.originalRange(for: hit) else { continue }
+                    guard let range = sent.originalRange(for: hit) else { continue }
                     matches.append(
                         DetectedMatch(
                             kind: .personalName,
