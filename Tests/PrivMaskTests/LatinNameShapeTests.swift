@@ -23,7 +23,7 @@ struct LatinNameShapeTests {
     /// romaji-only rule would stop masking it.
     @Test(
         "Western personal names are accepted",
-        arguments: ["John Smith", "Michael O'Connor", "Mary-Jane Lee", "McDonald", "Sarah Johnson"]
+        arguments: ["John Smith", "Michael O'Connor", "Mary-Jane Lee", "Sarah Johnson", "Emma Brown", "Wei Zhang", "Priya Patel"]
     )
     func acceptsWesternNames(_ name: String) {
         #expect(LatinNameShape.isNameShaped(name))
@@ -41,6 +41,20 @@ struct LatinNameShapeTests {
         ]
     )
     func rejectsIdentifiers(_ span: String) {
+        #expect(!LatinNameShape.isNameShaped(span))
+    }
+
+    /// Shaped like a Western name, but product and team names. The model
+    /// returned the first four as personal names on the name corpus; the rest
+    /// show the check needs no list. See #40.
+    @Test(
+        "Product and team names shaped like a Western name are rejected",
+        arguments: [
+            "Android", "Firebase Crashlytics", "Google Play Console", "Mobile Platform",
+            "Platform Team", "Kubernetes", "Datadog", "Visual Studio",
+        ]
+    )
+    func rejectsProductNames(_ span: String) {
         #expect(!LatinNameShape.isNameShaped(span))
     }
 

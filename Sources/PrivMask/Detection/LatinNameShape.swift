@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 /// Whether Latin text the language model returned can be a personal name.
 ///
@@ -14,13 +15,17 @@ import Foundation
 /// test is not redundant with `AppleNameTagger`: `Michael O'Connor` in a
 /// Japanese sentence is found by the model and missed by NLTagger.
 ///
-/// ponytail: shape only. `Grafana` and `Platform Team` pass as Western names, and
-/// romaji-shaped words such as `api` and `main` pass as romaji. A stop-list is the
-/// upgrade if the corpus shows the model returning them.
+/// A Western-shaped candidate must also be tagged a personal name by NLTagger,
+/// alone in a neutral English sentence: `Android` and `Google Play Console` have
+/// the shape and were masked until it was. See #40.
+///
+/// ponytail: romaji-shaped English words (`INFO`, `region`) still pass the romaji
+/// test, which NLTagger cannot judge for a single romaji token. A small stop-list
+/// is the upgrade if they recur.
 enum LatinNameShape {
     static func isNameShaped(_ text: String) -> Bool {
         let normalised = text.precomposedStringWithCompatibilityMapping
-        return readsAsRomaji(normalised) || isWesternName(normalised)
+        return readsAsRomaji(normalised) || (isWesternName(normalised) && taggedAsPerson(normalised))
     }
 
     /// One Japanese syllable: a vowel; a consonant, or a consonant pair such as
@@ -61,5 +66,29 @@ enum LatinNameShape {
             let range = NSRange(word.startIndex..., in: word)
             return westernWord.firstMatch(in: word, range: range) != nil
         }
+    }
+
+    /// Of six sentence shapes measured, this one kept all twelve test names
+    /// (`Emma Brown`, `Wei Zhang`, `Michael O'Connor`) and let the fewest product
+    /// names through: `Grafana` and `Jira Cloud` of twelve. See #40.
+    private static let probeSentence = (prefix: "Please ask ", suffix: " about it.")
+
+    /// Whether NLTagger, reading the candidate alone in English, calls it a
+    /// personal name.
+    static func taggedAsPerson(_ text: String) -> Bool {
+        let sentence = probeSentence.prefix + text + probeSentence.suffix
+        let tagger = NLTagger(tagSchemes: [.nameType])
+        tagger.string = sentence
+        tagger.setLanguage(.english, range: sentence.startIndex..<sentence.endIndex)
+        let candidate = sentence.range(of: text)!
+        var person = false
+        tagger.enumerateTags(
+            in: candidate, unit: .word, scheme: .nameType,
+            options: [.omitWhitespace, .omitPunctuation, .joinNames]
+        ) { tag, _ in
+            if tag == .personalName { person = true }
+            return !person
+        }
+        return person
     }
 }
