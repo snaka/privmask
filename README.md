@@ -241,11 +241,11 @@ flowchart TB
 
 No arrow leaves that box, and that is not a simplification.
 
-It matters because finding a Japanese personal name takes a language model —
+It matters because finding a Japanese personal name takes a trained model —
 patterns cannot, and neither can `NLTagger`, which has no Japanese entity model
-at all. Until the on-device model existed, that capability meant sending the
-text to somebody's server: handing over the exact thing you were trying not to
-share.
+at all. Until models small enough to run on a Mac existed, that capability meant
+sending the text to somebody's server: handing over the exact thing you were
+trying not to share. Both the NER model and the language model run on device.
 
 The two speeds are why it feels immediate: the deterministic detectors are shown
 straight away, and the model's findings are folded in when they arrive.
