@@ -79,12 +79,17 @@ extension NERDetector {
         let tokenizer = try XLMRTokenizer(contentsOf: directory.appendingPathComponent("tokenizer.json"))
         let model = try NERModel(contentsOf: directory.appendingPathComponent("ner.mlmodelc"), computeUnits: computeUnits)
         func list(_ name: String) throws -> Set<String> {
-            let text = try String(contentsOf: directory.appendingPathComponent(name), encoding: .utf8)
-            return Set(text.split(separator: "\n").map(String.init))
+            wordList(try String(contentsOf: directory.appendingPathComponent(name), encoding: .utf8))
         }
         return NERDetector(
             tokenize: { tokenizer.encode($0) }, clsID: tokenizer.clsID, sepID: tokenizer.sepID,
             predict: { try model.labels(for: $0) },
             words: try list("words.txt"), names: try list("names.txt"))
+    }
+
+    /// One entry per line. On newlines rather than "\n": Swift reads "\r\n" as
+    /// one Character, so a CRLF file would never split on "\n".
+    static func wordList(_ text: String) -> Set<String> {
+        Set(text.split(whereSeparator: \.isNewline).map(String.init))
     }
 }

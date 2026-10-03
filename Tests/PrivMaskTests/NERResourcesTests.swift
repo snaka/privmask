@@ -35,4 +35,10 @@ struct NERResourcesTests {
     func nowhere() {
         #expect(NERResources.directory(environment: [:], executable: URL(fileURLWithPath: "/nonexistent/bin/privmask")) == nil)
     }
+
+    @Test("A word list with CRLF line ends is split into its words")
+    func crlfWordList() {
+        #expect(NERDetector.wordList("森\r\n林\r\n") == ["森", "林"])
+        #expect(NERDetector.wordList("森\n林") == ["森", "林"])
+    }
 }
