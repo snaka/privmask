@@ -143,6 +143,11 @@ struct NERDetectorTests {
         #expect(found.isEmpty)
     }
 
+    @Test("Kanji outside the BMP count as Japanese at the gate")
+    func extensionBKanji() {
+        #expect(JapaneseText.containsJapanese("𠮷"))
+    }
+
     @Test("Matches are personal names from the NER source, at low confidence")
     func source() throws {
         let found = try Self.detector(labelling: { $0 == 0 ? 1 : $0 == 1 ? 2 : 0 }).detect(in: "田中")

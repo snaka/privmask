@@ -35,13 +35,16 @@ enum LatinNameShape {
         pattern: "^(?:[aiueo]|(?:ky|gy|sh|sy|zy|jy|ch|cy|ty|dy|ny|hy|by|py|my|ry|ts)[aiueo]|[kgsztdnhbpmrywfjv][aiueo]|n(?![aiueoy])|([kgsztdhbpmrfjc])(?=\\1|ch))+$"
     )
 
-    /// Every token reads as romaji. Tokens are split on space, `.`, `_` and `-`,
-    /// and tokens made only of digits are ignored, so `IiiTake_01` passes.
+    /// Every token reads as romaji. Tokens are split on space, `.`, `_` and `-`.
+    /// Tokens made only of digits are ignored, so `IiiTake_01` passes, and so
+    /// are tokens of one ASCII letter, so an initial or a one-letter suffix
+    /// (`S. Suguri`, `koyaba_j`) passes. At least one token must be left: `S. K`
+    /// fails.
     static func readsAsRomaji(_ text: String) -> Bool {
         let tokens = text.lowercased()
             .split(whereSeparator: { " ._-\u{3000}".contains($0) })
             .map(String.init)
-            .filter { !$0.allSatisfy(\.isNumber) }
+            .filter { !$0.allSatisfy(\.isNumber) && !($0.count == 1 && $0.first!.isASCII && $0.first!.isLetter) }
         guard !tokens.isEmpty else { return false }
         return tokens.allSatisfy { token in
             let range = NSRange(token.startIndex..., in: token)
