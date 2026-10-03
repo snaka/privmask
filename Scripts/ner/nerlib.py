@@ -7,7 +7,7 @@ and the inference rules part B mirrors in Swift.
 """
 from __future__ import annotations
 
-import hashlib, json, re, sys
+import hashlib, json, re, sys, unicodedata
 
 DEV_SHARE = 0.37  # about 40 of 109 samples
 
@@ -49,9 +49,18 @@ def spans_from_labels(offsets, labels) -> list[tuple[int, int]]:
             open_ = False
     return [tuple(s) for s in spans]
 
-def plausible(text: str) -> bool:
+def plausible(text: str, words: frozenset = frozenset(), names: frozenset = frozenset()) -> bool:
     """A single kana is never a name, and an all-capitals word is a label
-    (MEDIUM, INFO) by the rule #32 set for the model's Latin output."""
+    (MEDIUM, INFO) by the rule #32 set for the model's Latin output. A span that
+    is exactly a dictionary word is not a name either, unless the word is also a
+    listed name: 内線 and クエリ go, 森 stays (#43)."""
+    folded = unicodedata.normalize("NFKC", text)  # ｸﾗｳﾄﾞ is クラウド
+    if not any(ch.isalpha() for ch in folded):
+        return False
+    if len(folded) == 1 and words and folded not in names:
+        return False  # a lone character is a name only when it is a listed one (林, 関)
+    if folded in words and folded not in names:
+        return False
     if len(text) == 1 and ("\u3040" <= text <= "\u30ff" or "\uff66" <= text <= "\uff9d"):
         return False
     if text.isascii() and text.isalpha() and text.isupper() and len(text) > 1:
@@ -84,13 +93,13 @@ def line_spans(predict, tokenizer, line: str) -> list[tuple[int, int]]:
             return merge(found)
         start += WINDOW - STRIDE
 
-def detections(predict, tokenizer, corpus: dict, system: str) -> dict:
+def detections(predict, tokenizer, corpus: dict, system: str, words: frozenset = frozenset(), names: frozenset = frozenset()) -> dict:
     samples = {}
     for s in corpus["samples"]:
         text, names, base = s["text"], [], 0
         for line in text.split("\n"):
             for a, b in line_spans(predict, tokenizer, line) if line.strip() else []:
-                if not plausible(line[a:b]):
+                if not plausible(line[a:b], words, names):
                     continue
                 a, b = base + a, base + b
                 names.append({"text": text[a:b], "location": utf16(text, a), "length": utf16(text, b) - utf16(text, a)})
@@ -112,6 +121,13 @@ def check() -> None:
     assert merge([(0, 4), (2, 6), (8, 9)]) == [(0, 6), (8, 9)]
     assert merge([(0, 2), (2, 4)]) == [(0, 2), (2, 4)], "adjacent names stay apart"
     assert utf16("𠮷田さん", 2) == 3, "a non-BMP kanji is two UTF-16 units"
+    words = {"内線", "クエリ", "森", "本"}
+    names = {"森", "佐古"}
+    assert not plausible("内線", words, names) and not plausible("クエリ", words, names), "a dictionary word is not a name"
+    assert plausible("森", words, names), "a word that is also a family name is kept"
+    assert plausible("佐古宗直", words, names) and plausible("田中", words, names)
+    assert not plausible("ｸｴﾘ", words, names), "half-width katakana is folded before the lookup"
+    assert not plausible("_", words, names) and not plausible("達", words, names) and plausible("森", words, names)
     assert not plausible("が") and not plausible("ｶ") and not plausible("MEDIUM")
     assert plausible("林") and plausible("Jun Mannou") and plausible("ゆい")
     assert side("abc") == side("abc") and {side(f"s{i}") for i in range(50)} == {"dev", "test"}

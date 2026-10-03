@@ -6,7 +6,7 @@
 
     uv run --managed-python Scripts/ner/export.py .build/ner/model Corpus/ja-names.json .build/ner/export
 """
-import glob, json, subprocess, sys, unicodedata
+import csv, glob, importlib.util, io, json, subprocess, sys, unicodedata
 from pathlib import Path
 import numpy as np, torch
 import coremltools as ct
@@ -81,8 +81,24 @@ for l in lines[:400]:
 print(f"{100 * agree / total:.2f}% of tokens labelled as PyTorch does")
 if agree / total < 0.995: failures.append(f"only {100 * agree / total:.2f}% of tokens agree with PyTorch")
 
+# Dictionary words that are not names, for the post-filter (#43). Nouns,
+# pronouns, prefixes and suffixes, any script, except proper nouns for people.
+gs_spec = importlib.util.spec_from_file_location("gs", Path(__file__).resolve().parent.parent / "generate-surnames.py")
+gs = importlib.util.module_from_spec(gs_spec); gs_spec.loader.exec_module(gs)
+words, names = set(), set()
+for r in csv.reader(io.StringIO(gs.fetch_lexicon())):
+    if len(r) < 12 or not r[0]:
+        continue
+    pos = r[5:9]
+    if pos[:3] == ["名詞", "固有名詞", "人名"]:
+        names.add(r[0])
+    elif pos[0] in ("名詞", "代名詞", "接頭辞", "接尾辞"):
+        words.add(r[0])
+words = frozenset(words - names); names = frozenset(names)
+(out / "words.txt").write_text("\n".join(sorted(words)) + "\n")
+print(f"post-filter words {len(words)} ({mb(out / 'words.txt'):.1f} MB)")
 for name, c in corpora.items():
-    json.dump(nerlib.detections(predict_ml, small, c, "ner"), open(out / f"detections-{name}.json", "w"), ensure_ascii=False)
+    json.dump(nerlib.detections(predict_ml, small, c, "ner", words, names), open(out / f"detections-{name}.json", "w"), ensure_ascii=False)
 if failures:
     sys.exit("export checks failed:\n  " + "\n  ".join(failures))
 print("export checks passed")
