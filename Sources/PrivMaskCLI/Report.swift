@@ -24,17 +24,18 @@ struct Report: Encodable {
     let masked: String
     let findings: [Finding]
     let model: ModelStatus
+    let ner: ModelStatus
     /// Chunks of the input the model layer never examined. Empty is the normal
     /// case: the layer sends as many calls as the input takes, so a chunk is
     /// missing only because its call failed.
     let chunkFailures: [BatchedNameRun.ChunkFailure]
 
     var warnings: [String] {
-        Degradation.warnings(model: model, chunkFailures: chunkFailures)
+        Degradation.warnings(model: model, ner: ner, chunkFailures: chunkFailures)
     }
 
     private enum CodingKeys: String, CodingKey {
-        case masked, findings, model, modelDetail, warnings
+        case masked, findings, model, modelDetail, ner, nerDetail, warnings
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -46,6 +47,8 @@ struct Report: Encodable {
         // for its presence before its value, which is one more thing to get
         // wrong than reading null.
         try container.encode(model.detail, forKey: .modelDetail)
+        try container.encode(ner.token, forKey: .ner)
+        try container.encode(ner.detail, forKey: .nerDetail)
         try container.encode(warnings, forKey: .warnings)
     }
 }
@@ -76,19 +79,17 @@ enum ModelStatus {
         }
     }
 
-    /// What to tell the user when the model did not run. Personal names in
-    /// Japanese are found by nothing else, so its absence is a real gap and is
-    /// always stated.
-    var warning: String? {
+    /// The layer's state as the start of a warning, or nil when it ran.
+    func state(layer: String) -> String? {
         switch self {
         case .used: return nil
-        case .disabled: return "language model disabled; Japanese personal names were not looked for"
-        case .unavailable(let reason):
-            return "language model \(reason); Japanese personal names were not looked for"
-        case .failed(let reason):
-            return "language model failed (\(reason)); Japanese personal names were not looked for"
+        case .disabled: return "\(layer) disabled"
+        case .unavailable(let reason): return "\(layer) \(reason)"
+        case .failed(let reason): return "\(layer) failed (\(reason))"
         }
     }
+
+    var isUsed: Bool { if case .used = self { return true } else { return false } }
 }
 
 /// Every way in which a run examined less than the whole input.
@@ -102,12 +103,22 @@ enum ModelStatus {
 /// for stderr without paying to build the findings it will not print — one
 /// source of wording, two callers.
 enum Degradation {
+    /// Two layers look for Japanese personal names: the NER model and the
+    /// language model. Each one's absence is stated, with what is left.
     static func warnings(
         model: ModelStatus,
+        ner: ModelStatus,
         chunkFailures: [BatchedNameRun.ChunkFailure]
     ) -> [String] {
         var warnings: [String] = []
-        if let warning = model.warning { warnings.append(warning) }
+        if let state = model.state(layer: "language model") {
+            warnings.append(state + "; Japanese personal names were "
+                + (ner.isUsed ? "looked for by the NER model alone" : "not looked for"))
+        }
+        if let state = ner.state(layer: "NER model") {
+            warnings.append(state + "; Japanese personal names were "
+                + (model.isUsed ? "looked for by the language model alone" : "not looked for"))
+        }
         warnings += chunkFailures.map { failure in
             "chunk \(failure.index) of \(failure.total) (\(failure.characters) characters) "
                 + "was not examined for names: \(failure.reason)"

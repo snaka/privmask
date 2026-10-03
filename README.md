@@ -45,6 +45,9 @@ server.
 brew install snaka/tap/privmask
 ```
 
+The formula installs a model of about 64 MB alongside the binary. Nothing is
+downloaded when privmask runs.
+
 ## Usage
 
 ```sh
@@ -69,7 +72,7 @@ step before anything is replaced. It is not published yet.
 | Email, postal codes | Patterns |
 | Credentials — API keys, tokens, secrets | A published prefix, or the name that introduces the value |
 | Your own terms | A list you keep |
-| Japanese personal names | Apple Intelligence, on device |
+| Japanese personal names | A trained NER model, and Apple Intelligence where available, on device |
 | English personal names | `NLTagger` |
 
 Credentials are found two ways. A value with a published prefix — an AWS access
@@ -174,12 +177,12 @@ otherwise; deciding is the caller's job.
 
 macOS 13 or later.
 
-**Japanese personal names additionally need macOS 26 with Apple Intelligence
-enabled.** They are found only by the on-device model, which runs by default
-wherever it is available. Where it is not, privmask says so on stderr — and in
-the `warnings` array under `--json`. That array is empty only when every layer
-ran over the whole input, so it is the one thing to check before treating the
-output as safe to pass on.
+**Japanese personal names are found by a trained NER model, which runs on
+macOS 13 and later.** On macOS 26 with Apple Intelligence enabled, the on-device
+language model adds to it. `--no-ner` turns the NER model off. Where a layer did
+not run, privmask says so on stderr — and in the `warnings` array under
+`--json`. That array is empty only when every layer ran over the whole input, so
+it is the one thing to check before treating the output as safe to pass on.
 
 ## Your own terms
 
@@ -206,6 +209,7 @@ flowchart TB
         named["The name that introduces a value<br/>api_key = … · Authorization: …<br/>whatever the value looks like"]
         dd["NSDataDetector<br/>phone numbers · addresses<br/>full-width and unhyphenated"]
         terms["Your term list<br/>~/.config/privmask/terms.txt"]
+        ner["NER model (Core ML)<br/>Japanese personal names"]
         fm["Apple Intelligence<br/>on-device foundation model<br/>Japanese personal names"]
         merge["Reconcile<br/>precedence · confidence"]
         you["You confirm<br/>what gets masked"]
@@ -217,12 +221,14 @@ flowchart TB
     in --> named
     in --> dd
     in --> terms
+    in --> ner
     in --> fm
 
     pat -->|milliseconds| merge
     named -->|milliseconds| merge
     dd -->|milliseconds| merge
     terms -->|milliseconds| merge
+    ner -->|milliseconds| merge
     fm -->|seconds| merge
 
     merge --> you
@@ -244,8 +250,7 @@ straight away, and the model's findings are folded in when they arrive.
 
 | | macOS 13 – 25 | 26, Apple Intelligence off | 26, on |
 |---|:--:|:--:|:--:|
-| Everything except the two rows below | ✅ | ✅ | ✅ |
-| **Japanese personal names** | ❌ | ❌ | ✅ |
+| Everything except the row below | ✅ | ✅ | ✅ |
 | Spelling variants of your terms | ❌ | ❌ | ✅ |
 
 - Finding names takes as long as there is Japanese to read. The text is sent to
@@ -275,7 +280,7 @@ straight away, and the model's findings are folded in when they arrive.
 - Masking is **not reversible**. There is no way to recover the original text
   from the output.
 - `--no-model` makes privmask fully deterministic and much faster, at the cost
-  of the last two rows above.
+  of the last row above.
 
 ## Development
 

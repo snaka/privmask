@@ -8,6 +8,7 @@ struct Options {
     /// people never create one — but a missing file the user named is a typo,
     /// and continuing would mask less than they asked for.
     var dictionaryWasNamed = false
+    var useNER = true
     var useModel = true
     var showHelp = false
     var showVersion = false
@@ -35,25 +36,25 @@ struct Options {
           --dictionary PATH    Term list to use.
                                Default: ~/.config/privmask/terms.txt
           --no-dictionary      Ignore the term list.
-          --no-model           Skip the on-device language model layer, which is
-                               used by default wherever it is available.
-                               Japanese personal names are found only by that
-                               layer, so this turns their detection off, and it
-                               is the way to trade them for speed: the layer
-                               reads the Japanese in chunks, one call after
-                               another, so a long document takes proportionally
-                               longer. The layer itself needs macOS 26 with
-                               Apple Intelligence enabled; without it, names are
-                               not detected either way and privmask says so.
+          --no-ner             Skip the NER model, which finds Japanese personal
+                               names on any supported macOS. It runs by
+                               default; turning it off leaves names to the
+                               language model alone, or to nothing.
+          --no-model           Skip the on-device language model layer, used by
+                               default wherever it is available. It needs macOS
+                               26 with Apple Intelligence enabled, and reads the
+                               Japanese in chunks, one call after another, so a
+                               long document takes proportionally longer. Names
+                               are still looked for by the NER model without it.
           --version            Print the version.
           -h, --help           Print this message.
 
         FOR AN AGENT RUNNING THIS
           Use --json and check "warnings". It is empty only when every layer
           ran over the whole input. A non-empty "warnings" means something was
-          not looked for — most often Japanese personal names, which no other
-          layer finds — so the text has not been cleared for sharing just
-          because it went through privmask.
+          not looked for, or was looked for by fewer layers than usual: most
+          often Japanese personal names. The text has not been cleared for
+          sharing just because it went through privmask.
 
           The --json report carries the original, unmasked values in
           findings[].text. It is as sensitive as the input: do not write it to
@@ -62,8 +63,8 @@ struct Options {
           Masking is not reversible. Feeding masked text back in recovers
           nothing.
 
-          Do not reach for --no-model to make a run faster. It turns off the
-          only layer that finds Japanese personal names.
+          Do not reach for --no-ner or --no-model to make a run faster. Each one
+          leaves Japanese personal names to fewer layers.
         """
 
     static func parse(_ arguments: [String]) throws -> Options {
@@ -73,6 +74,8 @@ struct Options {
             switch arguments[index] {
             case "--json":
                 options.json = true
+            case "--no-ner":
+                options.useNER = false
             case "--no-model":
                 options.useModel = false
             case "--no-dictionary":
