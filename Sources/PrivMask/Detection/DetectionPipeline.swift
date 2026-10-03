@@ -120,18 +120,26 @@ public struct DetectionPipeline {
         }
     }
 
-    /// A finding that came only from the language model is dropped when it
-    /// overlaps a more trustworthy finding of a different kind, in either
-    /// direction.
+    /// A finding that came only from a language model, `languageModel` or `ner`,
+    /// is dropped when it overlaps a more trustworthy finding of a different
+    /// kind, in either direction.
     ///
     /// Containment alone is not enough, because the model returns spans that
     /// *wrap* a deterministic finding rather than sit inside it — it reported
     /// `03-1234-5678（日中）` as a personal name. Masking that as a name would
     /// swallow the annotation around the phone number.
+    ///
+    /// The candidate is rated by its sources' base confidence, not its promoted
+    /// one: two model layers agreeing on a span lifts it to medium, level with a
+    /// `dataDetector` phone number, but agreement does not make a wrapping span
+    /// any less wrong.
+    private static let modelSources: Set<DetectorSource> = [.languageModel, .ner]
+
     private static func supersedesModelFinding(_ other: MaskCandidate, _ candidate: MaskCandidate) -> Bool {
-        candidate.sources == [.languageModel]
+        Set(candidate.sources).isSubset(of: modelSources)
+            && !Set(other.sources).isSubset(of: modelSources)
             && rangesOverlap(other.range, candidate.range)
-            && other.confidence > candidate.confidence
+            && other.confidence > (candidate.sources.map(\.baseConfidence).max() ?? candidate.confidence)
     }
 
     private static func contains(_ outer: NSRange, _ inner: NSRange) -> Bool {
