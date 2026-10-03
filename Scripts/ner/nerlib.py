@@ -1,0 +1,126 @@
+"""Shared pieces of the NER pipeline (#43): the corpus split, held-out names,
+and the inference rules part B mirrors in Swift.
+
+    python3 Scripts/ner/nerlib.py split Corpus/ja-names.json .build/ner
+    python3 Scripts/ner/nerlib.py union .build/ner/union.json union a.json b.json
+    python3 Scripts/ner/nerlib.py check
+"""
+from __future__ import annotations
+
+import hashlib, json, re, sys
+
+DEV_SHARE = 0.37  # about 40 of 109 samples
+
+def side(sample_id: str) -> str:
+    """dev or test, from the id alone, so adding samples never moves one."""
+    h = int(hashlib.sha256(sample_id.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
+    return "dev" if h < DEV_SHARE else "test"
+
+def split(corpus: dict) -> tuple[dict, dict]:
+    def keep(s): return {**corpus, "samples": [x for x in corpus["samples"] if side(x["id"]) == s]}
+    return keep("dev"), keep("test")
+
+def held_out_names(paths: list[str]) -> set[str]:
+    """Every name and name part in these corpora: the training data may use none."""
+    out: set[str] = set()
+    for p in paths:
+        for s in json.load(open(p))["samples"]:
+            for e in s["expected"]:
+                out.add(e["text"])
+                out.update(t for t in re.split(r"[\s　・._\-]+", e["text"]) if t)
+    return out
+
+def utf16(text: str, i: int) -> int:
+    return len(text[:i].encode("utf-16-le")) // 2
+
+def spans_from_labels(offsets, labels) -> list[tuple[int, int]]:
+    """B starts a name; I continues it, and starts one when nothing precedes it."""
+    spans: list[list[int]] = []
+    open_ = False
+    for (a, b), lab in zip(offsets, labels):
+        if a == b:  # special or empty token
+            open_ = False
+            continue
+        if lab == 1 or (lab == 2 and not open_):
+            spans.append([a, b]); open_ = True
+        elif lab == 2:
+            spans[-1][1] = b
+        else:
+            open_ = False
+    return [tuple(s) for s in spans]
+
+def merge(spans) -> list[tuple[int, int]]:
+    out: list[list[int]] = []
+    for a, b in sorted(spans):
+        if out and a < out[-1][1]:
+            out[-1][1] = max(out[-1][1], b)
+        else:
+            out.append([a, b])
+    return [tuple(s) for s in out]
+
+WINDOW, STRIDE = 254, 64  # tokens per call, leaving room for <s> and </s>
+
+def line_spans(predict, tokenizer, line: str) -> list[tuple[int, int]]:
+    """Names in one line, windowing a line longer than the model takes."""
+    enc = tokenizer(line, add_special_tokens=False, return_offsets_mapping=True)
+    ids, offs = enc["input_ids"], enc["offset_mapping"]
+    found, start = [], 0
+    while True:
+        chunk = ids[start:start + WINDOW]
+        labels = predict([tokenizer.cls_token_id] + chunk + [tokenizer.sep_token_id])[1:-1]
+        # Strip each piece's leading whitespace from its offsets.
+        offsets = [(a + (len(line[a:b]) - len(line[a:b].lstrip())), b) for a, b in offs[start:start + WINDOW]]
+        found += spans_from_labels(offsets, labels)
+        if start + WINDOW >= len(ids):
+            return merge(found)
+        start += WINDOW - STRIDE
+
+def detections(predict, tokenizer, corpus: dict, system: str) -> dict:
+    samples = {}
+    for s in corpus["samples"]:
+        text, names, base = s["text"], [], 0
+        for line in text.split("\n"):
+            for a, b in line_spans(predict, tokenizer, line) if line.strip() else []:
+                a, b = base + a, base + b
+                names.append({"text": text[a:b], "location": utf16(text, a), "length": utf16(text, b) - utf16(text, a)})
+            base += len(line) + 1
+        samples[s["id"]] = {"names": names}
+    return {"system": system, "samples": samples}
+
+def union(system: str, files: list[str]) -> dict:
+    out: dict = {}
+    for f in files:
+        for k, v in json.load(open(f))["samples"].items():
+            out.setdefault(k, {"names": []})["names"] += v["names"]
+    return {"system": system, "samples": out}
+
+def check() -> None:
+    assert spans_from_labels([(0, 2), (2, 4), (4, 5)], [1, 2, 0]) == [(0, 4)]
+    assert spans_from_labels([(0, 2), (2, 4)], [2, 2]) == [(0, 4)], "I with no B starts a name"
+    assert spans_from_labels([(0, 0), (0, 2)], [1, 1]) == [(0, 2)]
+    assert merge([(0, 4), (2, 6), (8, 9)]) == [(0, 6), (8, 9)]
+    assert merge([(0, 2), (2, 4)]) == [(0, 2), (2, 4)], "adjacent names stay apart"
+    assert utf16("𠮷田さん", 2) == 3, "a non-BMP kanji is two UTF-16 units"
+    assert side("abc") == side("abc") and {side(f"s{i}") for i in range(50)} == {"dev", "test"}
+
+    class Tok:  # one character per token, to test windowing without a model
+        cls_token_id, sep_token_id = -1, -2
+        def __call__(self, line, add_special_tokens, return_offsets_mapping):
+            return {"input_ids": list(range(len(line))), "offset_mapping": [(i, i + 1) for i in range(len(line))]}
+    line = "あ" * 600 + "田中"  # the name sits past the first window
+    predict = lambda ids: [0] + [1 if i == 600 else 2 if i == 601 else 0 for i in ids[1:-1]] + [0]
+    assert line_spans(predict, Tok(), line) == [(600, 602)], "a name past the first window is found"
+    print("nerlib: all checks passed")
+
+if __name__ == "__main__":
+    cmd = sys.argv[1]
+    if cmd == "check":
+        check()
+    elif cmd == "split":
+        corpus = json.load(open(sys.argv[2]))
+        dev, test = split(corpus)
+        for name, c in (("dev", dev), ("test", test)):
+            json.dump(c, open(f"{sys.argv[3]}/{name}.json", "w"), ensure_ascii=False, indent=1)
+        print(f"dev {len(dev['samples'])}, test {len(test['samples'])}")
+    elif cmd == "union":
+        json.dump(union(sys.argv[3], sys.argv[4:]), open(sys.argv[2], "w"), ensure_ascii=False)
