@@ -23,6 +23,6 @@ let package = Package(
         // Scores detections files against a name corpus. A development tool,
         // like the probes, so not a product. See #28.
         .executableTarget(name: "NameScore", dependencies: ["PrivMask"]),
-        .testTarget(name: "PrivMaskTests", dependencies: ["PrivMask", "PrivMaskCLI"]),
+        .testTarget(name: "PrivMaskTests", dependencies: ["PrivMask", "PrivMaskCLI"], exclude: ["Fixtures"]),
     ]
 )
