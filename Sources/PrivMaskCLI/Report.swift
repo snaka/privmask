@@ -71,6 +71,16 @@ enum ModelStatus {
         }
     }
 
+    /// Failed, with the error said in one line: a Swift error's own
+    /// description, or an NSError's localized description rather than its
+    /// whole chain of underlying errors.
+    static func failed(_ error: Error) -> ModelStatus {
+        if type(of: error) is CustomStringConvertible.Type, !(type(of: error) is NSObject.Type) {
+            return .failed(String(describing: error))
+        }
+        return .failed((error as NSError).localizedDescription)
+    }
+
     /// Why, where there is a why. Never parsed — shown.
     var detail: String? {
         switch self {

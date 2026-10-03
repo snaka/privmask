@@ -59,7 +59,7 @@ if options.useNER {
         } catch {
             // Fail open, as the language model does: what the other layers
             // found is kept, and the gap is reported.
-            nerStatus = .failed("\(error)")
+            nerStatus = .failed(error)
         }
     } else {
         let looked = NERResources.candidates().map(\.path).joined(separator: ", ")

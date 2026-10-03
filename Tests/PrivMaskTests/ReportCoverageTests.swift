@@ -158,4 +158,15 @@ struct AgentFacingCLITests {
     func helpWarnsAgainstDisablingTheModelForSpeed() {
         #expect(Options.usage.contains("Do not reach for --no-ner or --no-model"))
     }
+
+    @Test("A failure's detail is one line, not an NSError's whole chain")
+    func failureDetailIsShort() {
+        let underlying = NSError(domain: "inner", code: 1)
+        let error = NSError(domain: "com.apple.CoreML", code: 0, userInfo: [
+            NSLocalizedDescriptionKey: "the model could not be loaded", NSUnderlyingErrorKey: underlying,
+        ])
+        #expect(ModelStatus.failed(error).detail == "the model could not be loaded")
+        #expect(ModelStatus.failed(NERDetector.Failure.labelCount(expected: 3, got: 1)).detail
+            == "the model returned 1 labels for 3 tokens")
+    }
 }
