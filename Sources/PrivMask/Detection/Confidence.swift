@@ -50,11 +50,12 @@ extension DetectorSource {
     /// and also read an IP address as an address.
     /// `credentialContext` is medium: the name is a reliable signal about the
     /// slot, but nothing has checked the value.
+    /// `ner` is the trained name model of #46: high recall, and it was accepted with 19 false positives on the test corpus.
     public var baseConfidence: Confidence {
         switch self {
         case .regex, .dictionary: return .high
         case .dataDetector, .credentialContext: return .medium
-        case .nameTagger, .languageModel: return .low
+        case .nameTagger, .languageModel, .ner: return .low
         }
     }
 }
