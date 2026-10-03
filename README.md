@@ -107,7 +107,7 @@ $ printf '担当: 田中健一\nAPI_KEY=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLE\n連
       "location" : 4,
       "placeholder" : "[NAME_1]",
       "sources" : [
-        "languageModel"
+        "ner"
       ],
       "text" : "田中健一"
     },
@@ -137,6 +137,8 @@ $ printf '担当: 田中健一\nAPI_KEY=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLE\n連
   "masked" : "担当: [NAME_1]\nAPI_KEY=[SECRET_1]\n連絡先 [PHONE_1]\n",
   "model" : "used",
   "modelDetail" : null,
+  "ner" : "used",
+  "nerDetail" : null,
   "warnings" : [
 
   ]
@@ -155,7 +157,7 @@ Each finding:
 |---|---|
 | `kind` | `email`, `phoneNumber`, `address`, `postalCode`, `personalName`, `organizationName`, `placeName`, `myNumber`, `credential`, `dictionaryTerm` |
 | `confidence` | `low`, `medium` or `high`. Normally a property of the detector that produced the match, promoted one step when two detectors find the same span independently — agreement is the only cheap evidence there is |
-| `sources` | Which detectors found it: `dataDetector`, `nameTagger`, `regex`, `dictionary`, `languageModel`, `credentialContext` |
+| `sources` | Which detectors found it: `dataDetector`, `nameTagger`, `regex`, `dictionary`, `ner`, `languageModel`, `credentialContext` |
 | `text` | The original value |
 | `location`, `length` | Where it sits, as UTF-16 offsets |
 | `placeholder` | What replaced it in `masked`, or `null` — two findings can overlap, and only one of them is replaced |
@@ -167,6 +169,8 @@ And around them:
 | `masked` | The same text `privmask` would have written without `--json` |
 | `model` | `used`, `disabled`, `unavailable` or `failed` — a closed set |
 | `modelDetail` | Why, when that is not `used`. Otherwise `null` |
+| `ner` | The NER model: `used`, `disabled`, `unavailable` or `failed` — the same closed set |
+| `nerDetail` | Why, when that is not `used`. Otherwise `null` |
 | `warnings` | What was not examined. See [Requirements](#requirements): empty is the only value that means every layer ran over the whole input |
 
 Everything found is masked, including low-confidence findings — there is no
