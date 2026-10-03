@@ -89,10 +89,11 @@ cores).
 | one line at a time           | 21.8s    | 2.8s       |
 | lines run concurrently       | 9.8s     | 2.9s       |
 
-NER makes one Core ML call per non-blank line, about 3.8 ms each when run one
-after another. The lines are independent, so `NERDetector.detect(in:)` runs
+NER makes one Core ML call per non-blank line. Run one after another, NER added
+about 3.8 ms of wall time per line, tokenizing included (21.8s less 2.8s, over
+5,000 lines). The lines are independent, so `NERDetector.detect(in:)` runs
 them with `concurrentPerform`; output is byte-identical to the sequential run.
-The gain stops at about 2.2 times with 12 cores: CPU time went from 21s to 44s,
-so the calls contend for something inside Core ML. Lines are not packed into
+The gain stops at about 2.2 times with 12 cores: wall time halved while CPU
+time went from 21s to 44s, so the calls do not scale with cores. Lines are not packed into
 one call, because that changes what the model sees and so its labels.
 
