@@ -49,6 +49,15 @@ def spans_from_labels(offsets, labels) -> list[tuple[int, int]]:
             open_ = False
     return [tuple(s) for s in spans]
 
+def plausible(text: str) -> bool:
+    """A single kana is never a name, and an all-capitals word is a label
+    (MEDIUM, INFO) by the rule #32 set for the model's Latin output."""
+    if len(text) == 1 and ("\u3040" <= text <= "\u30ff" or "\uff66" <= text <= "\uff9d"):
+        return False
+    if text.isascii() and text.isalpha() and text.isupper() and len(text) > 1:
+        return False
+    return True
+
 def merge(spans) -> list[tuple[int, int]]:
     out: list[list[int]] = []
     for a, b in sorted(spans):
@@ -81,6 +90,8 @@ def detections(predict, tokenizer, corpus: dict, system: str) -> dict:
         text, names, base = s["text"], [], 0
         for line in text.split("\n"):
             for a, b in line_spans(predict, tokenizer, line) if line.strip() else []:
+                if not plausible(line[a:b]):
+                    continue
                 a, b = base + a, base + b
                 names.append({"text": text[a:b], "location": utf16(text, a), "length": utf16(text, b) - utf16(text, a)})
             base += len(line) + 1
@@ -101,6 +112,8 @@ def check() -> None:
     assert merge([(0, 4), (2, 6), (8, 9)]) == [(0, 6), (8, 9)]
     assert merge([(0, 2), (2, 4)]) == [(0, 2), (2, 4)], "adjacent names stay apart"
     assert utf16("𠮷田さん", 2) == 3, "a non-BMP kanji is two UTF-16 units"
+    assert not plausible("が") and not plausible("ｶ") and not plausible("MEDIUM")
+    assert plausible("林") and plausible("Jun Mannou") and plausible("ゆい")
     assert side("abc") == side("abc") and {side(f"s{i}") for i in range(50)} == {"dev", "test"}
 
     class Tok:  # one character per token, to test windowing without a model

@@ -19,8 +19,11 @@ spec = importlib.util.spec_from_file_location("gs", HERE.parent / "generate-surn
 gs = importlib.util.module_from_spec(spec); spec.loader.exec_module(gs)
 
 # --- names -----------------------------------------------------------------
+NOUNS: list[str] = []  # SudachiDict common nouns, filled by name_pools
+
 def name_pools(held: set[str]):
     surn, single, long_, given, kana_s, kana_g = (set() for _ in range(6))
+    nouns: set[str] = set()
     for r in csv.reader(io.StringIO(gs.fetch_lexicon())):
         if len(r) < 12:
             continue
@@ -28,11 +31,16 @@ def name_pools(held: set[str]):
         if pos == ["名詞", "固有名詞", "人名", "姓"] and gs.is_kanji(s):
             (single if len(s) == 1 else long_ if len(s) >= 4 else surn).add(s)
             if gs.is_katakana(reading): kana_s.add(reading)
+        elif pos[:2] == ["名詞", "普通名詞"] and 2 <= len(s) <= 6 and (gs.is_kanji(s) or gs.is_katakana(s)):
+            nouns.add(s)
         elif pos == ["名詞", "固有名詞", "人名", "名"] and gs.is_kanji(s) and len(s) >= 2:
             given.add(s)
             if gs.is_katakana(reading): kana_g.add(reading)
     low = {h.lower() for h in held}
     clean = lambda x: sorted(v for v in x if v not in held)
+    # A common noun that is also a name part would teach the model the name is
+    # not one, so those are left out.
+    NOUNS[:] = sorted(nouns - surn - single - long_ - given)
     # A reading is also written in hiragana and in romaji, and neither form may be held out.
     clean_kana = lambda x: sorted(v for v in x if v not in held and hira(v) not in held and romaji(v).lower() not in low)
     return (*map(clean, (surn, single, long_, given)), *map(clean_kana, (kana_s, kana_g)))
@@ -103,6 +111,10 @@ NAMED = [
     "{who}{h}\n\n先日の件、{who}よりご連絡いたします。", "ご不明な点は{who}までお問い合わせください。", "以上、{who}より。",
     # messy
     "{who}→{who}へ引継ぎ済", "{who}さんに確認済み、{who}は未確認", "担当:{who}／確認:{who}", "{who}{h}　から　連絡あり", "assignee={acct}　reviewer={who}",
+    # names beside ordinary vocabulary, so position and neighbours are not enough
+    "{word}の{biz}は{who}{h}が確認しました。", "- 10:{d} {who}（{tech}担当）が参加。{biz}を確認。", "{who}{h}の{word}対応で{biz}は解消しました。",
+    "{tech} の設定は{who}{h}が見直しました。{word}の{biz}は影響なし。", "{casual}。{who}{h}、{biz}の件で相談させてください。",
+    "{who}{h} {casual}", "{word}に{who}が{biz}を実施し、{word}は{who}{h}が確認した。",
 ]
 UNNAMED = [
     # identifier-only lines
@@ -119,14 +131,40 @@ UNNAMED = [
     "田中式アルゴリズムで再計算した。", "中村屋のカレーパンを差し入れ。", "東口改札付近の基地局で障害。", "森林公園側のアンテナは正常です。",
     "高橋ビル 3F 受付までお願いいたします。", "Grafana の search-overview を確認してください。", "Android アプリが起動時にクラッシュ。",
     "山田式の見積もりでは{d}人日です。", "佐藤製作所の部品が入荷しました。", "新宿第{d}データセンターで点検。",
+    # technical prose and vocabulary with no name
+    "{word}のデプロイで {tech} の{biz}が悪化した。", "p99 {biz}が通常の {d}0ms から {d}00ms に上昇。", "{tech} のリーダーインスタンスを{biz}した。",
+    "{biz}の{word}対応として {tech} を導入する。", "## {biz}\n\n{word}の{biz}について整理する。", "{word}: {biz}の{word}を確認。",
+    "Server: {tech} / Cache: {tech}", "{tech}: enabled", "{casual}", "{casual}、{biz}は{word}のまま進めます。",
+    "インシデントをクローズしました。{word}の{biz}を共有します。", "{biz}をさばききれず、{biz}が発生した。",
+    # any common noun reads naturally in these frames
+    "{noun}の件、確認しました。", "{noun}について共有します。", "{noun}を確認しています。", "{noun}の資料を更新しました。",
+    "- {noun}", "## {noun}", "| {noun} | 済 |", "{noun}は{noun}と同じ扱いです。", "{noun}の{noun}を見直します。", "{noun}（{tech}）",
+    # markdown and code syntax
+    "```bash\nkubectl get pods -n {svc}\n```", "```\n{tech}\n```", "`{svc}` の `{svc}.yaml` を更新", "> **Note:** {noun}を参照",
+    "| 項目 | 値 |\n|---|---|\n| {noun} | {d} |", "1. {noun}を確認\n2. {noun}を更新",
 ]
-BIZ = ["集計", "請求", "在庫", "障害対応", "リリース", "決済", "会計", "出荷", "請求書発行", "棚卸", "給与計算", "検索インデックス", "通知", "監査ログ"]
+BIZ = ["集計", "請求", "在庫", "障害対応", "リリース", "決済", "会計", "出荷", "請求書発行", "棚卸", "給与計算", "検索インデックス", "通知", "監査ログ",
+       "照合ジョブ", "二重計上", "月初処理", "月末締め", "レイテンシ", "スループット", "ロールバック", "デプロイ", "フェイルオーバー", "レプリカ",
+       "キャッシュ", "トポロジ", "アジェンダ", "マイルストーン", "インシデント", "ポストモーテム", "バックログ", "スプリント", "障害訓練", "関西拠点"]
+TECH = ["Aurora", "Canary", "Redis", "Node.js", "python", "PostgreSQL", "Kubernetes", "Terraform", "Datadog", "Sentry", "Cache Layer",
+        "MILESTONES", "emp_no", "user_id", "Load Balancer", "API Gateway", "GitHub Actions", "Feature Flag", "Blue Green", "Staging"]
+WORDS = ["直前", "直後", "月初", "月末", "静的", "動的", "後勝ち", "先勝ち", "前回", "今回", "本番", "検証", "暫定", "恒久", "影響範囲", "原因", "対策", "経緯"]
+CASUAL = ["おつかれさまです", "おねがいします", "ありがとうございます", "まちがいでした", "ふりがなを付けておきます", "すみません、おくれます",
+          "りょうかいです", "よろしくおねがいします", "いったん様子見します", "おそくなりました"]
+HALF = str.maketrans("アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンァィゥェォャュョッー",
+                     "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｧｨｩｪｫｬｭｮｯｰ")
+def halfwidth(text: str) -> str:
+    """Half-width katakana, as old systems and messy logs write it. Voiced marks
+    are left composed, which keeps character offsets unchanged."""
+    return text.translate(HALF)
 FILL = {
     "ts": lambda r: f"2026-09-{r.randint(1,30):02d}T{r.randint(0,23):02d}:{r.randint(0,59):02d}:00+09:00",
     "svc": lambda r: r.choice(["order-svc", "notify", "billing", "auth", "search-api", "inventory", "payments"]),
     "id": lambda r: f"{r.randrange(16**6):06x}", "d": lambda r: str(r.randint(1, 30)),
     "co": lambda r: r.choice(["株式会社サンプル商事", "サンプルシステムズ", "当社", "弊社"]),
     "biz": lambda r: r.choice(BIZ), "h": lambda r: r.choice(HON),
+    "noun": lambda r: r.choice(NOUNS),
+    "tech": lambda r: r.choice(TECH), "word": lambda r: r.choice(WORDS), "casual": lambda r: r.choice(CASUAL),
     "who_role": lambda r: r.choice(FILLERS["who"] + ["未定", "全員", "別途調整", "調整中"]), "mention_only": lambda r: r.choice(FILLERS["mention"]),
     "addressee_only": lambda r: r.choice(FILLERS["addressee"]),
 }
@@ -160,12 +198,15 @@ def generate(n: int, seed: int, held: set[str]):
         if rng.random() < 0.25:   # a sample with no name at all; filled slots add more
             lines = [render(rng, rng.choice(UNNAMED), P) for _ in range(rng.randint(1, 4))]
         else:
-            lines = [render(rng, rng.choice(NAMED if rng.random() < 0.7 else UNNAMED), P) for _ in range(rng.randint(1, 4))]
+            lines = [render(rng, rng.choice(NAMED if rng.random() < 0.6 else UNNAMED), P) for _ in range(rng.randint(1, 5))]
         text, spans = "", []
+        joiner = "" if rng.random() < 0.25 else "\n"   # a paragraph is one long line
         for line, sp in lines:
-            if text: text += "\n"
+            if text: text += joiner
             spans += [[a + len(text), b + len(text)] for a, b in sp]
             text += line
+        if rng.random() < 0.08:
+            text = halfwidth(text)
         yield {"text": text, "spans": spans}
 
 def check(path: str, held: set[str]) -> None:
