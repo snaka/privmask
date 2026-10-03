@@ -18,7 +18,8 @@ public enum JapaneseText {
             0x3400...0x4DBF,  // CJK extension A
             0x4E00...0x9FFF,  // CJK unified ideographs
             0xF900...0xFAFF,  // CJK compatibility ideographs
-            0xFF66...0xFF9D:  // half-width katakana
+            0xFF66...0xFF9D,  // half-width katakana
+            0x20000...0x3134F:  // CJK extensions B to G, e.g. the 𠮷 of 𠮷田
             return true
         default:
             return false

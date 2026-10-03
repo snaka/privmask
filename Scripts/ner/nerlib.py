@@ -83,22 +83,25 @@ def merge(spans) -> list[tuple[int, int]]:
 # window repeats. A window starts WINDOW - OVERLAP tokens after the last.
 WINDOW, OVERLAP = 254, 64
 
-def line_spans(predict, tokenizer, line: str) -> list[tuple[int, int]]:
-    """Names in one line, windowing a line longer than the model takes."""
+def line_tokens(tokenizer, line: str) -> tuple[list[int], list[tuple[int, int]]]:
+    """Ids and code-point offsets for one line, as line_spans reads them: a
+    lone word-boundary piece (U+2581) gets an empty offset, and each piece's
+    leading whitespace is stripped from its offsets. (#43 review)"""
     enc = tokenizer(line, add_special_tokens=False, return_offsets_mapping=True)
     ids, offs = enc["input_ids"], enc["offset_mapping"]
-    # A lone word-boundary piece (U+2581) is given the offset of the character
-    # after it by the HF tokenizer; it is not part of any name, so it is made
-    # empty, and spans come only from pieces that carry text. (#43 review)
     pieces = tokenizer.convert_ids_to_tokens(ids) if hasattr(tokenizer, "convert_ids_to_tokens") else [None] * len(ids)
     offs = [(b, b) if piece == "\u2581" else (a, b) for piece, (a, b) in zip(pieces, offs)]
+    offs = [(a + (len(line[a:b]) - len(line[a:b].lstrip())), b) for a, b in offs]
+    return ids, offs
+
+def line_spans(predict, tokenizer, line: str) -> list[tuple[int, int]]:
+    """Names in one line, windowing a line longer than the model takes."""
+    ids, offs = line_tokens(tokenizer, line)
     found, start = [], 0
     while True:
         chunk = ids[start:start + WINDOW]
         labels = predict([tokenizer.cls_token_id] + chunk + [tokenizer.sep_token_id])[1:-1]
-        # Strip each piece's leading whitespace from its offsets.
-        offsets = [(a + (len(line[a:b]) - len(line[a:b].lstrip())), b) for a, b in offs[start:start + WINDOW]]
-        found += spans_from_labels(offsets, labels)
+        found += spans_from_labels(offs[start:start + WINDOW], labels)
         if start + WINDOW >= len(ids):
             return merge(found)
         start += WINDOW - OVERLAP

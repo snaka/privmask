@@ -21,9 +21,10 @@ struct ReportCoverageTests {
 
     private func report(
         model: ModelStatus,
+        ner: ModelStatus = .used,
         failures: [BatchedNameRun.ChunkFailure] = []
     ) -> Report {
-        Report(masked: "text", findings: [], model: model, chunkFailures: failures)
+        Report(masked: "text", findings: [], model: model, ner: ner, chunkFailures: failures)
     }
 
     private static let oneFailure = [
@@ -60,11 +61,33 @@ struct ReportCoverageTests {
         #expect(try encode(report(model: .used))["warnings"] as? [String] == [])
     }
 
-    @Test("warnings reports a model that did not run")
-    func warnsWhenTheModelDidNotRun() throws {
+    @Test("warnings reports a model that did not run, and that names were looked for by NER alone")
+    func modelDidNotRun() throws {
         let warnings = try encode(report(model: .disabled))["warnings"] as? [String] ?? []
-        #expect(warnings.count == 1)
-        #expect(warnings.first?.contains("Japanese personal names were not looked for") == true)
+        #expect(warnings == ["language model disabled; Japanese personal names were looked for by the NER model alone"])
+    }
+
+    @Test("warnings reports NER that did not run, and that names were looked for by the language model alone")
+    func nerDidNotRun() throws {
+        let warnings = try encode(report(model: .used, ner: .unavailable("is not installed")))["warnings"] as? [String] ?? []
+        #expect(warnings == ["NER model is not installed; Japanese personal names were looked for by the language model alone"])
+    }
+
+    @Test("With neither layer, both are named and names were not looked for")
+    func neither() throws {
+        let warnings = try encode(report(model: .unavailable("requires macOS 26 or later"), ner: .disabled))["warnings"] as? [String] ?? []
+        #expect(warnings == [
+            "language model requires macOS 26 or later; Japanese personal names were not looked for",
+            "NER model disabled; Japanese personal names were not looked for",
+        ])
+    }
+
+    @Test("ner is a bare token with its reason beside it, as model is")
+    func nerToken() throws {
+        let json = try encode(report(model: .used, ner: .failed("bad model")))
+        #expect(json["ner"] as? String == "failed")
+        #expect(json["nerDetail"] as? String == "bad model")
+        #expect(try encode(report(model: .used))["nerDetail"] is NSNull)
     }
 
     @Test("warnings reports a chunk the model never examined, and says which")
@@ -131,8 +154,19 @@ struct AgentFacingCLITests {
         #expect(Options.usage.lowercased().contains("not reversible"))
     }
 
-    @Test("The help says not to reach for --no-model to go faster")
+    @Test("The help says not to reach for --no-ner or --no-model to go faster")
     func helpWarnsAgainstDisablingTheModelForSpeed() {
-        #expect(Options.usage.contains("Do not reach for --no-model"))
+        #expect(Options.usage.contains("Do not reach for --no-ner or --no-model"))
+    }
+
+    @Test("A failure's detail is one line, not an NSError's whole chain")
+    func failureDetailIsShort() {
+        let underlying = NSError(domain: "inner", code: 1)
+        let error = NSError(domain: "com.apple.CoreML", code: 0, userInfo: [
+            NSLocalizedDescriptionKey: "the model could not be loaded", NSUnderlyingErrorKey: underlying,
+        ])
+        #expect(ModelStatus.failed(error).detail == "the model could not be loaded")
+        #expect(ModelStatus.failed(NERDetector.Failure.labelCount(expected: 3, got: 1)).detail
+            == "the model returned 1 labels for 3 tokens")
     }
 }

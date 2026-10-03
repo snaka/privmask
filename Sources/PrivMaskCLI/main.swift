@@ -48,6 +48,24 @@ if let url = options.dictionaryURL {
 
 let pipeline = DetectionPipeline(dictionaryTerms: terms)
 var candidates = pipeline.detect(in: input)
+var nerMatches: [DetectedMatch] = []
+var nerStatus = ModelStatus.disabled
+if options.useNER {
+    if let directory = NERResources.directory() {
+        do {
+            nerMatches = try NERDetector.load(from: directory).detect(in: input)
+            candidates = pipeline.detect(in: input, additional: nerMatches)
+            nerStatus = .used
+        } catch {
+            // Fail open, as the language model does: what the other layers
+            // found is kept, and the gap is reported.
+            nerStatus = .failed(error)
+        }
+    } else {
+        let looked = NERResources.candidates().map(\.path).joined(separator: ", ")
+        nerStatus = .unavailable("is not installed (looked in \(looked))")
+    }
+}
 var modelStatus = ModelStatus.disabled
 var chunkFailures: [BatchedNameRun.ChunkFailure] = []
 
@@ -62,7 +80,7 @@ if options.useModel {
                 if chunk == 1 { await progress?.start(total: total) } else { await progress?.advance(to: chunk) }
             }
             await progress?.stop()
-            candidates = pipeline.detect(in: input, additional: outcome.matches)
+            candidates = pipeline.detect(in: input, additional: nerMatches + outcome.matches)
             chunkFailures = outcome.failures
             modelStatus = .used
         } catch {
@@ -96,6 +114,7 @@ if options.json {
             )
         },
         model: modelStatus,
+        ner: nerStatus,
         chunkFailures: chunkFailures
     )
     let encoder = JSONEncoder()
@@ -114,6 +133,6 @@ if options.json {
 // This runs in both modes. --json carries the same list in `warnings`, and the
 // machine-readable mode being the quieter one was a trap for anyone who piped
 // stdout and watched the terminal.
-for warning in Degradation.warnings(model: modelStatus, chunkFailures: chunkFailures) {
+for warning in Degradation.warnings(model: modelStatus, ner: nerStatus, chunkFailures: chunkFailures) {
     FileHandle.standardError.write(Data("privmask: \(warning)\n".utf8))
 }

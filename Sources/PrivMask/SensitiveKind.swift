@@ -23,6 +23,7 @@ public enum DetectorSource: String, Hashable, Sendable, Codable {
     case dictionary
     case languageModel
     case credentialContext
+    case ner
 }
 
 /// One piece of sensitive information located in a text.

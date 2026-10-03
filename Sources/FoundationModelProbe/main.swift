@@ -1,3 +1,4 @@
+import CoreML
 import Foundation
 import PrivMask
 
@@ -27,6 +28,9 @@ func runProbe() async throws {
     // plus whatever the model adds. Measuring the model alone understates it,
     // because English names are NLTagger's job and never reach the model.
     let pipeline = DetectionPipeline(dictionaryTerms: corpus.dictionary)
+    let nerDirectory = NERResources.directory()
+    let nerDetector = try nerDirectory.map { try NERDetector.load(from: $0) }
+    print("NER model: \(nerDirectory?.path ?? "none")")
 
     var detections: [String: [DetectedMatch]] = [:]
     var ungroundedBySample: [(sampleID: String, texts: [String])] = []
@@ -44,14 +48,15 @@ func runProbe() async throws {
                 DetectedMatch(kind: $0.kind, source: $0.sources[0], range: $0.range, text: $0.text)
             }
         }
-        detections[sample.id] = flatten(pipeline.detect(in: sample.text))
+        let ner = try nerDetector?.detect(in: sample.text) ?? []
+        detections[sample.id] = flatten(pipeline.detect(in: sample.text, additional: ner))
 
         do {
             let outcome = try await detector.detect(in: sample.text)
             // Reconcile through the pipeline, exactly as the UI does when the
             // model returns, so precedence applies to the model's findings too.
             detections[sample.id] = flatten(
-                pipeline.detect(in: sample.text, additional: outcome.matches)
+                pipeline.detect(in: sample.text, additional: ner + outcome.matches)
             )
             durations.append(outcome.duration)
             if !outcome.failures.isEmpty { samplesWithFailedChunks += 1 }
@@ -141,8 +146,37 @@ func measureLatencyScaling() async {
     }
 }
 
+/// CPU against the Neural Engine for the NER layer: time over the corpus, and
+/// whether the labels agree. Decides the default compute units. See #46.
+func measureNER() throws {
+    guard let directory = NERResources.directory() else { print("no NER model; set PRIVMASK_NER_DIR"); return }
+    let corpus = try Corpus.load(contentsOf: ProbeLocator.corpusURL())
+    var baseline: [String: [String]] = [:]
+    for (label, units) in [("cpuOnly", MLComputeUnits.cpuOnly), ("cpuAndNeuralEngine", .cpuAndNeuralEngine)] {
+        // .all is left out: on the measured machine it aborts the process in
+        // MPSGraph ("MLIR pass manager failed"). See docs/ner-runtime.md.
+        let loadStart = Date()
+        let detector = try NERDetector.load(from: directory, computeUnits: units)
+        let loaded = Date().timeIntervalSince(loadStart)
+        let start = Date()
+        var names: [String: [String]] = [:]
+        for sample in corpus.samples {
+            names[sample.id] = try detector.detect(in: sample.text).map { "\($0.range.location):\($0.text)" }
+        }
+        let elapsed = Date().timeIntervalSince(start)
+        if baseline.isEmpty { baseline = names }
+        let differing = corpus.samples.filter { names[$0.id] != baseline[$0.id] }.count
+        print(String(format: "  %-20@ load %.2fs  corpus %.2fs  samples differing from cpuOnly: %d", label as NSString, loaded, elapsed, differing))
+    }
+}
+
 print("privmask — full pipeline probe (deterministic + on-device model)")
 print("macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)")
+
+if ProcessInfo.processInfo.environment["PRIVMASK_NER_MEASURE"] == "1" {
+    try measureNER()
+    exit(0)
+}
 
 if #available(macOS 26.0, *) {
     if ProcessInfo.processInfo.environment["PRIVMASK_LATENCY"] == "1" {

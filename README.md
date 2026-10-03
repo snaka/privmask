@@ -45,6 +45,9 @@ server.
 brew install snaka/tap/privmask
 ```
 
+The formula installs a model of about 64 MB alongside the binary. Nothing is
+downloaded when privmask runs.
+
 ## Usage
 
 ```sh
@@ -69,7 +72,7 @@ step before anything is replaced. It is not published yet.
 | Email, postal codes | Patterns |
 | Credentials — API keys, tokens, secrets | A published prefix, or the name that introduces the value |
 | Your own terms | A list you keep |
-| Japanese personal names | Apple Intelligence, on device |
+| Japanese personal names | A trained NER model, and Apple Intelligence where available, on device |
 | English personal names | `NLTagger` |
 
 Credentials are found two ways. A value with a published prefix — an AWS access
@@ -104,7 +107,7 @@ $ printf '担当: 田中健一\nAPI_KEY=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLE\n連
       "location" : 4,
       "placeholder" : "[NAME_1]",
       "sources" : [
-        "languageModel"
+        "ner"
       ],
       "text" : "田中健一"
     },
@@ -134,6 +137,8 @@ $ printf '担当: 田中健一\nAPI_KEY=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLE\n連
   "masked" : "担当: [NAME_1]\nAPI_KEY=[SECRET_1]\n連絡先 [PHONE_1]\n",
   "model" : "used",
   "modelDetail" : null,
+  "ner" : "used",
+  "nerDetail" : null,
   "warnings" : [
 
   ]
@@ -152,7 +157,7 @@ Each finding:
 |---|---|
 | `kind` | `email`, `phoneNumber`, `address`, `postalCode`, `personalName`, `organizationName`, `placeName`, `myNumber`, `credential`, `dictionaryTerm` |
 | `confidence` | `low`, `medium` or `high`. Normally a property of the detector that produced the match, promoted one step when two detectors find the same span independently — agreement is the only cheap evidence there is |
-| `sources` | Which detectors found it: `dataDetector`, `nameTagger`, `regex`, `dictionary`, `languageModel`, `credentialContext` |
+| `sources` | Which detectors found it: `dataDetector`, `nameTagger`, `regex`, `dictionary`, `ner`, `languageModel`, `credentialContext` |
 | `text` | The original value |
 | `location`, `length` | Where it sits, as UTF-16 offsets |
 | `placeholder` | What replaced it in `masked`, or `null` — two findings can overlap, and only one of them is replaced |
@@ -164,6 +169,8 @@ And around them:
 | `masked` | The same text `privmask` would have written without `--json` |
 | `model` | `used`, `disabled`, `unavailable` or `failed` — a closed set |
 | `modelDetail` | Why, when that is not `used`. Otherwise `null` |
+| `ner` | The NER model: `used`, `disabled`, `unavailable` or `failed` — the same closed set |
+| `nerDetail` | Why, when that is not `used`. Otherwise `null` |
 | `warnings` | What was not examined. See [Requirements](#requirements): empty is the only value that means every layer ran over the whole input |
 
 Everything found is masked, including low-confidence findings — there is no
@@ -174,12 +181,12 @@ otherwise; deciding is the caller's job.
 
 macOS 13 or later.
 
-**Japanese personal names additionally need macOS 26 with Apple Intelligence
-enabled.** They are found only by the on-device model, which runs by default
-wherever it is available. Where it is not, privmask says so on stderr — and in
-the `warnings` array under `--json`. That array is empty only when every layer
-ran over the whole input, so it is the one thing to check before treating the
-output as safe to pass on.
+**Japanese personal names are found by a trained NER model, which runs on
+macOS 13 and later.** On macOS 26 with Apple Intelligence enabled, the on-device
+language model adds to it. `--no-ner` turns the NER model off. Where a layer did
+not run, privmask says so on stderr — and in the `warnings` array under
+`--json`. That array is empty only when every layer ran over the whole input, so
+it is the one thing to check before treating the output as safe to pass on.
 
 ## Your own terms
 
@@ -206,6 +213,7 @@ flowchart TB
         named["The name that introduces a value<br/>api_key = … · Authorization: …<br/>whatever the value looks like"]
         dd["NSDataDetector<br/>phone numbers · addresses<br/>full-width and unhyphenated"]
         terms["Your term list<br/>~/.config/privmask/terms.txt"]
+        ner["NER model (Core ML)<br/>Japanese personal names"]
         fm["Apple Intelligence<br/>on-device foundation model<br/>Japanese personal names"]
         merge["Reconcile<br/>precedence · confidence"]
         you["You confirm<br/>what gets masked"]
@@ -217,12 +225,14 @@ flowchart TB
     in --> named
     in --> dd
     in --> terms
+    in --> ner
     in --> fm
 
     pat -->|milliseconds| merge
     named -->|milliseconds| merge
     dd -->|milliseconds| merge
     terms -->|milliseconds| merge
+    ner -->|a millisecond or two a line| merge
     fm -->|seconds| merge
 
     merge --> you
@@ -231,11 +241,11 @@ flowchart TB
 
 No arrow leaves that box, and that is not a simplification.
 
-It matters because finding a Japanese personal name takes a language model —
+It matters because finding a Japanese personal name takes a trained model —
 patterns cannot, and neither can `NLTagger`, which has no Japanese entity model
-at all. Until the on-device model existed, that capability meant sending the
-text to somebody's server: handing over the exact thing you were trying not to
-share.
+at all. Until models small enough to run on a Mac existed, that capability meant
+sending the text to somebody's server: handing over the exact thing you were
+trying not to share. Both the NER model and the language model run on device.
 
 The two speeds are why it feels immediate: the deterministic detectors are shown
 straight away, and the model's findings are folded in when they arrive.
@@ -244,27 +254,26 @@ straight away, and the model's findings are folded in when they arrive.
 
 | | macOS 13 – 25 | 26, Apple Intelligence off | 26, on |
 |---|:--:|:--:|:--:|
-| Everything except the two rows below | ✅ | ✅ | ✅ |
-| **Japanese personal names** | ❌ | ❌ | ✅ |
+| Everything except the row below | ✅ | ✅ | ✅ |
 | Spelling variants of your terms | ❌ | ❌ | ✅ |
 
-- Finding names takes as long as there is Japanese to read. The text is sent to
-  the model in chunks of about 1,500 characters, one call after another — the
-  on-device model runs them one at a time whatever you do, so a document with a
-  lot of Japanese in it takes proportionally longer. Everything is examined; the
-  cost is time. `--no-model` skips the whole layer when you would rather have
-  the speed. In a terminal, a line on stderr says which chunk it is reading; in
-  a pipe, nothing is drawn.
-- If a chunk fails, the names in the other chunks are still found and the chunk
-  that failed is named in a warning. A warning means that part of the text was
+- The language model layer takes as long as there is Japanese to read. The text
+  is sent to it in chunks of about 1,500 characters, one call after another —
+  the on-device model runs them one at a time whatever you do, so a document
+  with a lot of Japanese in it takes proportionally longer. Everything is
+  examined; the cost is time. `--no-model` skips that layer when you would
+  rather have the speed. In a terminal, a line on stderr says which chunk it is
+  reading; in a pipe, nothing is drawn.
+- If a language model chunk fails, the names in the other chunks are still
+  found and the chunk that failed is named in a warning. A warning means that part of the text was
   not examined — not that nothing was.
-- A name that competes with others on the same line is missed, run after run.
-  In the test corpus a name sharing a line with a company name, a phone number
+- The language model misses a name that competes with others on the same line,
+  run after run. In the test corpus a name sharing a line with a company name, a phone number
   and an email is not found at all — not occasionally, every time. Smaller
   chunks do find it, and make the model mask commit hashes and version numbers
   instead ([#1](https://github.com/snaka/privmask/issues/1)).
-- Separately, the model varies between runs. A name it finds in one run can be
-  missed in the next.
+- Separately, the language model varies between runs. A name it finds in one
+  run can be missed in the next.
 - A credential with neither a recognisable name nor a published prefix is not
   found — scoring values by randomness was rejected because that would also
   flag the commit hash and request ID this README's own example keeps intact.
@@ -274,8 +283,11 @@ straight away, and the model's findings are folded in when they arrive.
   document intact — so a passphrase with spaces in it is only partly covered.
 - Masking is **not reversible**. There is no way to recover the original text
   from the output.
-- `--no-model` makes privmask fully deterministic and much faster, at the cost
-  of the last two rows above.
+- `--no-model` makes privmask fully deterministic and takes away the seconds per
+  chunk of the language model layer, at the cost of the last row above. The NER
+  layer still runs, one model call per line: on a 5,000-line log it takes about
+  7 of the 10 seconds, and `--no-ner` takes those away too
+  ([measurement](docs/ner-runtime.md#speed-on-a-long-log)).
 
 ## Development
 

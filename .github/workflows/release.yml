@@ -20,6 +20,11 @@ jobs:
     # personal names — but failing in the toolchain check below says so plainly.
     runs-on: macos-26
     timeout-minutes: 30
+    env:
+      # The NER model installs from a release of its own; the tap formula's
+      # resource "ner" pins the same file. Change both together. See #46.
+      NER_MODEL_URL: https://github.com/snaka/privmask/releases/download/ner-model-1/privmask-ner-1.tar.gz
+      NER_MODEL_SHA256: 9c68188f141e0fe46473fbd21fadb5ddc652fc75a73055f22e432800732f5f88
 
     steps:
       - uses: actions/checkout@v7
@@ -113,6 +118,16 @@ jobs:
           echo "AppleLanguages: $(defaults read NSGlobalDomain AppleLanguages | tr -d '\n')"
           echo "AppleLocale:    $(defaults read NSGlobalDomain AppleLocale)"
 
+      - name: Fetch the NER model
+        run: |
+          set -euo pipefail
+          curl -fsSL "$NER_MODEL_URL" -o "$RUNNER_TEMP/ner.tar.gz"
+          echo "$NER_MODEL_SHA256  $RUNNER_TEMP/ner.tar.gz" | shasum -a 256 -c -
+          mkdir -p "$RUNNER_TEMP/ner"
+          tar -xzf "$RUNNER_TEMP/ner.tar.gz" -C "$RUNNER_TEMP/ner"
+          # Tests that need the model look here, so they run in CI too.
+          echo "PRIVMASK_NER_DIR=$RUNNER_TEMP/ner" >> "$GITHUB_ENV"
+
       - name: Test
         run: swift test
 
@@ -130,6 +145,12 @@ jobs:
           lipo -archs "$BIN" | grep -q arm64
           "$BIN" --version
           "$BIN" --version | grep -qx "privmask $VERSION"
+          # The binary must find names with the model it will be installed
+          # with, or the release is one in which names silently stopped being
+          # found.
+          REPORT=$(printf '担当は佐藤さんです。\n' | "$BIN" --json --no-model --no-dictionary)
+          echo "$REPORT" | jq -e '.ner == "used"'
+          echo "$REPORT" | jq -e '[.findings[] | select(.sources | index("ner"))] | length > 0'
           echo "bin=$BIN" >> "$GITHUB_ENV"
 
       - name: Package

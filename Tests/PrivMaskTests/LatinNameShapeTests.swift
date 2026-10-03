@@ -67,4 +67,16 @@ struct LatinNameShapeTests {
         #expect(!LatinNameShape.isNameShaped("01_02"))
         #expect(!LatinNameShape.isNameShaped(""))
     }
+
+    /// An initial or a one-letter suffix sits beside a romaji name in user ids
+    /// and signatures. Python's NER masked all three. See #46.
+    @Test("A single letter beside a romaji name is ignored", arguments: ["S. Suguri", "koyaba_j", "nagatsuta.m"])
+    func acceptsInitials(_ name: String) {
+        #expect(LatinNameShape.readsAsRomaji(name))
+    }
+
+    @Test("Single letters alone do not read as romaji", arguments: ["S. K", "a", "orders-db"])
+    func rejectsLettersAlone(_ span: String) {
+        #expect(!LatinNameShape.readsAsRomaji(span))
+    }
 }
