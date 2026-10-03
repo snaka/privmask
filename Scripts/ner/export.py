@@ -96,7 +96,9 @@ for r in csv.reader(io.StringIO(gs.fetch_lexicon())):
         words.add(r[0])
 words = frozenset(words - names); names = frozenset(names)
 (out / "words.txt").write_text("\n".join(sorted(words)) + "\n")
-print(f"post-filter words {len(words)} ({mb(out / 'words.txt'):.1f} MB)")
+# The names the filter keeps, which part B needs to reproduce it. (#43 review)
+(out / "names.txt").write_text("\n".join(sorted(names)) + "\n")
+print(f"post-filter words {len(words)} ({mb(out / 'words.txt'):.1f} MB), names {len(names)} ({mb(out / 'names.txt'):.1f} MB)")
 for name, c in corpora.items():
     json.dump(nerlib.detections(predict_ml, small, c, "ner", words, names), open(out / f"detections-{name}.json", "w"), ensure_ascii=False)
 if failures:

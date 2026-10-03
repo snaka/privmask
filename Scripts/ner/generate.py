@@ -40,7 +40,7 @@ def name_pools(held: set[str]):
     clean = lambda x: sorted(v for v in x if v not in held)
     # A common noun that is also a name part would teach the model the name is
     # not one, so those are left out.
-    NOUNS[:] = sorted(nouns - surn - single - long_ - given)
+    NOUNS[:] = sorted(nouns - surn - single - long_ - given - held)
     # A reading is also written in hiragana and in romaji, and neither form may be held out.
     clean_kana = lambda x: sorted(v for v in x if v not in held and hira(v) not in held and romaji(v).lower() not in low)
     return (*map(clean, (surn, single, long_, given)), *map(clean_kana, (kana_s, kana_g)))
@@ -194,6 +194,10 @@ def render(rng, template, P):
 
 def generate(n: int, seed: int, held: set[str]):
     rng, P = random.Random(seed), name_pools(held)
+    # A held-out name used as an unlabelled noun would teach the model that it
+    # is not a name. (#43 review)
+    clash = set(NOUNS) & held
+    assert not clash, f"held-out names among the common nouns: {sorted(clash)[:10]}"
     for _ in range(n):
         if rng.random() < 0.25:   # a sample with no name at all; filled slots add more
             lines = [render(rng, rng.choice(UNNAMED), P) for _ in range(rng.randint(1, 4))]

@@ -50,10 +50,13 @@ def spans_from_labels(offsets, labels) -> list[tuple[int, int]]:
     return [tuple(s) for s in spans]
 
 def plausible(text: str, words: frozenset = frozenset(), names: frozenset = frozenset()) -> bool:
-    """A single kana is never a name, and an all-capitals word is a label
-    (MEDIUM, INFO) by the rule #32 set for the model's Latin output. A span that
-    is exactly a dictionary word is not a name either, unless the word is also a
-    listed name: 内線 and クエリ go, 森 stays (#43)."""
+    """Whether a merged span may be a name. Applied after merge, to each span.
+
+    In order, on the span NFKC-folded (ｸｴﾘ is クエリ), with lengths in code points:
+    no letter at all: drop; one character and a word list given: keep only a
+    listed name (林, 関); exactly a word and not a listed name: drop (内線, クエリ;
+    森 stays). Then, on the span as written: a single kana: drop; an all-capitals
+    ASCII word: drop (MEDIUM, INFO, by the rule #32 set). See #43."""
     folded = unicodedata.normalize("NFKC", text)  # ｸﾗｳﾄﾞ is クラウド
     if not any(ch.isalpha() for ch in folded):
         return False
@@ -76,12 +79,19 @@ def merge(spans) -> list[tuple[int, int]]:
             out.append([a, b])
     return [tuple(s) for s in out]
 
-WINDOW, STRIDE = 254, 64  # tokens per call, leaving room for <s> and </s>
+# Tokens per call, leaving room for <s> and </s>, and how many of them the next
+# window repeats. A window starts WINDOW - OVERLAP tokens after the last.
+WINDOW, OVERLAP = 254, 64
 
 def line_spans(predict, tokenizer, line: str) -> list[tuple[int, int]]:
     """Names in one line, windowing a line longer than the model takes."""
     enc = tokenizer(line, add_special_tokens=False, return_offsets_mapping=True)
     ids, offs = enc["input_ids"], enc["offset_mapping"]
+    # A lone word-boundary piece (U+2581) is given the offset of the character
+    # after it by the HF tokenizer; it is not part of any name, so it is made
+    # empty, and spans come only from pieces that carry text. (#43 review)
+    pieces = tokenizer.convert_ids_to_tokens(ids) if hasattr(tokenizer, "convert_ids_to_tokens") else [None] * len(ids)
+    offs = [(b, b) if piece == "\u2581" else (a, b) for piece, (a, b) in zip(pieces, offs)]
     found, start = [], 0
     while True:
         chunk = ids[start:start + WINDOW]
@@ -91,20 +101,20 @@ def line_spans(predict, tokenizer, line: str) -> list[tuple[int, int]]:
         found += spans_from_labels(offsets, labels)
         if start + WINDOW >= len(ids):
             return merge(found)
-        start += WINDOW - STRIDE
+        start += WINDOW - OVERLAP
 
 def detections(predict, tokenizer, corpus: dict, system: str, words: frozenset = frozenset(), names: frozenset = frozenset()) -> dict:
     samples = {}
     for s in corpus["samples"]:
-        text, names, base = s["text"], [], 0
+        text, found, base = s["text"], [], 0
         for line in text.split("\n"):
             for a, b in line_spans(predict, tokenizer, line) if line.strip() else []:
                 if not plausible(line[a:b], words, names):
                     continue
                 a, b = base + a, base + b
-                names.append({"text": text[a:b], "location": utf16(text, a), "length": utf16(text, b) - utf16(text, a)})
+                found.append({"text": text[a:b], "location": utf16(text, a), "length": utf16(text, b) - utf16(text, a)})
             base += len(line) + 1
-        samples[s["id"]] = {"names": names}
+        samples[s["id"]] = {"names": found}
     return {"system": system, "samples": samples}
 
 def union(system: str, files: list[str]) -> dict:
@@ -139,6 +149,11 @@ def check() -> None:
     line = "あ" * 600 + "田中"  # the name sits past the first window
     predict = lambda ids: [0] + [1 if i == 600 else 2 if i == 601 else 0 for i in ids[1:-1]] + [0]
     assert line_spans(predict, Tok(), line) == [(600, 602)], "a name past the first window is found"
+    # Through detections, a listed single-kanji family name survives the filter.
+    one = {"samples": [{"id": "x", "text": "森さんと林さん"}]}
+    tag = lambda ids: [0] + [1 if i in (0, 4) else 0 for i in ids[1:-1]] + [0]
+    got = [n["text"] for n in detections(tag, Tok(), one, "t", frozenset({"森"}), frozenset({"森", "林"}))["samples"]["x"]["names"]]
+    assert got == ["森", "林"], f"listed single-kanji names must survive detections: {got}"
     print("nerlib: all checks passed")
 
 if __name__ == "__main__":
