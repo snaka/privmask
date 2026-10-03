@@ -45,25 +45,48 @@ public struct NERDetector: Sendable {
     }
 
     public func detect(in text: String) throws -> [DetectedMatch] {
-        var found: [DetectedMatch] = []
-        var base = 0
         // components(separatedBy:), not split(separator:): Swift reads "\r\n"
         // as one Character, and nerlib splits on "\n" alone.
-        for line in text.components(separatedBy: "\n") {
-            defer { base += line.utf16.count + 1 }
-            guard !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
-            let nsLine = line as NSString
-            for range in try spans(in: line) {
-                let name = nsLine.substring(with: range)
-                guard Self.plausible(name, words: words, names: names) else { continue }
-                // Latin text passes the check the model layer's does (#32, #40).
-                guard JapaneseText.containsJapanese(name) || LatinNameShape.isNameShaped(name) else { continue }
-                found.append(DetectedMatch(
-                    kind: .personalName, source: .ner,
-                    range: NSRange(location: base + range.location, length: range.length), text: name))
-            }
+        let lines = text.components(separatedBy: "\n")
+        var starts: [Int] = []
+        var base = 0
+        for line in lines {
+            starts.append(base)
+            base += line.utf16.count + 1
         }
-        return found
+        let bases = starts
+        // One Core ML call per line is most of the time on a long log, and the
+        // calls are independent, so lines run concurrently. Each line keeps its
+        // own call: packing lines together would change what the model sees.
+        let results = LineResults(count: lines.count)
+        DispatchQueue.concurrentPerform(iterations: lines.count) { i in
+            let line = lines[i]
+            guard !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+            results.set(i, Result { try matches(in: line, at: bases[i]) })
+        }
+        return try results.all.flatMap { try $0?.get() ?? [] }
+    }
+
+    private func matches(in line: String, at base: Int) throws -> [DetectedMatch] {
+        let nsLine = line as NSString
+        return try spans(in: line).compactMap { range in
+            let name = nsLine.substring(with: range)
+            guard Self.plausible(name, words: words, names: names) else { return nil }
+            // Latin text passes the check the model layer's does (#32, #40).
+            guard JapaneseText.containsJapanese(name) || LatinNameShape.isNameShaped(name) else { return nil }
+            return DetectedMatch(
+                kind: .personalName, source: .ner,
+                range: NSRange(location: base + range.location, length: range.length), text: name)
+        }
+    }
+
+    /// Each line's outcome, written from concurrentPerform's threads.
+    private final class LineResults: @unchecked Sendable {
+        private let lock = NSLock()
+        private var results: [Result<[DetectedMatch], Error>?]
+        init(count: Int) { results = Array(repeating: nil, count: count) }
+        func set(_ i: Int, _ result: Result<[DetectedMatch], Error>) { lock.withLock { results[i] = result } }
+        var all: [Result<[DetectedMatch], Error>?] { lock.withLock { results } }
     }
 
     /// Names in one line, windowing a line longer than the model takes.

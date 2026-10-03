@@ -34,6 +34,9 @@ struct NERDetectorTests {
         private let lock = NSLock()
         private var count = 0
         func increment() { lock.withLock { count += 1 } }
+        /// Adds and returns the new count.
+        func add(_ n: Int) -> Int { lock.withLock { count += n; return count } }
+        func raise(to n: Int) { lock.withLock { count = max(count, n) } }
         var value: Int { lock.withLock { count } }
     }
 
@@ -146,6 +149,67 @@ struct NERDetectorTests {
         #expect(found.map(\.kind) == [.personalName])
         #expect(found.map(\.source) == [.ner])
         #expect(DetectorSource.ner.baseConfidence == .low)
+    }
+
+    static func lines(_ count: Int) -> String {
+        (0..<count).map { $0 % 3 == 0 ? "\($0) 田中さん、田村さん" : "line \($0) ok" }.joined(separator: "\n")
+    }
+
+    @Test("Many lines give the matches running each line alone gives, in line order")
+    func manyLinesInOrder() throws {
+        let text = Self.lines(200)
+        let detector = Self.tanakaDetector()
+        var expected: [DetectedMatch] = []
+        var base = 0
+        for line in text.components(separatedBy: "\n") {
+            expected += try detector.detect(in: line).map {
+                DetectedMatch(kind: $0.kind, source: $0.source,
+                              range: NSRange(location: base + $0.range.location, length: $0.range.length), text: $0.text)
+            }
+            base += line.utf16.count + 1
+        }
+        let found = try detector.detect(in: text)
+        #expect(found.count == 134)
+        #expect(found.map(\.range) == expected.map(\.range))
+        #expect(found.map(\.text) == expected.map(\.text))
+    }
+
+    @Test("Lines are read concurrently")
+    func concurrent() throws {
+        let inFlight = Counter(), peak = Counter()
+        let detector = NERDetector(
+            tokenize: Self.perUnit, clsID: -1, sepID: -2,
+            predict: { ids in
+                peak.raise(to: inFlight.add(1))
+                Thread.sleep(forTimeInterval: 0.01)
+                _ = inFlight.add(-1)
+                return ids.map { _ in 0 }
+            })
+        _ = try detector.detect(in: Self.lines(32))
+        #expect(peak.value > 1)
+    }
+
+    @Test("An error on one line of many is thrown")
+    func errorOnOneLine() {
+        let detector = NERDetector(
+            tokenize: Self.perUnit, clsID: -1, sepID: -2,
+            predict: { ids in ids.count == 10 ? [0] : ids.map { _ in 0 } })  // only "bad line" is 8 units
+        #expect(throws: NERDetector.Failure.self) { try detector.detect(in: Self.lines(100) + "\nbad line") }
+    }
+
+    /// A model that calls each 田 the start of a name and the next character
+    /// its end.
+    static func tanakaDetector() -> NERDetector {
+        NERDetector(
+            tokenize: { line in
+                line.utf16.enumerated().map { XLMRTokenizer.Token(id: Int32($1), range: NSRange(location: $0, length: 1)) }
+            },
+            clsID: -1, sepID: -2,
+            predict: { ids in
+                var labels = ids.map { _ in 0 }
+                for i in ids.indices where ids[i] == 0x7530 && i + 1 < ids.count { labels[i] = 1; labels[i + 1] = 2 }
+                return labels
+            })
     }
 
     @Test("A model that returns the wrong number of labels is an error, not a guess")
