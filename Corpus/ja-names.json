@@ -3419,6 +3419,22 @@
             "romaji",
             "familyOnly"
           ]
+        },
+        {
+          "kind": "personalName",
+          "text": "kawanomics",
+          "tags": [
+            "romaji",
+            "familyOnly"
+          ]
+        },
+        {
+          "kind": "personalName",
+          "text": "muneyo",
+          "tags": [
+            "romaji",
+            "givenOnly"
+          ]
         }
       ],
       "mustNotDetect": []
