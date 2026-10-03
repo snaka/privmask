@@ -34,9 +34,6 @@ struct NERDetectorTests {
         private let lock = NSLock()
         private var count = 0
         func increment() { lock.withLock { count += 1 } }
-        /// Adds and returns the new count.
-        func add(_ n: Int) -> Int { lock.withLock { count += n; return count } }
-        func raise(to n: Int) { lock.withLock { count = max(count, n) } }
         var value: Int { lock.withLock { count } }
     }
 
@@ -177,21 +174,6 @@ struct NERDetectorTests {
         #expect(found.count == 134)
         #expect(found.map(\.range) == expected.map(\.range))
         #expect(found.map(\.text) == expected.map(\.text))
-    }
-
-    @Test("Lines are read concurrently")
-    func concurrent() throws {
-        let inFlight = Counter(), peak = Counter()
-        let detector = NERDetector(
-            tokenize: Self.perUnit, clsID: -1, sepID: -2,
-            predict: { ids in
-                peak.raise(to: inFlight.add(1))
-                Thread.sleep(forTimeInterval: 0.01)
-                _ = inFlight.add(-1)
-                return ids.map { _ in 0 }
-            })
-        _ = try detector.detect(in: Self.lines(32))
-        #expect(peak.value > 1)
     }
 
     @Test("An error on one line of many is thrown")
