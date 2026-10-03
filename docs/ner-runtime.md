@@ -1,4 +1,4 @@
-# The NER layer at runtime: compute units and the product's score
+# The NER layer at runtime: compute units, the product's score, and speed
 
 - Measured: 2026-10-03
 - Environment: macOS 26.6.2 (25G83), Apple M2 Pro, Apple Intelligence enabled
@@ -28,14 +28,16 @@ location) are not identical to the `cpuOnly` run.
 - `.all` (which allows the GPU) aborts the process:
   `MPSGraphExecutable.mm: failed assertion 'Error: MLIR pass manager failed'`.
   It cannot be caught, so the probe does not measure it.
-- `cpuOnly` stays the default. Nothing here argues for changing it.
+- `cpuOnly` is the default, and this measurement found nothing faster or
+  different: the Neural Engine took the same time and gave the same names.
 
 ## The product's score with NER
 
 `FoundationModelProbe Corpus/ja-names.json`, with `PRIVMASK_NER_DIR` set: the
 deterministic pipeline, NER, and the on-device model together, which is what the
-CLI produces. Scored with `NameScore` against each half of the corpus
-(`.build/ner/dev.json`, `.build/ner/test.json`).
+CLI produces. Scored with `NameScore` against each half of the corpus,
+`.build/ner/dev.json` and `.build/ner/test.json`, which
+`python3 Scripts/ner/nerlib.py split Corpus/ja-names.json .build/ner` makes.
 
 | half | recall | precision |
 |------|--------|-----------|
@@ -43,10 +45,54 @@ CLI produces. Scored with `NameScore` against each half of the corpus
 | test | 97.0% (533 expected)  | 98.1% (18 false positives of 939 detections) |
 
 For the test half, #45 reported 95.5% recall and 97.9% precision for
-privmask ∪ NER. The Swift runtime with the model is at least as good, so the port
-loses nothing; the difference is the language model, which varies between runs.
+privmask ∪ NER. The difference is the language model, which varies between runs.
+This run predates the change to the Latin check below.
 
 In that run 2 of 109 samples had their only chunk fail in the language model
 (`markdown-opus-02`, `hard-method-name`); their names come from the deterministic
 layer and NER alone. The whole run took 3m41s, nearly all of it the language
 model (mean 1.97s per sample, slowest 13.27s). NER adds 3.8s over the corpus.
+
+## What the Swift NER layer drops of Python's
+
+The Swift layer applies a check Python did not: a span must contain Japanese, or
+be Latin text shaped like a name (`LatinNameShape`, the check the language
+model's Latin names pass, #32 and #40). `NERParityTests` compares Swift with
+Python's detections after that check, so it cannot see what the check drops.
+
+After one-letter tokens (`S. Suguri`, `koyaba_j`, `nagatsuta.m`) and kanji
+outside the BMP were let through, the check drops three of Python's detections:
+`koyadmin` and `Zoom` on the test half, `kawanomics` on the dev half. Recall did
+not change, so on the test half both were false positives.
+
+Scored with `NameScore` on the test half, 533 expected names. Swift NER's
+detections are `NERDetector.detect(in:)` over each sample, as `NERParityTests`
+runs it; the unions are with #45's `privmask.json` (privmask without NER), by
+`nerlib.py union`, so no new language model run is involved:
+
+| detections                | recall | precision |
+|---------------------------|--------|-----------|
+| Python NER                | 91.9%  | 97.4% (18 false positives of 703) |
+| Swift NER                 | 91.9%  | 97.7% (16 false positives of 701) |
+| privmask ∪ Python NER     | 95.5%  | 97.9% (19 false positives of 913) |
+| privmask ∪ Swift NER      | 95.5%  | 98.1% (17 false positives of 911) |
+
+## Speed on a long log
+
+A 5,000-line ASCII log, with a Japanese name on every 250th line, through the
+release binary: `privmask --no-model --no-dictionary`, with
+`PRIVMASK_NER_DIR=.build/ner/export`. Same machine as above (Apple M2 Pro, 12
+cores).
+
+|                              | with NER | `--no-ner` |
+|------------------------------|----------|------------|
+| one line at a time           | 21.8s    | 2.8s       |
+| lines run concurrently       | 9.8s     | 2.9s       |
+
+NER makes one Core ML call per non-blank line, about 3.8 ms each when run one
+after another. The lines are independent, so `NERDetector.detect(in:)` runs
+them with `concurrentPerform`; output is byte-identical to the sequential run.
+The gain stops at about 2.2 times with 12 cores: CPU time went from 21s to 44s,
+so the calls contend for something inside Core ML. Lines are not packed into
+one call, because that changes what the model sees and so its labels.
+

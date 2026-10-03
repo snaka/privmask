@@ -232,7 +232,7 @@ flowchart TB
     named -->|milliseconds| merge
     dd -->|milliseconds| merge
     terms -->|milliseconds| merge
-    ner -->|milliseconds| merge
+    ner -->|a millisecond or two a line| merge
     fm -->|seconds| merge
 
     merge --> you
@@ -257,23 +257,23 @@ straight away, and the model's findings are folded in when they arrive.
 | Everything except the row below | ✅ | ✅ | ✅ |
 | Spelling variants of your terms | ❌ | ❌ | ✅ |
 
-- Finding names takes as long as there is Japanese to read. The text is sent to
-  the model in chunks of about 1,500 characters, one call after another — the
-  on-device model runs them one at a time whatever you do, so a document with a
-  lot of Japanese in it takes proportionally longer. Everything is examined; the
-  cost is time. `--no-model` skips the whole layer when you would rather have
-  the speed. In a terminal, a line on stderr says which chunk it is reading; in
-  a pipe, nothing is drawn.
-- If a chunk fails, the names in the other chunks are still found and the chunk
-  that failed is named in a warning. A warning means that part of the text was
+- The language model layer takes as long as there is Japanese to read. The text
+  is sent to it in chunks of about 1,500 characters, one call after another —
+  the on-device model runs them one at a time whatever you do, so a document
+  with a lot of Japanese in it takes proportionally longer. Everything is
+  examined; the cost is time. `--no-model` skips that layer when you would
+  rather have the speed. In a terminal, a line on stderr says which chunk it is
+  reading; in a pipe, nothing is drawn.
+- If a language model chunk fails, the names in the other chunks are still
+  found and the chunk that failed is named in a warning. A warning means that part of the text was
   not examined — not that nothing was.
-- A name that competes with others on the same line is missed, run after run.
-  In the test corpus a name sharing a line with a company name, a phone number
+- The language model misses a name that competes with others on the same line,
+  run after run. In the test corpus a name sharing a line with a company name, a phone number
   and an email is not found at all — not occasionally, every time. Smaller
   chunks do find it, and make the model mask commit hashes and version numbers
   instead ([#1](https://github.com/snaka/privmask/issues/1)).
-- Separately, the model varies between runs. A name it finds in one run can be
-  missed in the next.
+- Separately, the language model varies between runs. A name it finds in one
+  run can be missed in the next.
 - A credential with neither a recognisable name nor a published prefix is not
   found — scoring values by randomness was rejected because that would also
   flag the commit hash and request ID this README's own example keeps intact.
@@ -283,8 +283,11 @@ straight away, and the model's findings are folded in when they arrive.
   document intact — so a passphrase with spaces in it is only partly covered.
 - Masking is **not reversible**. There is no way to recover the original text
   from the output.
-- `--no-model` makes privmask fully deterministic and much faster, at the cost
-  of the last row above.
+- `--no-model` makes privmask fully deterministic and takes away the seconds per
+  chunk of the language model layer, at the cost of the last row above. The NER
+  layer still runs, one model call per line: on a 5,000-line log it takes about
+  7 of the 10 seconds, and `--no-ner` takes those away too
+  ([measurement](docs/ner-runtime.md#speed-on-a-long-log)).
 
 ## Development
 
